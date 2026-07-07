@@ -1,0 +1,18 @@
+# Dependencias y build
+node_modules/
+dist/
+.astro/
+*.log
+*.jpg.tmp
+
+# Herramientas de captura de pantalla
+.playwright-mcp/
+
+# Caché de tooling
+.atl/
+
+# Material de referencia del cliente (no forma parte del producto)
+propuestaProveedor.png
+/logo.png
+/CARATULA HTB PLAN LECTOR.jpeg
+/Primaria/
