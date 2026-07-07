@@ -1,0 +1,40 @@
+---
+const year = new Date().getFullYear();
+---
+
+<footer class="border-t border-line bg-surface-2">
+  <div class="mx-auto max-w-6xl px-4 py-14 md:px-8">
+    <div class="flex flex-col gap-10 md:flex-row md:items-start md:justify-between">
+      <div class="max-w-sm">
+        <img src="/brand/logo.png" alt="Human Touch Books" class="h-14 w-auto" />
+        <p class="mt-4 text-sm leading-relaxed text-ink/70">
+          Editorial peruana que pone lo humano en el centro de cada página. Textos escolares y
+          literatura que acompañan a crecer.
+        </p>
+      </div>
+
+      <div class="grid grid-cols-2 gap-10 text-sm">
+        <div>
+          <h3 class="font-display text-base text-ink">Catálogo</h3>
+          <ul class="mt-4 space-y-2.5 text-ink/70">
+            <li><a href="#escolar" class="hover:text-brand">Tutoría SMART</a></li>
+            <li><a href="#literatura" class="hover:text-brand">Literatura</a></li>
+            <li><a href="#editorial" class="hover:text-brand">La editorial</a></li>
+          </ul>
+        </div>
+        <div>
+          <h3 class="font-display text-base text-ink">Contacto</h3>
+          <ul class="mt-4 space-y-2.5 text-ink/70">
+            <li><a href="https://wa.me/51982953436" class="hover:text-brand">+51 982 953 436</a></li>
+            <li><a href="#contacto" class="hover:text-brand">Solicitar información</a></li>
+            <li>La Molina, Lima — Perú</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <div class="mt-12 border-t border-line pt-6 text-xs text-ink/50">
+      © {year} Human Touch Books · Editorial. Todos los derechos reservados.
+    </div>
+  </div>
+</footer>

@@ -1,0 +1,41 @@
+---
+const links = [
+  { href: "#escolar", label: "Textos escolares" },
+  { href: "#literatura", label: "Literatura" },
+  { href: "#editorial", label: "La editorial" },
+  { href: "#contacto", label: "Contacto" },
+];
+---
+
+<header
+  class="sticky top-0 z-40 border-b border-line bg-paper/85 backdrop-blur-md"
+>
+  <div class="mx-auto flex max-w-6xl items-center justify-between px-4 py-3 md:px-8">
+    <a href="#inicio" class="flex items-center gap-3" aria-label="Human Touch Books, inicio">
+      <img src="/brand/logo.png" alt="Human Touch Books" class="h-16 w-auto md:h-20" width="160" height="80" />
+    </a>
+
+    <nav class="hidden items-center gap-8 md:flex" aria-label="Navegación principal">
+      {
+        links.map((l) => (
+          <a
+            href={l.href}
+            class="text-sm font-medium text-ink/75 transition-colors hover:text-brand"
+          >
+            {l.label}
+          </a>
+        ))
+      }
+    </nav>
+
+    <a
+      href="https://wa.me/51982953436"
+      class="inline-flex min-h-[44px] items-center gap-2 rounded-full bg-brand px-5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-brand-deep focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
+    >
+      <svg viewBox="0 0 24 24" class="h-4 w-4 fill-current" aria-hidden="true">
+        <path d="M12 2a10 10 0 0 0-8.6 15l-1.3 4.7 4.8-1.3A10 10 0 1 0 12 2Zm5.3 14.2c-.2.6-1.3 1.2-1.8 1.2-.5.1-1 .1-1.7-.1-.4-.2-.9-.3-1.6-.6-2.7-1.2-4.5-4-4.6-4.2-.2-.2-1.1-1.5-1.1-2.8 0-1.3.7-2 .9-2.2.2-.3.5-.3.7-.3h.5c.2 0 .4 0 .6.5l.8 2c.1.2.1.4 0 .5l-.4.6c-.2.2-.3.4-.1.7.2.3.9 1.4 1.9 2.3 1.3 1.1 2.3 1.4 2.6 1.6.3.1.5.1.7-.1l.7-.8c.2-.3.4-.2.7-.1l2 .9c.3.2.5.2.6.4.1.1.1.7-.1 1.3Z" />
+      </svg>
+      Escríbenos
+    </a>
+  </div>
+</header>
