@@ -1,0 +1,313 @@
+---
+import { getCollection } from "astro:content";
+import Layout from "../layouts/Layout.astro";
+import Header from "../components/Header.astro";
+import Footer from "../components/Footer.astro";
+
+const libros = await getCollection("libros");
+const escolar = libros
+  .filter((l) => l.data.linea === "escolar")
+  .sort((a, b) => a.data.orden - b.data.orden);
+const literatura = libros
+  .filter((l) => l.data.linea === "literatura")
+  .sort((a, b) => a.data.orden - b.data.orden);
+const destacado = literatura[0];
+
+const valores = [
+  {
+    titulo: "Aprendizaje con sentido",
+    texto:
+      "Metodologías activas que promueven la reflexión, la comprensión y el pensamiento crítico.",
+  },
+  {
+    titulo: "Habilidades para la vida",
+    texto:
+      "Competencias socioemocionales y de convivencia que acompañan a cada estudiante a crecer.",
+  },
+  {
+    titulo: "El toque humano",
+    texto:
+      "Detrás de cada página hay personas. Formamos con cercanía, empatía y respeto por cada etapa.",
+  },
+];
+---
+
+<Layout>
+  <Header />
+
+  <main id="inicio">
+    <!-- HERO -->
+    <section class="relative overflow-hidden">
+      <div
+        class="pointer-events-none absolute -right-40 -top-40 h-[32rem] w-[32rem] rounded-full bg-brand-bright/15 blur-3xl"
+        aria-hidden="true"
+      >
+      </div>
+      <div
+        class="mx-auto grid max-w-6xl items-center gap-12 px-4 py-16 md:px-8 md:py-24 lg:grid-cols-[1.05fr_0.95fr] lg:gap-8"
+      >
+        <div class="reveal">
+          <p class="flex items-center gap-2 text-sm font-semibold text-brand">
+            <span class="h-px w-8 bg-brand"></span>
+            Editorial peruana
+          </p>
+          <h1
+            class="font-display mt-5 text-[clamp(2.5rem,6vw,4.5rem)] font-semibold leading-[1.05] text-ink"
+          >
+            Lo humano, hecho página.
+          </h1>
+          <p class="mt-6 max-w-[54ch] text-lg leading-relaxed text-ink/75">
+            En Human Touch Books creamos textos escolares y literatura que forman personas, no solo
+            lectores. Tutoría, convivencia y buenas historias, con el toque humano que nos define.
+          </p>
+          <div class="mt-9 flex flex-wrap items-center gap-4">
+            <a
+              href="#escolar"
+              class="inline-flex min-h-[48px] items-center rounded-full bg-accent px-7 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-accent-deep focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+            >
+              Conocer la colección
+            </a>
+            <a
+              href="#contacto"
+              class="inline-flex min-h-[48px] items-center rounded-full border border-line bg-surface px-7 text-sm font-semibold text-ink transition-colors hover:border-brand hover:text-brand"
+            >
+              Solicitar información
+            </a>
+          </div>
+        </div>
+
+        <!-- Arreglo editorial de portadas -->
+        <div class="relative mx-auto w-full max-w-md lg:max-w-none">
+          <div class="grid grid-cols-3 gap-3 sm:gap-4">
+            {
+              escolar.slice(0, 6).map((l, i) => (
+                <img
+                  src={l.data.portada}
+                  alt={`Portada de ${l.data.titulo}`}
+                  loading={i < 3 ? "eager" : "lazy"}
+                  class="aspect-[3/4] w-full rounded-xl object-cover shadow-lg shadow-brand/10 ring-1 ring-black/5 transition-transform duration-500 ease-out hover:-translate-y-1"
+                  style={`--tw-rotate: ${(i % 2 === 0 ? -1 : 1) * 1.5}deg;`}
+                />
+              ))
+            }
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- VALORES -->
+    <section class="border-y border-line bg-surface">
+      <div class="mx-auto grid max-w-6xl gap-8 px-4 py-16 md:grid-cols-3 md:px-8">
+        {
+          valores.map((v) => (
+            <div>
+              <h3 class="font-display text-xl font-medium text-ink">{v.titulo}</h3>
+              <p class="mt-3 max-w-[42ch] text-ink/70 leading-relaxed">{v.texto}</p>
+            </div>
+          ))
+        }
+      </div>
+    </section>
+
+    <!-- ESCOLAR -->
+    <section id="escolar" class="mx-auto max-w-6xl px-4 py-20 md:px-8 md:py-28">
+      <div class="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+        <div>
+          <p class="text-sm font-semibold text-brand">Textos escolares</p>
+          <h2 class="font-display mt-2 text-[clamp(2rem,4vw,3rem)] font-semibold text-ink">
+            Colección Tutoría SMART
+          </h2>
+          <p class="mt-3 max-w-[60ch] text-ink/70 leading-relaxed">
+            Tutoría, orientación educativa y convivencia escolar para toda la primaria. De 1.° a 6.°
+            grado.
+          </p>
+        </div>
+        <a
+          href="#contacto"
+          class="shrink-0 text-sm font-semibold text-brand hover:text-brand-deep"
+        >
+          Solicitar muestra docente →
+        </a>
+      </div>
+
+      <div class="mt-12 grid grid-cols-2 gap-5 sm:grid-cols-3 lg:grid-cols-6">
+        {
+          escolar.map((l) => (
+            <article class="group">
+              <div class="overflow-hidden rounded-xl ring-1 ring-black/5 shadow-md shadow-brand/10">
+                <img
+                  src={l.data.portada}
+                  alt={`Portada de ${l.data.titulo}`}
+                  loading="lazy"
+                  class="aspect-[3/4] w-full object-cover"
+                />
+              </div>
+              <h3 class="mt-3 text-sm font-semibold text-ink">{l.data.titulo}</h3>
+              <p class="text-xs text-ink/60">{l.data.grado}</p>
+            </article>
+          ))
+        }
+      </div>
+    </section>
+
+    <!-- LITERATURA -->
+    {
+      destacado && (
+        <section id="literatura" class="bg-ink text-white">
+          <div class="mx-auto grid max-w-6xl items-center gap-12 px-4 py-20 md:grid-cols-[0.8fr_1.2fr] md:px-8 md:py-28">
+            <div class="mx-auto w-full max-w-xs">
+              <img
+                src={destacado.data.portada}
+                alt={`Portada de ${destacado.data.titulo}`}
+                loading="lazy"
+                class="w-full rounded-2xl shadow-2xl ring-1 ring-white/10"
+              />
+            </div>
+            <div>
+              <p class="text-sm font-semibold text-brand-bright">Literatura</p>
+              <h2 class="font-display mt-2 text-[clamp(2rem,4vw,3.25rem)] font-semibold leading-tight">
+                {destacado.data.titulo}
+              </h2>
+              {destacado.data.subtitulo && (
+                <p class="font-display mt-1 text-xl italic text-white/70">
+                  {destacado.data.subtitulo}
+                </p>
+              )}
+              <p class="mt-6 max-w-[58ch] text-lg leading-relaxed text-white/80">
+                {destacado.data.sinopsis}
+              </p>
+              <dl class="mt-8 flex flex-wrap gap-x-10 gap-y-3 text-sm">
+                <div>
+                  <dt class="text-white/50">Autor</dt>
+                  <dd class="mt-0.5 font-medium">{destacado.data.autor}</dd>
+                </div>
+                <div>
+                  <dt class="text-white/50">Ilustraciones</dt>
+                  <dd class="mt-0.5 font-medium">{destacado.data.ilustrador}</dd>
+                </div>
+                <div>
+                  <dt class="text-white/50">Año</dt>
+                  <dd class="mt-0.5 font-medium">{destacado.data.anio}</dd>
+                </div>
+              </dl>
+              <a
+                href="#contacto"
+                class="mt-9 inline-flex min-h-[48px] items-center rounded-full bg-white px-7 text-sm font-semibold text-ink transition-colors hover:bg-white/90"
+              >
+                Consultar disponibilidad
+              </a>
+            </div>
+          </div>
+        </section>
+      )
+    }
+
+    <!-- EDITORIAL -->
+    <section id="editorial" class="mx-auto max-w-6xl px-4 py-20 md:px-8 md:py-28">
+      <div class="grid gap-12 md:grid-cols-2 md:gap-16">
+        <div>
+          <p class="text-sm font-semibold text-brand">La editorial</p>
+          <h2 class="font-display mt-2 text-[clamp(2rem,4vw,3rem)] font-semibold text-ink">
+            Ponemos lo humano en el centro
+          </h2>
+        </div>
+        <div class="space-y-5 text-lg leading-relaxed text-ink/75">
+          <p>
+            Human Touch Books nace de una convicción simple: los libros forman personas. Por eso
+            cada título —escolar o literario— se piensa desde la empatía, la convivencia y el
+            respeto por cada etapa de la vida.
+          </p>
+          <p>
+            Trabajamos junto a docentes, tutores y directivos para llevar a las aulas peruanas
+            materiales que acompañan de verdad. Y publicamos historias que nos recuerdan por qué el
+            toque humano importa.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- CONTACTO -->
+    <section id="contacto" class="border-t border-line bg-surface">
+      <div class="mx-auto grid max-w-6xl gap-12 px-4 py-20 md:grid-cols-2 md:px-8 md:py-28">
+        <div>
+          <p class="text-sm font-semibold text-brand">Contacto</p>
+          <h2 class="font-display mt-2 text-[clamp(2rem,4vw,3rem)] font-semibold text-ink">
+            Conversemos sobre tu colegio
+          </h2>
+          <p class="mt-4 max-w-[48ch] text-ink/70 leading-relaxed">
+            Déjanos tu mensaje y te responderemos a la brevedad. Atendemos consultas de colegios,
+            docentes y lectores.
+          </p>
+
+          <ul class="mt-8 space-y-4 text-sm">
+            <li class="flex items-center gap-3">
+              <span class="grid h-10 w-10 place-items-center rounded-full bg-brand/10 text-brand">✆</span>
+              <a href="https://wa.me/51982953436" class="font-medium hover:text-brand">
+                +51 982 953 436
+              </a>
+            </li>
+            <li class="flex items-center gap-3">
+              <span class="grid h-10 w-10 place-items-center rounded-full bg-brand/10 text-brand">◷</span>
+              Lun a Vie · 8:00 a. m. – 5:00 p. m.
+            </li>
+            <li class="flex items-center gap-3">
+              <span class="grid h-10 w-10 place-items-center rounded-full bg-brand/10 text-brand">⌂</span>
+              La Molina, Lima — Perú
+            </li>
+          </ul>
+        </div>
+
+        <form class="rounded-2xl border border-line bg-paper p-6 md:p-8">
+          <div class="grid gap-4 sm:grid-cols-2">
+            <label class="block">
+              <span class="text-sm font-medium text-ink">Nombre completo</span>
+              <input
+                type="text"
+                name="nombre"
+                required
+                class="mt-1.5 w-full rounded-md border border-line bg-white px-3.5 py-2.5 text-sm outline-none focus-visible:border-brand focus-visible:ring-2 focus-visible:ring-brand/30"
+              />
+            </label>
+            <label class="block">
+              <span class="text-sm font-medium text-ink">Correo electrónico</span>
+              <input
+                type="email"
+                name="correo"
+                required
+                class="mt-1.5 w-full rounded-md border border-line bg-white px-3.5 py-2.5 text-sm outline-none focus-visible:border-brand focus-visible:ring-2 focus-visible:ring-brand/30"
+              />
+            </label>
+          </div>
+          <label class="mt-4 block">
+            <span class="text-sm font-medium text-ink">Asunto</span>
+            <input
+              type="text"
+              name="asunto"
+              class="mt-1.5 w-full rounded-md border border-line bg-white px-3.5 py-2.5 text-sm outline-none focus-visible:border-brand focus-visible:ring-2 focus-visible:ring-brand/30"
+            />
+          </label>
+          <label class="mt-4 block">
+            <span class="text-sm font-medium text-ink">Mensaje</span>
+            <textarea
+              name="mensaje"
+              rows="4"
+              required
+              class="mt-1.5 w-full rounded-md border border-line bg-white px-3.5 py-2.5 text-sm outline-none focus-visible:border-brand focus-visible:ring-2 focus-visible:ring-brand/30"
+            ></textarea>
+          </label>
+          <button
+            type="submit"
+            class="mt-6 inline-flex min-h-[48px] w-full items-center justify-center rounded-full bg-brand px-7 text-sm font-semibold text-white transition-colors hover:bg-brand-deep focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
+          >
+            Enviar mensaje
+          </button>
+          <p class="mt-3 text-center text-xs text-ink/50">
+            Tu información está segura. No la compartimos con terceros.
+          </p>
+        </form>
+      </div>
+    </section>
+  </main>
+
+  <Footer />
+</Layout>
