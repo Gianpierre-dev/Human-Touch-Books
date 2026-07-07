@@ -1,0 +1,75 @@
+@import "tailwindcss";
+
+/*
+  Human Touch Books — sistema de diseno
+  Estrategia de color "committed": el azul de marca carga la identidad.
+  Calidez desde la tipografia y el papel, NO desde un beige generico.
+  Todos los valores en OKLCH.
+*/
+@theme {
+  /* Marca */
+  --color-ink: oklch(0.28 0.08 264); /* navy del wordmark: texto principal */
+  --color-brand: oklch(0.55 0.15 253); /* azul HTB: primario */
+  --color-brand-deep: oklch(0.42 0.13 258); /* azul profundo: hover, degradados */
+  --color-brand-bright: oklch(0.7 0.13 240); /* celeste del icono: acentos claros */
+  --color-accent: oklch(0.58 0.2 25); /* rojo del arco "Editorial": solo CTAs */
+  --color-accent-deep: oklch(0.5 0.19 25);
+
+  /* Superficies: papel calido-neutro, tenido levemente hacia el azul de marca */
+  --color-paper: oklch(0.985 0.004 255);
+  --color-surface: oklch(1 0 0);
+  --color-surface-2: oklch(0.965 0.008 255);
+  --color-line: oklch(0.9 0.01 255);
+
+  /* Tipografia: eje de contraste serif + grotesque */
+  --font-display: "Fraunces", "Georgia", serif;
+  --font-sans: "Hanken Grotesk", system-ui, sans-serif;
+
+  /* Radios contenidos (evita el over-round) */
+  --radius-sm: 0.375rem;
+  --radius: 0.75rem;
+  --radius-lg: 1.25rem;
+}
+
+html {
+  color-scheme: light;
+  scroll-behavior: smooth;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+}
+
+body {
+  background-color: var(--color-paper);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+/* Titulares: serif editorial, equilibrio de lineas */
+.font-display {
+  font-family: var(--font-display);
+  text-wrap: balance;
+  letter-spacing: -0.02em;
+}
+
+/* Utilidad de reveal seguro: contenido visible por defecto, la animacion realza */
+@media (prefers-reduced-motion: no-preference) {
+  .reveal {
+    animation: reveal-up 0.7s cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+  @keyframes reveal-up {
+    from {
+      opacity: 0;
+      transform: translateY(1.25rem);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+}
