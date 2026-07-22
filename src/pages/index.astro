@@ -8,301 +8,424 @@ const libros = await getCollection("libros");
 const escolar = libros
   .filter((l) => l.data.linea === "escolar")
   .sort((a, b) => a.data.orden - b.data.orden);
-const literatura = libros
-  .filter((l) => l.data.linea === "literatura")
-  .sort((a, b) => a.data.orden - b.data.orden);
-const destacado = literatura[0];
+const planLector = libros.filter((l) => l.data.linea === "literatura");
+
+// pista del carrusel: coleccion escolar + plan lector, duplicada para el loop
+const pista = [
+  ...escolar.map((l) => ({ portada: l.data.portada, titulo: l.data.titulo, etiqueta: l.data.grado ?? "" })),
+  ...planLector.map((l) => ({ portada: l.data.portada, titulo: l.data.titulo, etiqueta: "Plan Lector" })),
+];
 
 const valores = [
   {
-    titulo: "Aprendizaje con sentido",
-    texto:
-      "Metodologías activas que promueven la reflexión, la comprensión y el pensamiento crítico.",
+    icono: "M12 3 2 8l10 5 8-4v5h2V8L12 3Zm-6 9v4c0 1.7 2.7 3 6 3s6-1.3 6-3v-4l-6 3-6-3Z",
+    titulo: "Aprendizaje significativo",
+    texto: "Metodologías activas que promueven la comprensión y la reflexión.",
   },
   {
-    titulo: "Habilidades para la vida",
-    texto:
-      "Competencias socioemocionales y de convivencia que acompañan a cada estudiante a crecer.",
+    icono: "M16 11c1.7 0 3-1.3 3-3s-1.3-3-3-3-3 1.3-3 3 1.3 3 3 3Zm-8 0c1.7 0 3-1.3 3-3S9.7 5 8 5 5 6.3 5 8s1.3 3 3 3Zm0 2c-2.3 0-7 1.2-7 3.5V19h14v-2.5c0-2.3-4.7-3.5-7-3.5Zm8 0c-.3 0-.6 0-1 .1 1.2.8 2 2 2 3.4V19h6v-2.5c0-2.3-4.7-3.5-7-3.5Z",
+    titulo: "Desarrollo de habilidades",
+    texto: "Fortalecemos competencias socioemocionales y de convivencia.",
   },
   {
-    titulo: "El toque humano",
-    texto:
-      "Detrás de cada página hay personas. Formamos con cercanía, empatía y respeto por cada etapa.",
+    icono: "M12 2 4.5 20.3l.7.7L12 18l6.8 3 .7-.7L12 2Z",
+    titulo: "Preparados para el futuro",
+    texto: "Herramientas para la toma de decisiones y el proyecto de vida.",
   },
+  {
+    icono: "M12 21s-7.5-4.8-9.5-9C1 8.5 3 5.5 6 5.5c1.8 0 3.2 1 4 2.2.8-1.2 2.2-2.2 4-2.2 3 0 5 3 3.5 6.5-2 4.2-9.5 9-9.5 9Z",
+    titulo: "Acompañamos cada etapa de crecimiento",
+    texto: "Materiales y recursos que promueven una tutoría efectiva y transformadora.",
+  },
+];
+
+const chipsPlataforma = [
+  { color: "#1e6fd9", bg: "#e8f1fd", icono: "M16 11c1.7 0 3-1.3 3-3s-1.3-3-3-3-3 1.3-3 3 1.3 3 3 3Zm-8 0c1.7 0 3-1.3 3-3S9.7 5 8 5 5 6.3 5 8s1.3 3 3 3Zm0 2c-2.3 0-7 1.2-7 3.5V19h14v-2.5c0-2.3-4.7-3.5-7-3.5Zm8 0c-.3 0-.6 0-1 .1 1.2.8 2 2 2 3.4V19h6v-2.5c0-2.3-4.7-3.5-7-3.5Z", titulo: "Comunidad conectada", texto: "Gestiona y comparte con confianza." },
+  { color: "#0f9d58", bg: "#e8f7ee", icono: "M12 3 2 8l10 5 8-4v5h2V8L12 3Zm-6 9v4c0 1.7 2.7 3 6 3s6-1.3 6-3v-4l-6 3-6-3Z", titulo: "Recursos educativos", texto: "Material de calidad siempre disponible." },
+  { color: "#6d28d9", bg: "#f1eafd", icono: "M12 2 4 5v6c0 5 3.4 9.7 8 11 4.6-1.3 8-6 8-11V5l-8-3Zm-1 14-3.5-3.5 1.4-1.4L11 13.2l4.6-4.6 1.4 1.4L11 16Z", titulo: "Entorno seguro", texto: "Protegemos tu información y la de tus estudiantes." },
+  { color: "#f29900", bg: "#fdf3e0", icono: "M20 2H4a2 2 0 0 0-2 2v18l4-4h14a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2Z", titulo: "Comunicación eficiente", texto: "Mensajería y avisos en tiempo real." },
 ];
 ---
 
-<Layout>
+<Layout
+  title="Tutoría SMART 2027 — Human Touch Books"
+  description="Proyecto Tutoría SMART 2027: programa de tutoría y convivencia escolar para colegios y familias. Formación integral para una nueva generación."
+>
   <Header />
 
   <main id="inicio">
     <!-- HERO -->
-    <section class="relative overflow-hidden">
+    <section class="relative overflow-hidden bg-navy text-white">
       <div
-        class="pointer-events-none absolute -right-40 -top-40 h-[32rem] w-[32rem] rounded-full bg-brand-bright/15 blur-3xl"
+        class="pointer-events-none absolute inset-0 bg-[radial-gradient(60rem_30rem_at_110%_-10%,#1e6fd955,transparent_60%),radial-gradient(40rem_24rem_at_-10%_110%,#35a3f533,transparent_60%)]"
         aria-hidden="true"
       >
       </div>
       <div
-        class="mx-auto grid max-w-6xl items-center gap-12 px-4 py-16 md:px-8 md:py-24 lg:grid-cols-[1.05fr_0.95fr] lg:gap-8"
+        class="relative mx-auto grid max-w-6xl items-center gap-10 px-4 py-14 md:grid-cols-[1.05fr_0.95fr] md:px-8 md:py-20"
       >
         <div class="reveal">
-          <p class="flex items-center gap-2 text-sm font-semibold text-brand">
-            <span class="h-px w-8 bg-brand"></span>
-            Editorial peruana
-          </p>
-          <h1
-            class="font-display mt-5 text-[clamp(2.5rem,6vw,4.5rem)] font-semibold leading-[1.05] text-ink"
+          <span
+            class="inline-flex items-center rounded-full bg-brand-bright/20 px-4 py-1 text-xs font-bold tracking-[0.2em] text-brand-bright uppercase"
           >
-            Lo humano, hecho página.
+            Proyecto
+          </span>
+          <h1 class="mt-4 text-[clamp(2.4rem,5.5vw,3.9rem)] leading-[1.02] font-extrabold tracking-tight">
+            TUTORIA SMART<br />
+            <span class="text-brand-bright">2027</span>
           </h1>
-          <p class="mt-6 max-w-[54ch] text-lg leading-relaxed text-ink/75">
-            En Human Touch Books creamos textos escolares y literatura que forman personas, no solo
-            lectores. Tutoría, convivencia y buenas historias, con el toque humano que nos define.
+          <p class="mt-3 text-lg font-semibold text-brand-bright/95">
+            Formación integral para una nueva generación
           </p>
-          <div class="mt-9 flex flex-wrap items-center gap-4">
+          <p class="mt-4 max-w-[52ch] leading-relaxed text-white/75">
+            Programa de tutoría y convivencia escolar diseñado para fortalecer habilidades
+            socioemocionales, liderazgo y proyecto de vida.
+          </p>
+          <div class="mt-8 flex flex-wrap items-center gap-4">
             <a
-              href="#escolar"
-              class="inline-flex min-h-[48px] items-center rounded-full bg-accent px-7 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-accent-deep focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+              href="#coleccion"
+              class="inline-flex min-h-[48px] items-center gap-2 rounded-full bg-white px-7 text-sm font-bold text-navy shadow-md transition duration-300 ease-out hover:-translate-y-0.5 hover:shadow-lg"
             >
+              <svg viewBox="0 0 24 24" class="h-4 w-4 fill-brand" aria-hidden="true">
+                <path d="M18 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2Zm-6 2 4 0v7l-2-1.5L12 11V4Z" />
+              </svg>
               Conocer la colección
             </a>
             <a
               href="#contacto"
-              class="inline-flex min-h-[48px] items-center rounded-full border border-line bg-surface px-7 text-sm font-semibold text-ink transition-colors hover:border-brand hover:text-brand"
+              class="inline-flex min-h-[48px] items-center gap-2 rounded-full border border-white/40 px-7 text-sm font-bold text-white transition-colors hover:border-white hover:bg-white/10"
             >
+              <svg viewBox="0 0 24 24" class="h-4 w-4 fill-current" aria-hidden="true">
+                <path d="M20 4H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2Zm0 4-8 5-8-5V6l8 5 8-5v2Z" />
+              </svg>
               Solicitar información
             </a>
           </div>
         </div>
 
-        <!-- Arreglo editorial de portadas -->
-        <div class="relative mx-auto w-full max-w-md lg:max-w-none">
-          <div class="grid grid-cols-3 gap-3 sm:gap-4">
-            {
-              escolar.slice(0, 6).map((l, i) => (
-                <img
-                  src={l.data.portada}
-                  alt={`Portada de ${l.data.titulo}`}
-                  loading={i < 3 ? "eager" : "lazy"}
-                  class="aspect-[3/4] w-full rounded-xl object-cover shadow-lg shadow-brand/10 ring-1 ring-black/5 transition-transform duration-500 ease-out hover:-translate-y-1"
-                  style={`--tw-rotate: ${(i % 2 === 0 ? -1 : 1) * 1.5}deg;`}
-                />
-              ))
-            }
+        <!-- Imagen del mock aprobado (incluye tarjeta Capacitaciones y logo MBM) -->
+        <div class="relative mx-auto w-full max-w-lg">
+          <div class="relative overflow-hidden rounded-2xl shadow-2xl ring-1 ring-white/10">
+            <img
+              src="/mock/hero-estudiantes.png"
+              alt="Estudiantes del proyecto Tutoría SMART junto a la tarjeta de Capacitaciones y Talleres y la distribuidora MBM"
+              class="block w-full"
+              width="520"
+              height="332"
+              loading="eager"
+            />
+            <div
+              class="pointer-events-none absolute inset-0 bg-gradient-to-r from-navy via-navy/35 to-transparent"
+              style="background: linear-gradient(90deg, #0a2550 0%, #0a2550ee 16%, #0a2550aa 28%, transparent 50%);"
+              aria-hidden="true"
+            >
+            </div>
           </div>
         </div>
       </div>
     </section>
 
     <!-- VALORES -->
-    <section class="border-y border-line bg-surface">
-      <div class="mx-auto grid max-w-6xl gap-8 px-4 py-16 md:grid-cols-3 md:px-8">
+    <section class="border-b border-line bg-surface">
+      <div class="mx-auto grid max-w-6xl gap-6 px-4 py-12 sm:grid-cols-2 md:px-8 lg:grid-cols-4">
         {
           valores.map((v) => (
-            <div>
-              <h3 class="font-display text-xl font-medium text-ink">{v.titulo}</h3>
-              <p class="mt-3 max-w-[42ch] text-ink/70 leading-relaxed">{v.texto}</p>
-            </div>
-          ))
-        }
-      </div>
-    </section>
-
-    <!-- ESCOLAR -->
-    <section id="escolar" class="mx-auto max-w-6xl px-4 py-20 md:px-8 md:py-28">
-      <div class="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
-        <div>
-          <p class="text-sm font-semibold text-brand">Textos escolares</p>
-          <h2 class="font-display mt-2 text-[clamp(2rem,4vw,3rem)] font-semibold text-ink">
-            Colección Tutoría SMART
-          </h2>
-          <p class="mt-3 max-w-[60ch] text-ink/70 leading-relaxed">
-            Tutoría, orientación educativa y convivencia escolar para toda la primaria. De 1.° a 6.°
-            grado.
-          </p>
-        </div>
-        <a
-          href="#contacto"
-          class="shrink-0 text-sm font-semibold text-brand hover:text-brand-deep"
-        >
-          Solicitar muestra docente →
-        </a>
-      </div>
-
-      <div class="mt-12 grid grid-cols-2 gap-5 sm:grid-cols-3 lg:grid-cols-6">
-        {
-          escolar.map((l) => (
-            <article class="group">
-              <div class="overflow-hidden rounded-xl ring-1 ring-black/5 shadow-md shadow-brand/10">
-                <img
-                  src={l.data.portada}
-                  alt={`Portada de ${l.data.titulo}`}
-                  loading="lazy"
-                  class="aspect-[3/4] w-full object-cover"
-                />
+            <div class="reveal-scroll flex items-start gap-3.5">
+              <span class="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-surface-2">
+                <svg viewBox="0 0 24 24" class="h-5.5 w-5.5 fill-brand" aria-hidden="true">
+                  <path d={v.icono} />
+                </svg>
+              </span>
+              <div>
+                <h3 class="text-[0.95rem] leading-snug font-bold text-ink">{v.titulo}</h3>
+                <p class="mt-1.5 text-[0.83rem] leading-relaxed text-ink/65">{v.texto}</p>
               </div>
-              <h3 class="mt-3 text-sm font-semibold text-ink">{l.data.titulo}</h3>
-              <p class="text-xs text-ink/60">{l.data.grado}</p>
-            </article>
+            </div>
           ))
         }
       </div>
     </section>
 
-    <!-- LITERATURA -->
-    {
-      destacado && (
-        <section id="literatura" class="bg-ink text-white">
-          <div class="mx-auto grid max-w-6xl items-center gap-10 px-4 py-20 md:grid-cols-[1.35fr_1fr] md:gap-14 md:px-8 md:py-28">
-            <div class="w-full">
-              <img
-                src={destacado.data.portada}
-                alt={`Carátula de ${destacado.data.titulo}`}
-                loading="lazy"
-                class="w-full rounded-2xl shadow-2xl ring-1 ring-white/10"
-              />
-            </div>
-            <div>
-              <p class="text-sm font-semibold text-brand-bright">Literatura</p>
-              <h2 class="font-display mt-2 text-[clamp(2rem,4vw,3.25rem)] font-semibold leading-tight">
-                {destacado.data.titulo}
-              </h2>
-              {destacado.data.subtitulo && (
-                <p class="font-display mt-1 text-xl italic text-white/70">
-                  {destacado.data.subtitulo}
-                </p>
-              )}
-              <p class="mt-6 max-w-[58ch] text-lg leading-relaxed text-white/80">
-                {destacado.data.sinopsis}
+    <!-- COLECCION -->
+    <section id="coleccion" class="bg-paper py-16 md:py-20">
+      <div class="mx-auto max-w-6xl px-4 md:px-8">
+        <h2 class="flex items-center justify-center gap-4 text-center text-[clamp(1.6rem,3.4vw,2.3rem)] font-extrabold text-ink">
+          <span class="hidden h-px w-16 bg-brand/40 sm:block" aria-hidden="true"></span>
+          Colección Tutoría Smart
+          <span class="hidden h-px w-16 bg-brand/40 sm:block" aria-hidden="true"></span>
+        </h2>
+      </div>
+
+      <div class="marquee mt-10 overflow-hidden" aria-label="Portadas de la colección Tutoría SMART y Plan Lector">
+        <div class="marquee-track flex w-max items-end gap-8 px-4">
+          {
+            [...pista, ...pista].map((libro) => (
+              <figure class="w-40 shrink-0 sm:w-44">
+                <img
+                  src={libro.portada}
+                  alt={`Portada de ${libro.titulo}`}
+                  loading="lazy"
+                  class="aspect-[3/4] w-full rounded-lg object-cover shadow-lg shadow-navy/15 ring-1 ring-black/5"
+                />
+                <figcaption class="mt-2 text-center text-xs font-semibold text-ink/60">
+                  {libro.etiqueta}
+                </figcaption>
+              </figure>
+            ))
+          }
+        </div>
+      </div>
+    </section>
+
+    <!-- PLATAFORMA -->
+    <section id="plataforma" class="border-y border-line bg-surface-2/60">
+      <div class="mx-auto grid max-w-6xl items-center gap-10 px-4 py-16 md:grid-cols-[1fr_1.05fr] md:px-8 md:py-24">
+        <div class="reveal-scroll">
+          <span class="inline-flex items-center gap-1.5 rounded-full bg-brand px-4 py-1.5 text-[0.68rem] font-bold tracking-[0.16em] text-white uppercase">
+            <svg viewBox="0 0 24 24" class="h-3 w-3 fill-current" aria-hidden="true">
+              <path d="m12 2 2.4 7.2H22l-6 4.6 2.3 7.2-6.3-4.4-6.3 4.4L8 13.8 2 9.2h7.6L12 2Z" />
+            </svg>
+            Plataforma exclusiva
+          </span>
+          <h2 class="mt-4 text-[clamp(2rem,4.4vw,3.1rem)] leading-tight font-extrabold text-ink">
+            Plataforma<br />
+            <span class="text-brand">TUTORIA SMART</span>
+          </h2>
+          <p class="mt-4 max-w-[48ch] border-l-2 border-brand/40 pl-4 leading-relaxed text-ink/70">
+            Un espacio diseñado para docentes, directores, padres de familia y alumnos: recursos
+            educativos, comunicación eficiente y un entorno seguro.
+          </p>
+
+          <div class="mt-8 grid grid-cols-2 gap-4 sm:grid-cols-4">
+            {
+              chipsPlataforma.map((c) => (
+                <div class="rounded-xl bg-surface p-3.5 text-center shadow-sm ring-1 ring-line">
+                  <span class="mx-auto grid h-9 w-9 place-items-center rounded-lg" style={`background:${c.bg}`}>
+                    <svg viewBox="0 0 24 24" class="h-4.5 w-4.5" style={`fill:${c.color}`} aria-hidden="true">
+                      <path d={c.icono} />
+                    </svg>
+                  </span>
+                  <h3 class="mt-2 text-[0.78rem] leading-tight font-bold text-ink">{c.titulo}</h3>
+                  <p class="mt-1 text-[0.68rem] leading-snug text-ink/55">{c.texto}</p>
+                </div>
+              ))
+            }
+          </div>
+
+          <div class="mt-8 flex flex-wrap items-center gap-4">
+            <a
+              href="#contacto"
+              class="inline-flex min-h-[50px] items-center gap-2.5 rounded-full bg-gradient-to-r from-brand to-violet px-8 text-sm font-bold text-white shadow-lg shadow-brand/25 transition duration-300 ease-out hover:-translate-y-0.5 hover:shadow-xl focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
+            >
+              <span class="grid h-6 w-6 place-items-center rounded-full bg-white/20">
+                <svg viewBox="0 0 24 24" class="h-3.5 w-3.5 fill-white" aria-hidden="true">
+                  <path d="M10 17l5-5-5-5v10Z" />
+                </svg>
+              </span>
+              INGRESA AQUÍ
+            </a>
+            <p class="flex items-center gap-1.5 text-xs font-semibold text-ink/55">
+              <svg viewBox="0 0 24 24" class="h-4 w-4 fill-brand" aria-hidden="true">
+                <path d="M12 2 4 5v6c0 5 3.4 9.7 8 11 4.6-1.3 8-6 8-11V5l-8-3Zm-1 14-3.5-3.5 1.4-1.4L11 13.2l4.6-4.6 1.4 1.4L11 16Z" />
+              </svg>
+              Acceso exclusivo para usuarios autorizados
+            </p>
+          </div>
+        </div>
+
+        <div class="reveal-scroll mx-auto w-full max-w-xl">
+          <img
+            src="/mock/laptop-smarti.png"
+            alt="Plataforma Tutoría SMART en una laptop, junto a SMARTI, el asistente virtual"
+            class="block w-full drop-shadow-2xl"
+            width="742"
+            height="754"
+            loading="lazy"
+          />
+        </div>
+      </div>
+    </section>
+
+    <!-- NOSOTROS / AUTOR -->
+    <section id="nosotros" class="bg-paper py-16 md:py-24">
+      <div class="mx-auto max-w-6xl px-4 md:px-8">
+        <div class="reveal-scroll grid items-center gap-10 rounded-2xl bg-surface p-6 shadow-md ring-1 ring-line md:grid-cols-[0.38fr_1fr] md:p-10">
+          <div class="mx-auto w-full max-w-[260px]">
+            <img
+              src="/mock/bisquerra.png"
+              alt="Retrato de Rafael Bisquerra Alzina"
+              class="w-full rounded-xl object-cover shadow-lg"
+              width="368"
+              height="586"
+              loading="lazy"
+            />
+          </div>
+          <div>
+            <h2 class="text-[clamp(1.5rem,3vw,2.1rem)] font-extrabold text-ink">
+              Rafael Bisquerra Alzina
+            </h2>
+            <div class="mt-4 space-y-4 leading-relaxed text-ink/70">
+              <p>
+                Rafael Bisquerra Alzina es un reconocido psicólogo, pedagogo e investigador
+                español, considerado uno de los principales referentes internacionales en el
+                ámbito de la educación emocional. Doctor en Ciencias de la Educación por la
+                Universidad de Barcelona, ha dedicado gran parte de su trayectoria académica al
+                estudio de las emociones y su impacto en el aprendizaje, el bienestar y el
+                desarrollo integral de las personas.
               </p>
-              <dl class="mt-8 flex flex-wrap gap-x-10 gap-y-3 text-sm">
-                <div>
-                  <dt class="text-white/50">Autor</dt>
-                  <dd class="mt-0.5 font-medium">{destacado.data.autor}</dd>
-                </div>
-                <div>
-                  <dt class="text-white/50">Ilustraciones</dt>
-                  <dd class="mt-0.5 font-medium">{destacado.data.ilustrador}</dd>
-                </div>
-                <div>
-                  <dt class="text-white/50">Año</dt>
-                  <dd class="mt-0.5 font-medium">{destacado.data.anio}</dd>
-                </div>
-              </dl>
-              <a
-                href="#contacto"
-                class="mt-9 inline-flex min-h-[48px] items-center rounded-full bg-white px-7 text-sm font-semibold text-ink transition-colors hover:bg-white/90"
-              >
-                Consultar disponibilidad
-              </a>
+              <p>
+                Es fundador del Grupo de Investigación en Orientación Psicopedagógica (GROP) de
+                la Universidad de Barcelona y autor de numerosas publicaciones sobre inteligencia
+                emocional, competencias emocionales y bienestar. Sus aportes han influido
+                significativamente en la incorporación de la educación emocional en instituciones
+                educativas de España y América Latina, convirtiéndose en una referencia obligada
+                para docentes, investigadores y profesionales de la educación.
+              </p>
             </div>
           </div>
-        </section>
-      )
-    }
-
-    <!-- EDITORIAL -->
-    <section id="editorial" class="mx-auto max-w-6xl px-4 py-20 md:px-8 md:py-28">
-      <div class="grid gap-12 md:grid-cols-2 md:gap-16">
-        <div>
-          <p class="text-sm font-semibold text-brand">La editorial</p>
-          <h2 class="font-display mt-2 text-[clamp(2rem,4vw,3rem)] font-semibold text-ink">
-            Ponemos lo humano en el centro
-          </h2>
-        </div>
-        <div class="space-y-5 text-lg leading-relaxed text-ink/75">
-          <p>
-            Human Touch Books nace de una convicción simple: los libros forman personas. Por eso
-            cada título —escolar o literario— se piensa desde la empatía, la convivencia y el
-            respeto por cada etapa de la vida.
-          </p>
-          <p>
-            Trabajamos junto a docentes, tutores y directivos para llevar a las aulas peruanas
-            materiales que acompañan de verdad. Y publicamos historias que nos recuerdan por qué el
-            toque humano importa.
-          </p>
         </div>
       </div>
     </section>
 
     <!-- CONTACTO -->
-    <section id="contacto" class="border-t border-line bg-surface">
-      <div class="mx-auto grid max-w-6xl gap-12 px-4 py-20 md:grid-cols-2 md:px-8 md:py-28">
-        <div>
-          <p class="text-sm font-semibold text-brand">Contacto</p>
-          <h2 class="font-display mt-2 text-[clamp(2rem,4vw,3rem)] font-semibold text-ink">
-            Conversemos sobre tu colegio
+    <section id="contacto" class="relative overflow-hidden border-t border-line bg-surface-2/50">
+      <div class="mx-auto grid max-w-6xl gap-12 px-4 py-16 md:grid-cols-[0.9fr_1.1fr] md:px-8 md:py-24">
+        <div class="reveal-scroll">
+          <span class="text-xs font-bold tracking-[0.2em] text-brand uppercase">Contáctanos</span>
+          <h2 class="mt-2 text-[clamp(1.9rem,4vw,2.8rem)] leading-tight font-extrabold text-ink">
+            Estamos aquí<br />para <span class="text-brand">ayudarte</span>
           </h2>
-          <p class="mt-4 max-w-[48ch] text-ink/70 leading-relaxed">
-            Déjanos tu mensaje y te responderemos a la brevedad. Atendemos consultas de colegios,
-            docentes y lectores.
+          <p class="mt-4 max-w-[42ch] leading-relaxed text-ink/70">
+            Déjanos tu mensaje y te responderemos lo antes posible.
           </p>
 
-          <ul class="mt-8 space-y-4 text-sm">
-            <li class="flex items-center gap-3">
-              <span class="grid h-10 w-10 place-items-center rounded-full bg-brand/10 text-brand">✆</span>
-              <a href="https://wa.me/51982953436" class="font-medium hover:text-brand">
-                +51 982 953 436
-              </a>
-            </li>
-            <li class="flex items-center gap-3">
-              <span class="grid h-10 w-10 place-items-center rounded-full bg-brand/10 text-brand">◷</span>
-              Lun a Vie · 8:00 a. m. – 5:00 p. m.
-            </li>
-            <li class="flex items-center gap-3">
-              <span class="grid h-10 w-10 place-items-center rounded-full bg-brand/10 text-brand">⌂</span>
-              La Molina, Lima — Perú
-            </li>
-          </ul>
+          <div class="mt-8 rounded-2xl bg-surface p-6 shadow-sm ring-1 ring-line">
+            <h3 class="text-sm font-bold text-ink">Información de contacto</h3>
+            <ul class="mt-5 space-y-5 text-sm">
+              <li class="flex items-center gap-3.5">
+                <span class="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-[#e8f1fd]">
+                  <svg viewBox="0 0 24 24" class="h-4.5 w-4.5 fill-brand" aria-hidden="true">
+                    <path d="M20 4H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2Zm0 4-8 5-8-5V6l8 5 8-5v2Z" />
+                  </svg>
+                </span>
+                <div>
+                  <p class="font-semibold text-ink">Correo electrónico</p>
+                  <p class="text-ink/60">informes@humantouchbooks.pe</p>
+                </div>
+              </li>
+              <li class="flex items-center gap-3.5">
+                <span class="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-[#e8f7ee]">
+                  <svg viewBox="0 0 24 24" class="h-4.5 w-4.5 fill-wa" aria-hidden="true">
+                    <path d="M12 2a10 10 0 0 0-8.6 15l-1.3 4.7 4.8-1.3A10 10 0 1 0 12 2Zm5.3 14.2c-.2.6-1.3 1.2-1.8 1.2-.5.1-1 .1-1.7-.1-.4-.2-.9-.3-1.6-.6-2.7-1.2-4.5-4-4.6-4.2-.2-.2-1.1-1.5-1.1-2.8 0-1.3.7-2 .9-2.2.2-.3.5-.3.7-.3h.5c.2 0 .4 0 .6.5l.8 2c.1.2.1.4 0 .5l-.4.6c-.2.2-.3.4-.1.7.2.3.9 1.4 1.9 2.3 1.3 1.1 2.3 1.4 2.6 1.6.3.1.5.1.7-.1l.7-.8c.2-.3.4-.2.7-.1l2 .9c.3.2.5.2.6.4.1.1.1.7-.1 1.3Z" />
+                  </svg>
+                </span>
+                <div>
+                  <p class="font-semibold text-ink">Celular · WhatsApp</p>
+                  <a href="https://wa.me/51982953436" class="text-ink/60 hover:text-brand">+51 982 953 436</a>
+                </div>
+              </li>
+              <li class="flex items-center gap-3.5">
+                <span class="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-[#fdf3e0]">
+                  <svg viewBox="0 0 24 24" class="h-4.5 w-4.5 fill-[#f29900]" aria-hidden="true">
+                    <path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2Zm4 11h-5V6h2v5h3v2Z" />
+                  </svg>
+                </span>
+                <div>
+                  <p class="font-semibold text-ink">Horario de atención</p>
+                  <p class="text-ink/60">Lunes a viernes: 8:00 a. m. – 5:00 p. m.<br />Sábados: 8:00 a. m. – 1:00 p. m.</p>
+                </div>
+              </li>
+              <li class="flex items-center gap-3.5">
+                <span class="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-[#f1eafd]">
+                  <svg viewBox="0 0 24 24" class="h-4.5 w-4.5 fill-violet" aria-hidden="true">
+                    <path d="M12 2a7 7 0 0 0-7 7c0 5.2 7 13 7 13s7-7.8 7-13a7 7 0 0 0-7-7Zm0 9.5A2.5 2.5 0 1 1 14.5 9 2.5 2.5 0 0 1 12 11.5Z" />
+                  </svg>
+                </span>
+                <div>
+                  <p class="font-semibold text-ink">Ubicación</p>
+                  <p class="text-ink/60">La Molina, Lima — Perú</p>
+                </div>
+              </li>
+            </ul>
+          </div>
         </div>
 
-        <form class="rounded-2xl border border-line bg-paper p-6 md:p-8">
-          <div class="grid gap-4 sm:grid-cols-2">
+        <form
+          class="reveal-scroll self-start rounded-2xl bg-surface p-6 shadow-md ring-1 ring-line md:p-8"
+          action="https://wa.me/51982953436"
+          method="get"
+        >
+          <h3 class="text-lg font-bold text-ink">Envíanos tu mensaje</h3>
+          <div class="mt-5 grid gap-4 sm:grid-cols-2">
             <label class="block">
-              <span class="text-sm font-medium text-ink">Nombre completo</span>
+              <span class="text-sm font-semibold text-ink">Nombre completo <span class="text-accent">*</span></span>
               <input
                 type="text"
                 name="nombre"
                 required
-                class="mt-1.5 w-full rounded-md border border-line bg-white px-3.5 py-2.5 text-sm outline-none focus-visible:border-brand focus-visible:ring-2 focus-visible:ring-brand/30"
+                placeholder="Escribe tu nombre"
+                class="mt-1.5 w-full rounded-lg border border-line bg-paper px-3.5 py-2.5 text-sm outline-none placeholder:text-ink/35 focus-visible:border-brand focus-visible:ring-2 focus-visible:ring-brand/30"
               />
             </label>
             <label class="block">
-              <span class="text-sm font-medium text-ink">Correo electrónico</span>
+              <span class="text-sm font-semibold text-ink">Correo electrónico <span class="text-accent">*</span></span>
               <input
                 type="email"
                 name="correo"
                 required
-                class="mt-1.5 w-full rounded-md border border-line bg-white px-3.5 py-2.5 text-sm outline-none focus-visible:border-brand focus-visible:ring-2 focus-visible:ring-brand/30"
+                placeholder="ejemplo@correo.com"
+                class="mt-1.5 w-full rounded-lg border border-line bg-paper px-3.5 py-2.5 text-sm outline-none placeholder:text-ink/35 focus-visible:border-brand focus-visible:ring-2 focus-visible:ring-brand/30"
               />
+            </label>
+            <label class="block">
+              <span class="text-sm font-semibold text-ink">Teléfono <span class="text-accent">*</span></span>
+              <input
+                type="tel"
+                name="telefono"
+                required
+                placeholder="Ej. 987 654 321"
+                class="mt-1.5 w-full rounded-lg border border-line bg-paper px-3.5 py-2.5 text-sm outline-none placeholder:text-ink/35 focus-visible:border-brand focus-visible:ring-2 focus-visible:ring-brand/30"
+              />
+            </label>
+            <label class="block">
+              <span class="text-sm font-semibold text-ink">Asunto <span class="text-accent">*</span></span>
+              <select
+                name="asunto"
+                required
+                class="mt-1.5 w-full rounded-lg border border-line bg-paper px-3.5 py-2.5 text-sm text-ink outline-none focus-visible:border-brand focus-visible:ring-2 focus-visible:ring-brand/30"
+              >
+                <option value="">Selecciona un asunto</option>
+                <option>Información para colegios</option>
+                <option>Información para padres de familia</option>
+                <option>Capacitaciones y talleres</option>
+                <option>Otro</option>
+              </select>
             </label>
           </div>
           <label class="mt-4 block">
-            <span class="text-sm font-medium text-ink">Asunto</span>
-            <input
-              type="text"
-              name="asunto"
-              class="mt-1.5 w-full rounded-md border border-line bg-white px-3.5 py-2.5 text-sm outline-none focus-visible:border-brand focus-visible:ring-2 focus-visible:ring-brand/30"
-            />
-          </label>
-          <label class="mt-4 block">
-            <span class="text-sm font-medium text-ink">Mensaje</span>
+            <span class="text-sm font-semibold text-ink">Mensaje <span class="text-accent">*</span></span>
             <textarea
               name="mensaje"
               rows="4"
               required
-              class="mt-1.5 w-full rounded-md border border-line bg-white px-3.5 py-2.5 text-sm outline-none focus-visible:border-brand focus-visible:ring-2 focus-visible:ring-brand/30"
+              placeholder="Escribe tu mensaje aquí…"
+              class="mt-1.5 w-full rounded-lg border border-line bg-paper px-3.5 py-2.5 text-sm outline-none placeholder:text-ink/35 focus-visible:border-brand focus-visible:ring-2 focus-visible:ring-brand/30"
             ></textarea>
           </label>
           <button
             type="submit"
-            class="mt-6 inline-flex min-h-[48px] w-full items-center justify-center rounded-full bg-brand px-7 text-sm font-semibold text-white transition-colors hover:bg-brand-deep focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
+            class="mt-6 inline-flex min-h-[48px] w-full items-center justify-center gap-2 rounded-full bg-brand px-7 text-sm font-bold text-white transition-colors hover:bg-brand-deep focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
           >
+            <svg viewBox="0 0 24 24" class="h-4 w-4 fill-current" aria-hidden="true">
+              <path d="M2 21 23 12 2 3v7l15 2-15 2v7Z" />
+            </svg>
             Enviar mensaje
           </button>
-          <p class="mt-3 text-center text-xs text-ink/50">
-            Tu información está segura. No la compartimos con terceros.
+          <p class="mt-3 flex items-center justify-center gap-1.5 text-center text-xs text-ink/50">
+            <svg viewBox="0 0 24 24" class="h-3.5 w-3.5 fill-brand" aria-hidden="true">
+              <path d="M12 2 4 5v6c0 5 3.4 9.7 8 11 4.6-1.3 8-6 8-11V5l-8-3Z" />
+            </svg>
+            Tu información está segura. No compartimos tus datos.
           </p>
         </form>
       </div>
