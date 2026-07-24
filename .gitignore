@@ -21,4 +21,9 @@ propuestaProveedor.png
 1.png
 2.png
 3.png
-proforma-htb.html
+proforma-*.html
+
+# Entorno y subidas (repo publico: secretos fuera del repo)
+.env
+uploads/
+pgvars.tmp.json
