@@ -1,0 +1,87 @@
+---
+import PanelLayout from "../../layouts/PanelLayout.astro";
+import { bd } from "../../lib/bd";
+
+export const prerender = false;
+
+const libros = await bd.libro.findMany({ orderBy: [{ linea: "asc" }, { orden: "asc" }] });
+const ok = Astro.url.searchParams.get("ok");
+const mensajes: Record<string, string> = {
+  creado: "Libro creado correctamente.",
+  guardado: "Cambios guardados.",
+  eliminado: "Libro eliminado.",
+};
+const etiquetaLinea: Record<string, string> = {
+  escolar: "Texto escolar",
+  literatura: "Literatura",
+};
+---
+
+<PanelLayout titulo="Libros" correo={Astro.locals.sesion?.correo}>
+  <div class="flex flex-wrap items-center justify-between gap-4">
+    <div>
+      <h1 class="text-2xl font-extrabold text-ink">Libros</h1>
+      <p class="mt-1 text-sm text-ink/60">
+        {libros.length} título{libros.length === 1 ? "" : "s"} en el catálogo. Los cambios se
+        publican al instante en la web.
+      </p>
+    </div>
+    <a
+      href="/admin/libros/nuevo"
+      class="rounded-full bg-brand px-6 py-2.5 text-sm font-bold text-white transition-colors hover:bg-brand-deep"
+    >
+      + Agregar libro
+    </a>
+  </div>
+
+  {
+    ok && (
+      <p class="mt-4 rounded-lg bg-wa/10 px-4 py-2.5 text-sm font-semibold text-[#15803d]">
+        {mensajes[ok] ?? "Listo."}
+      </p>
+    )
+  }
+
+  <div class="mt-6 overflow-x-auto rounded-xl border border-line bg-surface shadow-sm">
+    <table class="w-full text-sm">
+      <thead>
+        <tr class="border-b border-line text-left text-xs font-bold tracking-wide text-ink/60 uppercase">
+          <th class="px-4 py-3">Portada</th>
+          <th class="px-4 py-3">Título</th>
+          <th class="px-4 py-3">Línea</th>
+          <th class="px-4 py-3">Grado / Nivel</th>
+          <th class="px-4 py-3">Orden</th>
+          <th class="px-4 py-3"></th>
+        </tr>
+      </thead>
+      <tbody>
+        {
+          libros.map((libro) => (
+            <tr class="border-b border-line/60 last:border-0">
+              <td class="px-4 py-3">
+                <img
+                  src={libro.portadaUrl}
+                  alt=""
+                  class="h-16 w-12 rounded object-cover ring-1 ring-line"
+                  loading="lazy"
+                />
+              </td>
+              <td class="px-4 py-3 font-semibold text-ink">{libro.titulo}</td>
+              <td class="px-4 py-3 text-ink/70">{etiquetaLinea[libro.linea]}</td>
+              <td class="px-4 py-3 text-ink/70">{libro.grado ?? libro.nivel ?? "—"}</td>
+              <td class="px-4 py-3 text-ink/70">{libro.orden}</td>
+              <td class="px-4 py-3 text-right">
+                <a
+                  href={`/admin/libros/${libro.id}`}
+                  class="font-semibold text-brand hover:text-brand-deep"
+                >
+                  Editar
+                </a>
+              </td>
+            </tr>
+          ))
+        }
+      </tbody>
+    </table>
+  </div>
+</PanelLayout>

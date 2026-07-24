@@ -1,20 +1,31 @@
 ---
-import { getCollection } from "astro:content";
 import Layout from "../layouts/Layout.astro";
 import Header from "../components/Header.astro";
 import Footer from "../components/Footer.astro";
+import { bd } from "../lib/bd";
 
-const libros = await getCollection("libros");
-const escolar = libros
-  .filter((l) => l.data.linea === "escolar")
-  .sort((a, b) => a.data.orden - b.data.orden);
-const planLector = libros.filter((l) => l.data.linea === "literatura");
+export const prerender = false;
 
-// pista del carrusel: coleccion escolar + plan lector, duplicada para el loop
-const pista = [
-  ...escolar.map((l) => ({ portada: l.data.portada, titulo: l.data.titulo, etiqueta: l.data.grado ?? "" })),
-  ...planLector.map((l) => ({ portada: l.data.portada, titulo: l.data.titulo, etiqueta: "Plan Lector" })),
-];
+// Catalogo y ajustes administrados desde el panel (/admin)
+const libros = await bd.libro.findMany({
+  where: { destacado: true },
+  orderBy: [{ linea: "asc" }, { orden: "asc" }],
+});
+
+// pista del carrusel: coleccion completa, duplicada para el loop
+const pista = libros.map((l) => ({
+  portada: l.portadaUrl,
+  titulo: l.titulo,
+  etiqueta: l.grado ?? l.nivel ?? "",
+}));
+
+const filasAjustes = await bd.ajuste.findMany();
+const ajustes = Object.fromEntries(filasAjustes.map((a) => [a.clave, a.valor]));
+const whatsapp = ajustes.whatsapp ?? "51982953436";
+const correoContacto = ajustes.correo_contacto ?? "informes@humantouchbooks.pe";
+const horarios = (ajustes.horario ?? "Lunes a viernes: 8:00 a. m. – 5:00 p. m.").split("|");
+const ubicacion = ajustes.ubicacion ?? "La Molina, Lima — Perú";
+const whatsappVisible = `+${whatsapp.slice(0, 2)} ${whatsapp.slice(2, 5)} ${whatsapp.slice(5, 8)} ${whatsapp.slice(8)}`;
 
 const valores = [
   {
@@ -51,7 +62,7 @@ const chipsPlataforma = [
   title="Tutoría SMART 2027 — Human Touch Books"
   description="Proyecto Tutoría SMART 2027: programa de tutoría y convivencia escolar para colegios y familias. Formación integral para una nueva generación."
 >
-  <Header />
+  <Header whatsapp={whatsapp} />
 
   <main id="inicio">
     <!-- HERO -->
@@ -310,7 +321,7 @@ const chipsPlataforma = [
                 </span>
                 <div>
                   <p class="font-semibold text-ink">Correo electrónico</p>
-                  <p class="text-ink/60">informes@humantouchbooks.pe</p>
+                  <p class="text-ink/60">{correoContacto}</p>
                 </div>
               </li>
               <li class="flex items-center gap-3.5">
@@ -321,7 +332,7 @@ const chipsPlataforma = [
                 </span>
                 <div>
                   <p class="font-semibold text-ink">Celular · WhatsApp</p>
-                  <a href="https://wa.me/51982953436" class="text-ink/60 hover:text-brand">+51 982 953 436</a>
+                  <a href={`https://wa.me/${whatsapp}`} class="text-ink/60 hover:text-brand">{whatsappVisible}</a>
                 </div>
               </li>
               <li class="flex items-center gap-3.5">
@@ -332,7 +343,14 @@ const chipsPlataforma = [
                 </span>
                 <div>
                   <p class="font-semibold text-ink">Horario de atención</p>
-                  <p class="text-ink/60">Lunes a viernes: 8:00 a. m. – 5:00 p. m.<br />Sábados: 8:00 a. m. – 1:00 p. m.</p>
+                  <p class="text-ink/60">
+                    {horarios.map((h, i) => (
+                      <>
+                        {i > 0 && <br />}
+                        {h.trim()}
+                      </>
+                    ))}
+                  </p>
                 </div>
               </li>
               <li class="flex items-center gap-3.5">
@@ -343,7 +361,7 @@ const chipsPlataforma = [
                 </span>
                 <div>
                   <p class="font-semibold text-ink">Ubicación</p>
-                  <p class="text-ink/60">La Molina, Lima — Perú</p>
+                  <p class="text-ink/60">{ubicacion}</p>
                 </div>
               </li>
             </ul>
@@ -352,7 +370,7 @@ const chipsPlataforma = [
 
         <form
           class="reveal-scroll self-start rounded-2xl bg-surface p-6 shadow-md ring-1 ring-line md:p-8"
-          action="https://wa.me/51982953436"
+          action={`https://wa.me/${whatsapp}`}
           method="get"
         >
           <h3 class="text-lg font-bold text-ink">Envíanos tu mensaje</h3>

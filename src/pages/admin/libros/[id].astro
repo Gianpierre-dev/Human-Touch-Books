@@ -1,0 +1,39 @@
+---
+import PanelLayout from "../../../layouts/PanelLayout.astro";
+import FormularioLibro from "../../../components/FormularioLibro.astro";
+import { bd } from "../../../lib/bd";
+
+export const prerender = false;
+
+const { id } = Astro.params;
+const libro = await bd.libro.findUnique({ where: { id: id ?? "" } });
+if (!libro) return Astro.redirect("/admin?error=noexiste", 302);
+
+const error = Astro.url.searchParams.get("error");
+---
+
+<PanelLayout titulo={`Editar: ${libro.titulo}`} correo={Astro.locals.sesion?.correo}>
+  <div class="flex flex-wrap items-center justify-between gap-4">
+    <div>
+      <h1 class="text-2xl font-extrabold text-ink">Editar libro</h1>
+      <p class="mt-1 text-sm text-ink/60">{libro.titulo}</p>
+    </div>
+    <form
+      method="post"
+      action={`/api/admin/libros/${libro.id}`}
+      onsubmit="return confirm('¿Eliminar este libro? Esta acción no se puede deshacer.')"
+    >
+      <input type="hidden" name="_accion" value="eliminar" />
+      <button
+        type="submit"
+        class="rounded-full border border-accent/40 px-5 py-2 text-sm font-bold text-accent transition-colors hover:bg-accent/10"
+      >
+        Eliminar
+      </button>
+    </form>
+  </div>
+
+  <div class="mt-6">
+    <FormularioLibro accion={`/api/admin/libros/${libro.id}`} libro={libro} error={error} />
+  </div>
+</PanelLayout>

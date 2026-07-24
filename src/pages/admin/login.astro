@@ -1,0 +1,60 @@
+---
+import Layout from "../../layouts/Layout.astro";
+
+export const prerender = false;
+
+const error = Astro.url.searchParams.get("error");
+const mensajes: Record<string, string> = {
+  campos: "Completa el correo y la contraseña.",
+  credenciales: "Correo o contraseña incorrectos.",
+};
+---
+
+<Layout title="Ingresar — Panel HTB" description="Acceso al panel de administración">
+  <main class="grid min-h-screen place-items-center bg-navy px-4">
+    <form
+      method="post"
+      action="/api/admin/sesion"
+      class="w-full max-w-sm rounded-2xl bg-surface p-8 shadow-2xl"
+    >
+      <img src="/brand/logo.png" alt="Human Touch Books" class="mx-auto h-16 w-auto" />
+      <h1 class="mt-4 text-center text-xl font-extrabold text-ink">Panel de administración</h1>
+      <p class="mt-1 text-center text-sm text-ink/60">Acceso exclusivo para usuarios autorizados</p>
+
+      {
+        error && (
+          <p class="mt-4 rounded-lg bg-accent/10 px-4 py-2.5 text-sm font-semibold text-accent">
+            {mensajes[error] ?? "No se pudo iniciar sesión."}
+          </p>
+        )
+      }
+
+      <label class="mt-6 block">
+        <span class="text-sm font-semibold text-ink">Correo</span>
+        <input
+          type="email"
+          name="correo"
+          required
+          autocomplete="username"
+          class="mt-1.5 w-full rounded-lg border border-line bg-paper px-3.5 py-2.5 text-sm outline-none focus-visible:border-brand focus-visible:ring-2 focus-visible:ring-brand/30"
+        />
+      </label>
+      <label class="mt-4 block">
+        <span class="text-sm font-semibold text-ink">Contraseña</span>
+        <input
+          type="password"
+          name="clave"
+          required
+          autocomplete="current-password"
+          class="mt-1.5 w-full rounded-lg border border-line bg-paper px-3.5 py-2.5 text-sm outline-none focus-visible:border-brand focus-visible:ring-2 focus-visible:ring-brand/30"
+        />
+      </label>
+      <button
+        type="submit"
+        class="mt-6 w-full rounded-full bg-brand py-3 text-sm font-bold text-white transition-colors hover:bg-brand-deep focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
+      >
+        Ingresar
+      </button>
+    </form>
+  </main>
+</Layout>

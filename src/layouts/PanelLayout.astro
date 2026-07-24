@@ -1,0 +1,42 @@
+---
+import Layout from "./Layout.astro";
+
+interface Props {
+  titulo: string;
+  correo?: string;
+}
+
+const { titulo, correo } = Astro.props;
+---
+
+<Layout title={`${titulo} — Panel HTB`} description="Panel de administración de Human Touch Books">
+  <div class="min-h-screen bg-paper">
+    <header class="border-b border-line bg-navy text-white">
+      <div class="mx-auto flex max-w-5xl items-center justify-between gap-4 px-4 py-3 md:px-6">
+        <a href="/admin" class="flex items-center gap-3 font-bold">
+          <img src="/brand/logo.png" alt="" class="h-9 w-auto rounded bg-white/95 px-1.5 py-0.5" />
+          Panel de administración
+        </a>
+        {
+          correo && (
+            <div class="flex items-center gap-4 text-sm">
+              <a href="/" class="text-white/80 hover:text-white">Ver sitio</a>
+              <a href="/admin/ajustes" class="text-white/80 hover:text-white">Ajustes</a>
+              <form method="post" action="/api/admin/salir">
+                <button
+                  type="submit"
+                  class="rounded-full border border-white/40 px-4 py-1.5 font-semibold transition-colors hover:bg-white/10"
+                >
+                  Salir
+                </button>
+              </form>
+            </div>
+          )
+        }
+      </div>
+    </header>
+    <main class="mx-auto max-w-5xl px-4 py-8 md:px-6">
+      <slot />
+    </main>
+  </div>
+</Layout>

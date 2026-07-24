@@ -1,0 +1,128 @@
+---
+import type { Libro } from "@prisma/client";
+
+interface Props {
+  accion: string;
+  libro?: Libro;
+  error?: string | null;
+}
+
+const { accion, libro, error } = Astro.props;
+const clasesCampo =
+  "mt-1.5 w-full rounded-lg border border-line bg-paper px-3.5 py-2.5 text-sm outline-none focus-visible:border-brand focus-visible:ring-2 focus-visible:ring-brand/30";
+---
+
+<form
+  method="post"
+  action={accion}
+  enctype="multipart/form-data"
+  class="rounded-xl border border-line bg-surface p-6 shadow-sm md:p-8"
+>
+  {
+    error && (
+      <p class="mb-5 rounded-lg bg-accent/10 px-4 py-2.5 text-sm font-semibold text-accent">
+        {error}
+      </p>
+    )
+  }
+
+  <div class="grid gap-4 sm:grid-cols-2">
+    <label class="block sm:col-span-2">
+      <span class="text-sm font-semibold text-ink">Título *</span>
+      <input type="text" name="titulo" required value={libro?.titulo ?? ""} class={clasesCampo} />
+    </label>
+
+    <label class="block sm:col-span-2">
+      <span class="text-sm font-semibold text-ink">Subtítulo</span>
+      <input type="text" name="subtitulo" value={libro?.subtitulo ?? ""} class={clasesCampo} />
+    </label>
+
+    <label class="block">
+      <span class="text-sm font-semibold text-ink">Línea *</span>
+      <select name="linea" required class={clasesCampo}>
+        <option value="escolar" selected={libro?.linea === "escolar"}>Texto escolar</option>
+        <option value="literatura" selected={libro?.linea === "literatura"}>Literatura</option>
+      </select>
+    </label>
+
+    <label class="block">
+      <span class="text-sm font-semibold text-ink">Orden</span>
+      <input type="number" name="orden" value={libro?.orden ?? 0} class={clasesCampo} />
+    </label>
+
+    <label class="block">
+      <span class="text-sm font-semibold text-ink">Grado (ej. 1.° de Primaria)</span>
+      <input type="text" name="grado" value={libro?.grado ?? ""} class={clasesCampo} />
+    </label>
+
+    <label class="block">
+      <span class="text-sm font-semibold text-ink">Nivel (ej. Primaria, Plan Lector)</span>
+      <input type="text" name="nivel" value={libro?.nivel ?? ""} class={clasesCampo} />
+    </label>
+
+    <label class="block">
+      <span class="text-sm font-semibold text-ink">Autor</span>
+      <input type="text" name="autor" value={libro?.autor ?? ""} class={clasesCampo} />
+    </label>
+
+    <label class="block">
+      <span class="text-sm font-semibold text-ink">Ilustrador</span>
+      <input type="text" name="ilustrador" value={libro?.ilustrador ?? ""} class={clasesCampo} />
+    </label>
+
+    <label class="block">
+      <span class="text-sm font-semibold text-ink">Año</span>
+      <input type="number" name="anio" value={libro?.anio ?? ""} class={clasesCampo} />
+    </label>
+
+    <label class="flex items-center gap-2.5 self-end pb-1">
+      <input
+        type="checkbox"
+        name="destacado"
+        value="si"
+        checked={libro?.destacado ?? true}
+        class="h-4 w-4 accent-[#1e6fd9]"
+      />
+      <span class="text-sm font-semibold text-ink">Mostrar en la web</span>
+    </label>
+
+    <label class="block sm:col-span-2">
+      <span class="text-sm font-semibold text-ink">Sinopsis *</span>
+      <textarea name="sinopsis" rows="4" required class={clasesCampo}>{libro?.sinopsis ?? ""}</textarea>
+    </label>
+
+    <div class="sm:col-span-2">
+      <span class="text-sm font-semibold text-ink">
+        Portada {libro ? "(dejar vacío para mantener la actual)" : "*"}
+      </span>
+      <div class="mt-2 flex items-center gap-4">
+        {
+          libro && (
+            <img
+              src={libro.portadaUrl}
+              alt="Portada actual"
+              class="h-24 w-18 rounded object-cover ring-1 ring-line"
+            />
+          )
+        }
+        <input
+          type="file"
+          name="portada"
+          accept=".jpg,.jpeg,.png,.webp"
+          class="text-sm text-ink/70 file:mr-3 file:rounded-full file:border-0 file:bg-surface-2 file:px-4 file:py-2 file:text-sm file:font-semibold file:text-brand hover:file:bg-line"
+        />
+      </div>
+      <p class="mt-1.5 text-xs text-ink/50">JPG, PNG o WebP. Máximo 5 MB.</p>
+    </div>
+  </div>
+
+  <div class="mt-6 flex items-center gap-3">
+    <button
+      type="submit"
+      class="rounded-full bg-brand px-7 py-2.5 text-sm font-bold text-white transition-colors hover:bg-brand-deep"
+    >
+      Guardar
+    </button>
+    <a href="/admin" class="text-sm font-semibold text-ink/60 hover:text-ink">Cancelar</a>
+  </div>
+</form>

@@ -1,4 +1,11 @@
 ---
+interface Props {
+  whatsapp?: string;
+}
+
+const { whatsapp = "51982953436" } = Astro.props;
+const whatsappVisible = `+${whatsapp.slice(0, 2)} ${whatsapp.slice(2, 5)} ${whatsapp.slice(5, 8)} ${whatsapp.slice(8)}`;
+
 const links = [
   { href: "#nosotros", label: "Nosotros" },
   { href: "#coleccion", label: "Nuestros Textos Educativos" },
@@ -26,13 +33,13 @@ const links = [
     </nav>
 
     <a
-      href="https://wa.me/51982953436"
+      href={`https://wa.me/${whatsapp}`}
       class="inline-flex min-h-[44px] items-center gap-2 rounded-full bg-wa px-5 text-sm font-bold text-white shadow-sm transition-colors hover:brightness-110 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-wa"
     >
       <svg viewBox="0 0 24 24" class="h-4 w-4 fill-current" aria-hidden="true">
         <path d="M12 2a10 10 0 0 0-8.6 15l-1.3 4.7 4.8-1.3A10 10 0 1 0 12 2Zm5.3 14.2c-.2.6-1.3 1.2-1.8 1.2-.5.1-1 .1-1.7-.1-.4-.2-.9-.3-1.6-.6-2.7-1.2-4.5-4-4.6-4.2-.2-.2-1.1-1.5-1.1-2.8 0-1.3.7-2 .9-2.2.2-.3.5-.3.7-.3h.5c.2 0 .4 0 .6.5l.8 2c.1.2.1.4 0 .5l-.4.6c-.2.2-.3.4-.1.7.2.3.9 1.4 1.9 2.3 1.3 1.1 2.3 1.4 2.6 1.6.3.1.5.1.7-.1l.7-.8c.2-.3.4-.2.7-.1l2 .9c.3.2.5.2.6.4.1.1.1.7-.1 1.3Z" />
       </svg>
-      <span class="hidden sm:inline">WhatsApp</span> +51 982 953 436
+      <span class="hidden sm:inline">WhatsApp</span> {whatsappVisible}
     </a>
   </div>
 </header>

@@ -1,0 +1,58 @@
+---
+import PanelLayout from "../../layouts/PanelLayout.astro";
+import { bd } from "../../lib/bd";
+
+export const prerender = false;
+
+const filas = await bd.ajuste.findMany();
+const ajustes = Object.fromEntries(filas.map((a) => [a.clave, a.valor]));
+const ok = Astro.url.searchParams.get("ok");
+
+const clasesCampo =
+  "mt-1.5 w-full rounded-lg border border-line bg-paper px-3.5 py-2.5 text-sm outline-none focus-visible:border-brand focus-visible:ring-2 focus-visible:ring-brand/30";
+---
+
+<PanelLayout titulo="Ajustes" correo={Astro.locals.sesion?.correo}>
+  <h1 class="text-2xl font-extrabold text-ink">Ajustes del sitio</h1>
+  <p class="mt-1 mb-6 text-sm text-ink/60">
+    Datos de contacto que se muestran en la página web.
+  </p>
+
+  {
+    ok && (
+      <p class="mb-5 rounded-lg bg-wa/10 px-4 py-2.5 text-sm font-semibold text-[#15803d]">
+        Cambios guardados.
+      </p>
+    )
+  }
+
+  <form
+    method="post"
+    action="/api/admin/ajustes"
+    class="max-w-xl rounded-xl border border-line bg-surface p-6 shadow-sm md:p-8"
+  >
+    <label class="block">
+      <span class="text-sm font-semibold text-ink">Correo de contacto</span>
+      <input type="email" name="correo_contacto" value={ajustes.correo_contacto ?? ""} class={clasesCampo} />
+    </label>
+    <label class="mt-4 block">
+      <span class="text-sm font-semibold text-ink">WhatsApp (solo números, con 51)</span>
+      <input type="text" name="whatsapp" value={ajustes.whatsapp ?? ""} class={clasesCampo} />
+    </label>
+    <label class="mt-4 block">
+      <span class="text-sm font-semibold text-ink">Horario de atención</span>
+      <input type="text" name="horario" value={ajustes.horario ?? ""} class={clasesCampo} />
+    </label>
+    <label class="mt-4 block">
+      <span class="text-sm font-semibold text-ink">Ubicación</span>
+      <input type="text" name="ubicacion" value={ajustes.ubicacion ?? ""} class={clasesCampo} />
+    </label>
+
+    <button
+      type="submit"
+      class="mt-6 rounded-full bg-brand px-7 py-2.5 text-sm font-bold text-white transition-colors hover:bg-brand-deep"
+    >
+      Guardar cambios
+    </button>
+  </form>
+</PanelLayout>
