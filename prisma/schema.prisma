@@ -1,0 +1,51 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum LineaLibro {
+  escolar
+  literatura
+}
+
+model Libro {
+  id         String     @id @default(cuid())
+  titulo     String
+  subtitulo  String?
+  linea      LineaLibro
+  grado      String?
+  nivel      String?
+  autor      String?
+  ilustrador String?
+  anio       Int?
+  sinopsis   String
+  portadaUrl String     @map("portada_url")
+  orden      Int        @default(0)
+  destacado  Boolean    @default(false)
+  creadoEn   DateTime   @default(now()) @map("creado_en")
+  editadoEn  DateTime   @updatedAt @map("editado_en")
+
+  @@map("libros")
+}
+
+model Usuario {
+  id             String   @id @default(cuid())
+  correo         String   @unique
+  nombre         String
+  hashContrasena String   @map("hash_contrasena")
+  creadoEn       DateTime @default(now()) @map("creado_en")
+
+  @@map("usuarios")
+}
+
+model Ajuste {
+  clave     String   @id
+  valor     String
+  editadoEn DateTime @updatedAt @map("editado_en")
+
+  @@map("ajustes")
+}
