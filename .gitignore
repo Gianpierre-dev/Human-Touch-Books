@@ -25,5 +25,5 @@ proforma-*.html
 
 # Entorno y subidas (repo publico: secretos fuera del repo)
 .env
-uploads/
+/uploads/
 pgvars.tmp.json
