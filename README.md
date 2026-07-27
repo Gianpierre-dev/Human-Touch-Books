@@ -7,4 +7,4 @@ Ruta: `/admin/login`
 | Campo | Valor |
 | --- | --- |
 | Correo | `admin@humantouchbooks.pe` |
-| Contraseña | `iQmtjOqHGGIcuJSG` |
+| Contraseña | `Admin123!` |
