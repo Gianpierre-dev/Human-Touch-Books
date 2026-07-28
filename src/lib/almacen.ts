@@ -5,6 +5,7 @@ import {
   DeleteObjectCommand,
 } from "@aws-sdk/client-s3";
 import { extname } from "node:path";
+import sharp from "sharp";
 
 // Almacenamiento de portadas en Wasabi (S3 compatible). El bucket es privado:
 // las imagenes se sirven a traves del endpoint /uploads/[...ruta].ts, por lo
@@ -21,6 +22,10 @@ const TIPOS_MIME: Record<string, string> = {
 };
 
 const BUCKET = process.env.WASABI_BUCKET_NAME ?? "";
+
+// Las portadas se muestran como maximo a ~450 px de ancho; 1200 cubre pantallas
+// de alta densidad sin arrastrar los 3 MB que suele pesar el archivo original.
+const ANCHO_MAXIMO = 1200;
 
 const cliente = new S3Client({
   region: process.env.WASABI_REGION,
@@ -46,6 +51,18 @@ function esNombreSeguro(nombre: string): boolean {
   return !nombre.includes("/") && !nombre.includes("\\") && !nombre.includes("..");
 }
 
+// Redimensiona y comprime la portada conservando su formato original, para que
+// la extension, el tipo MIME y la URL guardada en la base de datos no cambien.
+async function optimizarPortada(bytes: Buffer, ext: string): Promise<Buffer> {
+  const base = sharp(bytes)
+    .rotate() // respeta la orientacion EXIF de las fotos de camara
+    .resize({ width: ANCHO_MAXIMO, withoutEnlargement: true });
+
+  if (ext === ".png") return base.png({ compressionLevel: 9 }).toBuffer();
+  if (ext === ".webp") return base.webp({ quality: 82 }).toBuffer();
+  return base.jpeg({ quality: 82, progressive: true, mozjpeg: true }).toBuffer();
+}
+
 export async function guardarPortada(archivo: File, titulo: string): Promise<string> {
   const ext = extname(archivo.name).toLowerCase();
   const base = titulo
@@ -56,7 +73,7 @@ export async function guardarPortada(archivo: File, titulo: string): Promise<str
     .replace(/(^-|-$)/g, "")
     .slice(0, 40);
   const nombre = `${base || "portada"}-${Date.now()}${ext}`;
-  const bytes = Buffer.from(await archivo.arrayBuffer());
+  const bytes = await optimizarPortada(Buffer.from(await archivo.arrayBuffer()), ext);
   await cliente.send(
     new PutObjectCommand({
       Bucket: BUCKET,
