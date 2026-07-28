@@ -5,12 +5,15 @@ interface Props {
   title?: string;
   description?: string;
   noindex?: boolean;
+  /** Ancla del contenido principal. Si se pasa, se pinta el enlace de salto. */
+  anclaContenido?: string;
 }
 
 const {
   title = "Human Touch Books — Editorial",
   description = "Editorial peruana especializada en tutoría, convivencia escolar y literatura con sentido humano. Serie Tutoría SMART para primaria y libros que acompañan.",
   noindex = false,
+  anclaContenido,
 } = Astro.props;
 
 // Detras del proxy de Railway el adapter descarta Host y X-Forwarded-Host
@@ -18,7 +21,8 @@ const {
 // resuelve a localhost. El dominio real vive en `site` de astro.config.mjs.
 const base = Astro.site ?? new URL(Astro.url.origin);
 const urlCanonica = new URL(Astro.url.pathname, base).href;
-const imagenSocial = new URL("/covers/smart-1.jpg", base).href;
+// Imagen social dedicada 1200x630 (la genera scripts/generar-og.mjs).
+const imagenSocial = new URL("/og/portada-social.jpg", base).href;
 ---
 
 <!doctype html>
@@ -46,8 +50,14 @@ const imagenSocial = new URL("/covers/smart-1.jpg", base).href;
     <meta property="og:type" content="website" />
     <meta property="og:url" content={urlCanonica} />
     <meta property="og:image" content={imagenSocial} />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:locale" content="es_PE" />
+    <meta property="og:site_name" content="Human Touch Books" />
+    <meta name="twitter:card" content="summary_large_image" />
   </head>
   <body class="min-h-screen antialiased">
+    {anclaContenido && <a class="salto-contenido" href={anclaContenido}>Saltar al contenido</a>}
     <slot />
   </body>
 </html>

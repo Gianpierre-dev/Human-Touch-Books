@@ -1,39 +1,77 @@
 ---
+interface Props {
+  whatsapp?: string;
+  correoContacto?: string;
+  ubicacion?: string;
+  hayColeccion?: boolean;
+}
+
+const {
+  whatsapp = "51982953436",
+  correoContacto = "informes@humantouchbooks.pe",
+  ubicacion = "La Molina, Lima — Perú",
+  hayColeccion = true,
+} = Astro.props;
+
+const whatsappVisible = `+${whatsapp.slice(0, 2)} ${whatsapp.slice(2, 5)} ${whatsapp.slice(5, 8)} ${whatsapp.slice(8)}`;
 const year = new Date().getFullYear();
+
+// Area tactil de 44 px de alto en cada enlace del pie (WCAG 2.5.8).
+const claseEnlace =
+  "foco-marca inline-flex min-h-[44px] items-center text-ink/75 transition-colors hover:text-brand";
+
+// El enlace a #coleccion se omite cuando la seccion no se renderiza.
+const explora = [
+  ...(hayColeccion ? [{ href: "#coleccion", label: "Colección Tutoría SMART" }] : []),
+  { href: "#plataforma", label: "Plataforma" },
+  { href: "#nosotros", label: "Nosotros" },
+  { href: "#preguntas", label: "Preguntas frecuentes" },
+];
 ---
 
 <footer class="border-t border-line bg-surface-2">
   <div class="mx-auto max-w-6xl px-4 py-14 md:px-8">
     <div class="flex flex-col gap-10 md:flex-row md:items-start md:justify-between">
       <div class="max-w-sm">
-        <img src="/brand/logo.png" alt="Human Touch Books" class="h-14 w-auto" />
-        <p class="mt-4 text-sm leading-relaxed text-ink/70">
+        <img src="/brand/logo.png" alt="Human Touch Books" class="h-14 w-auto" width="113" height="70" />
+        <p class="mt-4 text-sm leading-relaxed text-ink/75">
           Editorial peruana que pone lo humano en el centro de cada página. Textos escolares y
           literatura que acompañan a crecer.
         </p>
       </div>
 
-      <div class="grid grid-cols-2 gap-10 text-sm">
+      <div class="grid grid-cols-1 gap-8 text-sm sm:grid-cols-2 sm:gap-10">
         <div>
-          <h3 class="font-display text-base text-ink">Explora</h3>
-          <ul class="mt-4 space-y-2.5 text-ink/70">
-            <li><a href="#coleccion" class="hover:text-brand">Colección Tutoría Smart</a></li>
-            <li><a href="#plataforma" class="hover:text-brand">Plataforma</a></li>
-            <li><a href="#nosotros" class="hover:text-brand">Nosotros</a></li>
+          <h2 class="font-display text-base text-ink">Explora</h2>
+          <ul class="mt-2">
+            {explora.map((e) => (
+              <li>
+                <a href={e.href} class={claseEnlace}>
+                  {e.label}
+                </a>
+              </li>
+            ))}
           </ul>
         </div>
         <div>
-          <h3 class="font-display text-base text-ink">Contacto</h3>
-          <ul class="mt-4 space-y-2.5 text-ink/70">
-            <li><a href="https://wa.me/51982953436" class="hover:text-brand">+51 982 953 436</a></li>
-            <li><a href="#contacto" class="hover:text-brand">Solicitar información</a></li>
-            <li>La Molina, Lima — Perú</li>
+          <h2 class="font-display text-base text-ink">Contacto</h2>
+          <ul class="mt-2">
+            <li>
+              <a href={`https://wa.me/${whatsapp}`} class={claseEnlace}>{whatsappVisible}</a>
+            </li>
+            <li>
+              <a href={`mailto:${correoContacto}`} class={claseEnlace}>{correoContacto}</a>
+            </li>
+            <li>
+              <a href="#contacto" class={claseEnlace}>Solicitar información</a>
+            </li>
+            <li class="flex min-h-[44px] items-center text-ink/75">{ubicacion}</li>
           </ul>
         </div>
       </div>
     </div>
 
-    <div class="mt-12 border-t border-line pt-6 text-xs text-ink/50">
+    <div class="mt-12 border-t border-line pt-6 text-xs text-ink/70">
       © {year} Human Touch Books · Editorial. Todos los derechos reservados.
     </div>
   </div>

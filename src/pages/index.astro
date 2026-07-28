@@ -12,12 +12,16 @@ const libros = await bd.libro.findMany({
   orderBy: [{ linea: "asc" }, { orden: "asc" }],
 });
 
-// pista del carrusel: coleccion completa, duplicada para el loop
-const pista = libros.map((l) => ({
-  portada: l.portadaUrl,
-  titulo: l.titulo,
-  etiqueta: l.grado ?? l.nivel ?? "",
-}));
+// Cada linea del catalogo se muestra en su propio bloque: mezclarlas en una sola
+// tira obligaba a la visitante a adivinar que es texto escolar y que es lectura.
+const escolares = libros.filter((l) => l.linea === "escolar");
+const literatura = libros.filter((l) => l.linea === "literatura");
+
+const gradosEscolares = escolares.map((l) => l.grado).filter((g): g is string => Boolean(g));
+const primerGrado = gradosEscolares.at(0);
+const ultimoGrado = gradosEscolares.at(-1);
+// Subtitulo comun de la serie: viene del catalogo, no se inventa aqui.
+const subtituloSerie = escolares.at(0)?.subtitulo ?? "";
 
 const filasAjustes = await bd.ajuste.findMany();
 const ajustes = Object.fromEntries(filasAjustes.map((a) => [a.clave, a.valor]));
@@ -55,48 +59,116 @@ const TEXTO_WHATSAPP = "Hola, quiero información sobre el proyecto Tutoría SMA
 const enlaceWhatsappGenerico = `https://wa.me/${whatsapp}?text=${encodeURIComponent(TEXTO_WHATSAPP)}`;
 
 const clasesCampo =
-  "mt-1.5 min-h-[44px] w-full rounded-lg border border-line bg-paper px-3.5 py-3 text-sm outline-none placeholder:text-ink/35 focus-visible:border-brand focus-visible:ring-2 focus-visible:ring-brand/30";
+  "mt-1.5 min-h-[44px] w-full rounded-lg border border-line bg-paper px-3.5 py-3 text-sm outline-none placeholder:text-ink/65 focus-visible:border-brand focus-visible:ring-2 focus-visible:ring-brand/30";
 
 const valores = [
   {
     icono: "M12 3 2 8l10 5 8-4v5h2V8L12 3Zm-6 9v4c0 1.7 2.7 3 6 3s6-1.3 6-3v-4l-6 3-6-3Z",
     titulo: "Aprendizaje significativo",
-    texto: "Metodologías activas que promueven la comprensión y la reflexión.",
+    texto:
+      "Metodologías activas que llevan a tus estudiantes de la explicación a la comprensión y la reflexión.",
   },
   {
     icono: "M16 11c1.7 0 3-1.3 3-3s-1.3-3-3-3-3 1.3-3 3 1.3 3 3 3Zm-8 0c1.7 0 3-1.3 3-3S9.7 5 8 5 5 6.3 5 8s1.3 3 3 3Zm0 2c-2.3 0-7 1.2-7 3.5V19h14v-2.5c0-2.3-4.7-3.5-7-3.5Zm8 0c-.3 0-.6 0-1 .1 1.2.8 2 2 2 3.4V19h6v-2.5c0-2.3-4.7-3.5-7-3.5Z",
-    titulo: "Desarrollo de habilidades",
-    texto: "Fortalecemos competencias socioemocionales y de convivencia.",
+    titulo: "Habilidades para convivir",
+    texto:
+      "Sesiones que fortalecen las competencias socioemocionales y de convivencia dentro del aula.",
   },
   {
     icono: "M12 2 4.5 20.3l.7.7L12 18l6.8 3 .7-.7L12 2Z",
-    titulo: "Preparados para el futuro",
-    texto: "Herramientas para la toma de decisiones y el proyecto de vida.",
+    titulo: "Preparados para decidir",
+    texto:
+      "Herramientas para acompañar la toma de decisiones y la construcción del proyecto de vida.",
   },
   {
     icono: "M12 21s-7.5-4.8-9.5-9C1 8.5 3 5.5 6 5.5c1.8 0 3.2 1 4 2.2.8-1.2 2.2-2.2 4-2.2 3 0 5 3 3.5 6.5-2 4.2-9.5 9-9.5 9Z",
-    titulo: "Acompañamos cada etapa de crecimiento",
-    texto: "Materiales y recursos que promueven una tutoría efectiva y transformadora.",
+    titulo: "Un texto por cada grado",
+    texto:
+      "Materiales y recursos graduados para que la tutoría tenga continuidad en todos los años de primaria.",
   },
 ];
 
 const chipsPlataforma = [
-  { color: "#1e6fd9", bg: "#e8f1fd", icono: "M16 11c1.7 0 3-1.3 3-3s-1.3-3-3-3-3 1.3-3 3 1.3 3 3 3Zm-8 0c1.7 0 3-1.3 3-3S9.7 5 8 5 5 6.3 5 8s1.3 3 3 3Zm0 2c-2.3 0-7 1.2-7 3.5V19h14v-2.5c0-2.3-4.7-3.5-7-3.5Zm8 0c-.3 0-.6 0-1 .1 1.2.8 2 2 2 3.4V19h6v-2.5c0-2.3-4.7-3.5-7-3.5Z", titulo: "Comunidad conectada", texto: "Gestiona y comparte con confianza." },
-  { color: "#0f9d58", bg: "#e8f7ee", icono: "M12 3 2 8l10 5 8-4v5h2V8L12 3Zm-6 9v4c0 1.7 2.7 3 6 3s6-1.3 6-3v-4l-6 3-6-3Z", titulo: "Recursos educativos", texto: "Material de calidad siempre disponible." },
-  { color: "#6d28d9", bg: "#f1eafd", icono: "M12 2 4 5v6c0 5 3.4 9.7 8 11 4.6-1.3 8-6 8-11V5l-8-3Zm-1 14-3.5-3.5 1.4-1.4L11 13.2l4.6-4.6 1.4 1.4L11 16Z", titulo: "Entorno seguro", texto: "Protegemos tu información y la de tus estudiantes." },
-  { color: "#f29900", bg: "#fdf3e0", icono: "M20 2H4a2 2 0 0 0-2 2v18l4-4h14a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2Z", titulo: "Comunicación eficiente", texto: "Mensajería y avisos en tiempo real." },
+  {
+    color: "#124a99",
+    bg: "#e8f1fd",
+    icono: "M16 11c1.7 0 3-1.3 3-3s-1.3-3-3-3-3 1.3-3 3 1.3 3 3 3Zm-8 0c1.7 0 3-1.3 3-3S9.7 5 8 5 5 6.3 5 8s1.3 3 3 3Zm0 2c-2.3 0-7 1.2-7 3.5V19h14v-2.5c0-2.3-4.7-3.5-7-3.5Zm8 0c-.3 0-.6 0-1 .1 1.2.8 2 2 2 3.4V19h6v-2.5c0-2.3-4.7-3.5-7-3.5Z",
+    titulo: "Comunidad conectada",
+    texto: "Docentes, directores, familias y alumnos en un mismo espacio.",
+  },
+  {
+    color: "#12803c",
+    bg: "#e8f7ee",
+    icono: "M12 3 2 8l10 5 8-4v5h2V8L12 3Zm-6 9v4c0 1.7 2.7 3 6 3s6-1.3 6-3v-4l-6 3-6-3Z",
+    titulo: "Recursos educativos",
+    texto: "Material de la colección disponible cuando lo necesitas.",
+  },
+  {
+    color: "#5b21b6",
+    bg: "#f1eafd",
+    icono: "M12 2 4 5v6c0 5 3.4 9.7 8 11 4.6-1.3 8-6 8-11V5l-8-3Zm-1 14-3.5-3.5 1.4-1.4L11 13.2l4.6-4.6 1.4 1.4L11 16Z",
+    titulo: "Entorno seguro",
+    texto: "Protegemos tu información y la de tus estudiantes.",
+  },
+  {
+    color: "#a15c00",
+    bg: "#fdf3e0",
+    icono: "M20 2H4a2 2 0 0 0-2 2v18l4-4h14a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2Z",
+    titulo: "Comunicación eficiente",
+    texto: "Mensajería y avisos en tiempo real.",
+  },
+];
+
+// Preguntas frecuentes: cada respuesta se apoya solo en datos que ya viven en la
+// base (catalogo, ajustes de contacto) o en el propio formulario. Nada nuevo.
+interface Pregunta {
+  pregunta: string;
+  respuesta: string;
+  enlace?: { href: string; texto: string; externo?: boolean };
+}
+
+const preguntas: Pregunta[] = [
+  {
+    pregunta: "¿Para qué grados está disponible la colección?",
+    respuesta:
+      primerGrado && ultimoGrado
+        ? `Tutoría SMART reúne ${escolares.length} títulos, uno por grado: de ${primerGrado} a ${ultimoGrado}.` +
+          (literatura.length > 0 ? " Además contamos con una línea de Plan Lector." : "")
+        : "Escríbenos y te enviamos el detalle de los títulos disponibles.",
+  },
+  {
+    pregunta: "¿Trabajan con colegios o también con padres de familia?",
+    respuesta:
+      "Con ambos. En el formulario puedes elegir información para colegios, información para padres de familia o capacitaciones y talleres.",
+  },
+  {
+    pregunta: "¿Cómo solicito información o una cotización?",
+    respuesta: `Completa el formulario de contacto, escríbenos a ${correoContacto} o contáctanos por WhatsApp al ${whatsappVisible}.`,
+    enlace: { href: "#contacto", texto: "Ir al formulario" },
+  },
+  {
+    pregunta: "¿Dónde están y en qué horario atienden?",
+    respuesta: `Estamos en ${ubicacion}. Horario de atención: ${horarios.map((h) => h.trim()).join(" · ")}.`,
+  },
+  {
+    pregunta: "¿Cómo se accede a la plataforma Tutoría SMART?",
+    respuesta:
+      "La plataforma se habilita para las instituciones que trabajan con la editorial. Solicita el acceso desde el formulario y lo coordinamos con tu colegio.",
+    enlace: { href: "#contacto", texto: "Solicitar acceso" },
+  },
 ];
 ---
 
 <Layout
   title="Tutoría SMART 2027 — Human Touch Books"
   description="Proyecto Tutoría SMART 2027: programa de tutoría y convivencia escolar para colegios y familias. Formación integral para una nueva generación."
+  anclaContenido="#inicio"
 >
-  <Header whatsapp={whatsapp} />
+  <Header whatsapp={whatsapp} hayColeccion={escolares.length > 0} />
 
-  <main id="inicio">
+  <main id="inicio" tabindex="-1">
     <!-- HERO -->
-    <section class="relative overflow-hidden bg-navy text-white">
+    <section class="relative overflow-hidden bg-navy text-white" aria-labelledby="titulo-hero">
       <div
         class="pointer-events-none absolute inset-0 bg-[radial-gradient(60rem_30rem_at_110%_-10%,#1e6fd955,transparent_60%),radial-gradient(40rem_24rem_at_-10%_110%,#35a3f533,transparent_60%)]"
         aria-hidden="true"
@@ -107,58 +179,77 @@ const chipsPlataforma = [
       >
         <div class="reveal">
           <span
-            class="inline-flex items-center rounded-full bg-brand-bright/20 px-4 py-1 text-xs font-bold tracking-[0.2em] text-brand-bright uppercase"
+            class="inline-flex items-center rounded-full bg-brand-bright/20 px-4 py-1 text-xs font-bold tracking-[0.2em] text-white uppercase"
           >
             Proyecto
           </span>
-          <h1 class="mt-4 text-[clamp(2.4rem,5.5vw,3.9rem)] leading-[1.02] font-extrabold tracking-tight">
+          <h1
+            id="titulo-hero"
+            class="mt-4 text-[clamp(2.4rem,5.5vw,3.9rem)] leading-[1.02] font-extrabold tracking-tight"
+          >
             TUTORÍA SMART<br />
             <span class="text-brand-bright">2027</span>
           </h1>
           <p class="mt-3 text-lg font-semibold text-brand-bright/95">
             Formación integral para una nueva generación
           </p>
-          <p class="mt-4 max-w-[52ch] leading-relaxed text-white/75">
+          <p class="mt-4 max-w-[52ch] leading-relaxed text-white/80">
             Programa de tutoría y convivencia escolar diseñado para fortalecer habilidades
             socioemocionales, liderazgo y proyecto de vida.
           </p>
-          <div class="mt-8 flex flex-wrap items-center gap-4">
-            <a
-              href="#coleccion"
-              class="inline-flex min-h-[48px] items-center gap-2 rounded-full bg-white px-7 text-sm font-bold text-navy shadow-md transition duration-300 ease-out hover:-translate-y-0.5 hover:shadow-lg"
-            >
-              <svg viewBox="0 0 24 24" class="h-4 w-4 fill-brand" aria-hidden="true">
-                <path d="M18 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2Zm-6 2 4 0v7l-2-1.5L12 11V4Z" />
-              </svg>
-              Conocer la colección
-            </a>
+
+          {/* El CTA de conversion va primero y con el mayor peso visual disponible
+              sobre el navy: pastilla blanca solida. Explorar la coleccion es la
+              accion secundaria. */}
+          <div class="mt-8 flex flex-wrap items-center gap-3.5">
             <a
               href="#contacto"
-              class="inline-flex min-h-[48px] items-center gap-2 rounded-full border border-white/40 px-7 text-sm font-bold text-white transition-colors hover:border-white hover:bg-white/10"
+              class="foco-claro inline-flex min-h-[52px] items-center gap-2.5 rounded-full bg-white px-8 text-[0.95rem] font-extrabold text-navy shadow-[0_12px_28px_-10px_rgba(0,0,0,0.65)] ring-1 ring-white/70 transition duration-300 ease-out hover:-translate-y-0.5 hover:bg-brand-bright hover:text-navy hover:shadow-[0_18px_34px_-12px_rgba(53,163,245,0.75)]"
             >
-              <svg viewBox="0 0 24 24" class="h-4 w-4 fill-current" aria-hidden="true">
+              <svg viewBox="0 0 24 24" class="h-4.5 w-4.5 fill-brand" aria-hidden="true">
                 <path d="M20 4H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2Zm0 4-8 5-8-5V6l8 5 8-5v2Z" />
               </svg>
               Solicitar información
             </a>
+            <a
+              href="#coleccion"
+              class="foco-claro inline-flex min-h-[52px] items-center gap-2 rounded-full border border-white/45 px-7 text-[0.95rem] font-bold text-white transition-colors hover:border-white hover:bg-white/10"
+            >
+              <svg viewBox="0 0 24 24" class="h-4 w-4 fill-current" aria-hidden="true">
+                <path d="M18 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2Zm-6 2 4 0v7l-2-1.5L12 11V4Z" />
+              </svg>
+              Conocer la colección
+            </a>
           </div>
+
+          <p class="mt-6 flex items-start gap-2.5 text-[0.85rem] leading-relaxed text-white/75">
+            <svg viewBox="0 0 24 24" class="mt-0.5 h-4 w-4 shrink-0 fill-brand-bright" aria-hidden="true">
+              <path d="M12 2 4 5v6c0 5 3.4 9.7 8 11 4.6-1.3 8-6 8-11V5l-8-3Zm-1 14-3.5-3.5 1.4-1.4L11 13.2l4.6-4.6 1.4 1.4L11 16Z" />
+            </svg>
+            <span>
+              Con el respaldo académico de <strong class="font-semibold text-white"
+                >Rafael Bisquerra Alzina</strong
+              >, referente internacional en educación emocional.
+            </span>
+          </p>
         </div>
 
-        <!-- Imagen del mock aprobado (incluye tarjeta Capacitaciones y logo MBM) -->
+        {/* Imagen del mock aprobado, recortada para quitar los restos de tipografia
+            de la maqueta original (ver scripts/limpiar-mocks.mjs). */}
         <div class="relative mx-auto w-full max-w-lg">
-          <div class="relative overflow-hidden rounded-2xl shadow-2xl ring-1 ring-white/10">
+          <div class="relative overflow-hidden rounded-2xl shadow-2xl ring-1 ring-white/15">
             <img
-              src="/mock/hero-estudiantes.png"
+              src="/mock/hero-estudiantes-limpio.png"
               alt="Estudiantes del proyecto Tutoría SMART junto a la tarjeta de Capacitaciones y Talleres y la distribuidora MBM"
               class="block w-full"
-              width="520"
-              height="332"
+              width="505"
+              height="336"
               loading="eager"
               fetchpriority="high"
             />
             <div
-              class="pointer-events-none absolute inset-0 bg-gradient-to-r from-navy via-navy/35 to-transparent"
-              style="background: linear-gradient(90deg, #0a2550 0%, #0a2550ee 16%, #0a2550aa 28%, transparent 50%);"
+              class="pointer-events-none absolute inset-0"
+              style="background: linear-gradient(100deg, #0a255066 0%, #0a255022 34%, transparent 62%);"
               aria-hidden="true"
             >
             </div>
@@ -167,63 +258,209 @@ const chipsPlataforma = [
       </div>
     </section>
 
-    <!-- VALORES -->
-    <section class="border-b border-line bg-surface">
-      <div class="mx-auto grid max-w-6xl gap-6 px-4 py-12 sm:grid-cols-2 md:px-8 lg:grid-cols-4">
-        {
-          valores.map((v) => (
-            <div class="reveal-scroll flex items-start gap-3.5">
-              <span class="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-surface-2">
-                <svg viewBox="0 0 24 24" class="h-5.5 w-5.5 fill-brand" aria-hidden="true">
-                  <path d={v.icono} />
-                </svg>
-              </span>
-              <div>
-                <h3 class="text-[0.95rem] leading-snug font-bold text-ink">{v.titulo}</h3>
-                <p class="mt-1.5 text-[0.83rem] leading-relaxed text-ink/65">{v.texto}</p>
-              </div>
-            </div>
-          ))
-        }
-      </div>
-    </section>
+    <!-- PROPUESTA DE VALOR -->
+    <section
+      id="propuesta"
+      class="border-b border-line bg-surface"
+      aria-labelledby="titulo-propuesta"
+    >
+      <div class="mx-auto max-w-6xl px-4 py-14 md:px-8 md:py-16">
+        <div class="reveal-scroll max-w-[46ch]">
+          <span class="text-xs font-bold tracking-[0.2em] text-brand uppercase">La propuesta</span>
+          <h2
+            id="titulo-propuesta"
+            class="mt-2 text-[clamp(1.5rem,3vw,2.05rem)] font-display leading-tight font-bold text-ink"
+          >
+            Qué aporta Tutoría SMART a tu institución
+          </h2>
+        </div>
 
-    <!-- COLECCION -->
-    <section id="coleccion" class="bg-paper py-16 md:py-20">
-      <div class="mx-auto max-w-6xl px-4 md:px-8">
-        <h2 class="flex items-center justify-center gap-4 text-center text-[clamp(1.6rem,3.4vw,2.3rem)] font-extrabold text-ink">
-          <span class="hidden h-px w-16 bg-brand/40 sm:block" aria-hidden="true"></span>
-          Colección Tutoría Smart
-          <span class="hidden h-px w-16 bg-brand/40 sm:block" aria-hidden="true"></span>
-        </h2>
-      </div>
-
-      <div class="marquee mt-10 overflow-hidden" aria-label="Portadas de la colección Tutoría SMART y Plan Lector">
-        <div class="marquee-track flex w-max items-end gap-8 px-4">
+        <div class="mt-10 grid gap-x-8 gap-y-9 sm:grid-cols-2 lg:grid-cols-4">
           {
-            [...pista, ...pista].map((libro) => (
-              <figure class="w-40 shrink-0 sm:w-44">
-                <img
-                  src={libro.portada}
-                  alt={`Portada de ${libro.titulo}`}
-                  loading="lazy"
-                  width="480"
-                  height="640"
-                  class="aspect-[3/4] w-full rounded-lg object-cover shadow-lg shadow-navy/15 ring-1 ring-black/5"
-                />
-                <figcaption class="mt-2 text-center text-xs font-semibold text-ink/60">
-                  {libro.etiqueta}
-                </figcaption>
-              </figure>
+            valores.map((v) => (
+              <div class="reveal-scroll flex items-start gap-4">
+                <span class="grid h-12 w-12 shrink-0 place-items-center rounded-xl bg-surface-2 ring-1 ring-line">
+                  <svg viewBox="0 0 24 24" class="h-6 w-6 fill-brand" aria-hidden="true">
+                    <path d={v.icono} />
+                  </svg>
+                </span>
+                <div>
+                  <h3 class="text-[1.0625rem] leading-snug font-bold text-ink">{v.titulo}</h3>
+                  <p class="mt-1.5 text-[0.9rem] leading-relaxed text-ink/75">{v.texto}</p>
+                </div>
+              </div>
             ))
           }
         </div>
       </div>
     </section>
 
+    <!-- COLECCION ESCOLAR -->
+    {
+      escolares.length > 0 && (
+        <section id="coleccion" class="bg-paper py-16 md:py-20" aria-labelledby="titulo-coleccion">
+          <div class="mx-auto max-w-6xl px-4 md:px-8">
+            <div class="reveal-scroll text-center">
+              <span class="text-xs font-bold tracking-[0.2em] text-brand uppercase">
+                Textos escolares
+              </span>
+              <h2
+                id="titulo-coleccion"
+                class="mt-2 text-[clamp(1.7rem,3.4vw,2.4rem)] font-display leading-tight font-bold text-ink"
+              >
+                Colección Tutoría SMART
+              </h2>
+              {subtituloSerie && (
+                <p class="mx-auto mt-3 max-w-[52ch] leading-relaxed text-ink/75">
+                  {subtituloSerie}.
+                  {primerGrado && ultimoGrado && ` Un texto por grado, de ${primerGrado} a ${ultimoGrado}.`}
+                </p>
+              )}
+            </div>
+
+            {/* Grilla estatica: la tira animada anterior impedia leer los titulos y
+                no se podia detener (WCAG 2.2.2). */}
+            <ul class="mt-12 grid grid-cols-2 gap-x-5 gap-y-9 sm:grid-cols-3 lg:grid-cols-6">
+              {escolares.map((libro) => (
+                <li class="reveal-scroll">
+                  <a
+                    href="#contacto"
+                    class="foco-marca group block text-center"
+                    aria-label={`Solicitar información sobre ${libro.titulo}`}
+                  >
+                    <img
+                      src={libro.portadaUrl}
+                      alt={`Portada de ${libro.titulo}`}
+                      loading="lazy"
+                      width="800"
+                      height="991"
+                      class="aspect-[800/991] w-full rounded-lg object-cover shadow-lg shadow-navy/15 ring-1 ring-black/5 transition duration-300 ease-out group-hover:-translate-y-1.5 group-hover:shadow-xl group-hover:shadow-navy/25 group-hover:ring-brand/40"
+                    />
+                    <h3 class="mt-3.5 text-[0.9375rem] leading-snug font-bold text-ink transition-colors group-hover:text-brand">
+                      {libro.titulo}
+                    </h3>
+                    <p class="mt-0.5 text-[0.8125rem] font-medium text-ink/70">
+                      {libro.grado ?? libro.nivel}
+                    </p>
+                  </a>
+                </li>
+              ))}
+            </ul>
+
+            <div class="reveal-scroll mt-12 flex justify-center">
+              <a
+                href="#contacto"
+                class="foco-marca inline-flex min-h-[52px] items-center gap-2.5 rounded-full bg-brand px-8 text-[0.95rem] font-bold text-white shadow-lg shadow-brand/25 transition duration-300 ease-out hover:-translate-y-0.5 hover:bg-brand-deep"
+              >
+                <svg viewBox="0 0 24 24" class="h-4.5 w-4.5 fill-current" aria-hidden="true">
+                  <path d="M20 4H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2Zm0 4-8 5-8-5V6l8 5 8-5v2Z" />
+                </svg>
+                Solicitar información de la colección
+              </a>
+            </div>
+          </div>
+        </section>
+      )
+    }
+
+    <!-- PLAN LECTOR -->
+    {
+      literatura.length > 0 && (
+        <section
+          id="plan-lector"
+          class="border-t border-line bg-surface py-16 md:py-20"
+          aria-labelledby="titulo-plan-lector"
+        >
+          <div class="mx-auto max-w-6xl px-4 md:px-8">
+            <div class="reveal-scroll">
+              <span class="text-xs font-bold tracking-[0.2em] text-brand uppercase">
+                Línea de literatura
+              </span>
+              <h2
+                id="titulo-plan-lector"
+                class="mt-2 text-[clamp(1.7rem,3.4vw,2.4rem)] font-display leading-tight font-bold text-ink"
+              >
+                Plan Lector
+              </h2>
+            </div>
+
+            <ul class:list={["mt-10 grid gap-8", literatura.length > 1 && "lg:grid-cols-2"]}>
+              {literatura.map((libro) => (
+                <li class="reveal-scroll">
+                  <article class="grid items-start gap-6 rounded-2xl bg-paper p-5 ring-1 ring-line sm:grid-cols-[212px_1fr] sm:p-6">
+                    {/* Sin proporcion forzada: las portadas de esta linea las carga
+                        el panel y no comparten formato con la serie escolar.
+                        Recortarlas a vertical mutilaria la tapa. */}
+                    {/* min-h reserva espacio mientras carga la imagen lazy (evita CLS)
+                        sin forzar una proporcion que mutile portadas apaisadas. */}
+                    <span class="block min-h-[150px] w-full max-w-[212px] rounded-lg bg-surface-2 p-2.5 ring-1 ring-line">
+                      <img
+                        src={libro.portadaUrl}
+                        alt={`Portada de ${libro.titulo}`}
+                        loading="lazy"
+                        class="block h-auto w-full rounded shadow-md shadow-navy/15"
+                      />
+                    </span>
+                    <div>
+                      <h3 class="text-[1.15rem] leading-snug font-extrabold text-ink">
+                        {libro.titulo}
+                      </h3>
+                      {libro.subtitulo && (
+                        <p class="mt-1 text-[0.9rem] text-ink/75">{libro.subtitulo}</p>
+                      )}
+                      <dl class="mt-3 space-y-1 text-[0.8125rem] text-ink/75">
+                        {libro.autor && (
+                          <div class="flex gap-1.5">
+                            <dt class="font-semibold text-ink">Autor:</dt>
+                            <dd>{libro.autor}</dd>
+                          </div>
+                        )}
+                        {libro.ilustrador && (
+                          <div class="flex gap-1.5">
+                            <dt class="font-semibold text-ink">Ilustración:</dt>
+                            <dd>{libro.ilustrador}</dd>
+                          </div>
+                        )}
+                        {libro.nivel && (
+                          <div class="flex gap-1.5">
+                            <dt class="font-semibold text-ink">Línea:</dt>
+                            <dd>
+                              {libro.nivel}
+                              {libro.anio ? ` · ${libro.anio}` : ""}
+                            </dd>
+                          </div>
+                        )}
+                      </dl>
+                      <p class="mt-3.5 text-[0.9rem] leading-relaxed text-ink/75">
+                        {libro.sinopsis}
+                      </p>
+                      <a
+                        href="#contacto"
+                        class="foco-marca mt-4 inline-flex min-h-[44px] items-center gap-2 text-[0.9rem] font-bold text-brand hover:text-brand-deep"
+                        aria-label={`Solicitar información sobre ${libro.titulo}`}
+                      >
+                        Solicitar información
+                        <svg viewBox="0 0 24 24" class="h-4 w-4 fill-current" aria-hidden="true">
+                          <path d="M10 17l5-5-5-5v10Z" />
+                        </svg>
+                      </a>
+                    </div>
+                  </article>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </section>
+      )
+    }
+
     <!-- PLATAFORMA -->
-    <section id="plataforma" class="border-y border-line bg-surface-2/60">
-      <div class="mx-auto grid max-w-6xl items-center gap-10 px-4 py-16 md:grid-cols-[1fr_1.05fr] md:px-8 md:py-24">
+    <section
+      id="plataforma"
+      class="border-y border-line bg-surface-2/60"
+      aria-labelledby="titulo-plataforma"
+    >
+      <div class="mx-auto grid max-w-6xl items-center gap-10 px-4 py-16 md:px-8 md:py-24 lg:grid-cols-[1.15fr_0.85fr]">
         <div class="reveal-scroll">
           <span class="inline-flex items-center gap-1.5 rounded-full bg-brand px-4 py-1.5 text-[0.68rem] font-bold tracking-[0.16em] text-white uppercase">
             <svg viewBox="0 0 24 24" class="h-3 w-3 fill-current" aria-hidden="true">
@@ -231,11 +468,14 @@ const chipsPlataforma = [
             </svg>
             Plataforma exclusiva
           </span>
-          <h2 class="mt-4 text-[clamp(2rem,4.4vw,3.1rem)] leading-tight font-extrabold text-ink">
+          <h2
+            id="titulo-plataforma"
+            class="mt-4 text-[clamp(2rem,4.4vw,3.1rem)] font-display leading-tight font-bold text-ink"
+          >
             Plataforma<br />
             <span class="text-brand">TUTORÍA SMART</span>
           </h2>
-          <p class="mt-4 max-w-[48ch] border-l-2 border-brand/40 pl-4 leading-relaxed text-ink/70">
+          <p class="mt-4 max-w-[48ch] border-l-2 border-brand/40 pl-4 leading-relaxed text-ink/75">
             Un espacio diseñado para docentes, directores, padres de familia y alumnos: recursos
             educativos, comunicación eficiente y un entorno seguro.
           </p>
@@ -243,103 +483,206 @@ const chipsPlataforma = [
           <div class="mt-8 grid grid-cols-2 gap-4 sm:grid-cols-4">
             {
               chipsPlataforma.map((c) => (
-                <div class="rounded-xl bg-surface p-3.5 text-center shadow-sm ring-1 ring-line">
-                  <span class="mx-auto grid h-9 w-9 place-items-center rounded-lg" style={`background:${c.bg}`}>
-                    <svg viewBox="0 0 24 24" class="h-4.5 w-4.5" style={`fill:${c.color}`} aria-hidden="true">
+                <div class="rounded-xl bg-surface p-4 shadow-sm ring-1 ring-line">
+                  <span
+                    class="grid h-9 w-9 place-items-center rounded-lg"
+                    style={`background:${c.bg}`}
+                  >
+                    <svg viewBox="0 0 24 24" class="h-5 w-5" style={`fill:${c.color}`} aria-hidden="true">
                       <path d={c.icono} />
                     </svg>
                   </span>
-                  <h3 class="mt-2 text-[0.78rem] leading-tight font-bold text-ink">{c.titulo}</h3>
-                  <p class="mt-1 text-[0.68rem] leading-snug text-ink/55">{c.texto}</p>
+                  <h3 class="mt-2.5 text-[0.8125rem] leading-tight font-bold text-ink">{c.titulo}</h3>
+                  <p class="mt-1.5 text-[0.75rem] leading-snug text-ink/75">{c.texto}</p>
                 </div>
               ))
             }
           </div>
 
+          {/* Antes decia "INGRESA AQUI" y hacia scroll al formulario: prometia un
+              login que no existe en esta pagina. El acceso se solicita. */}
           <div class="mt-8 flex flex-wrap items-center gap-4">
             <a
               href="#contacto"
-              class="inline-flex min-h-[50px] items-center gap-2.5 rounded-full bg-gradient-to-r from-brand to-violet px-8 text-sm font-bold text-white shadow-lg shadow-brand/25 transition duration-300 ease-out hover:-translate-y-0.5 hover:shadow-xl focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
+              class="foco-marca inline-flex min-h-[52px] items-center gap-2.5 rounded-full bg-gradient-to-r from-brand to-violet px-8 text-[0.95rem] font-bold text-white shadow-lg shadow-brand/25 transition duration-300 ease-out hover:-translate-y-0.5 hover:shadow-xl"
             >
               <span class="grid h-6 w-6 place-items-center rounded-full bg-white/20">
                 <svg viewBox="0 0 24 24" class="h-3.5 w-3.5 fill-white" aria-hidden="true">
                   <path d="M10 17l5-5-5-5v10Z" />
                 </svg>
               </span>
-              INGRESA AQUÍ
+              Solicitar acceso
             </a>
-            <p class="flex items-center gap-1.5 text-xs font-semibold text-ink/55">
-              <svg viewBox="0 0 24 24" class="h-4 w-4 fill-brand" aria-hidden="true">
+            <p class="flex max-w-[34ch] items-start gap-2 text-[0.8125rem] leading-relaxed text-ink/75">
+              <svg viewBox="0 0 24 24" class="mt-0.5 h-4 w-4 shrink-0 fill-brand" aria-hidden="true">
                 <path d="M12 2 4 5v6c0 5 3.4 9.7 8 11 4.6-1.3 8-6 8-11V5l-8-3Zm-1 14-3.5-3.5 1.4-1.4L11 13.2l4.6-4.6 1.4 1.4L11 16Z" />
               </svg>
-              Acceso exclusivo para usuarios autorizados
+              <span>
+                La plataforma se habilita para las instituciones que trabajan con la editorial.
+              </span>
             </p>
           </div>
         </div>
 
-        <div class="reveal-scroll mx-auto w-full max-w-xl">
-          <img
-            src="/mock/laptop-smarti.png"
-            alt="Plataforma Tutoría SMART en una laptop, junto a SMARTI, el asistente virtual"
-            class="block w-full drop-shadow-2xl"
-            width="742"
-            height="754"
-            loading="lazy"
-          />
+        {/* Imagen recortada: el original repetia en pixeles el titular, el parrafo
+            y dos de los chips de arriba (ver scripts/limpiar-mocks.mjs). */}
+        <div class="reveal-scroll mx-auto w-full max-w-[340px] lg:max-w-none">
+          {/* Marco explicito: el recorte deja un rectangulo opaco y sin el anillo
+              leia como una imagen suelta sobre el fondo de la seccion. */}
+          <div class="overflow-hidden rounded-2xl shadow-xl shadow-navy/15 ring-1 ring-line">
+            <img
+              src="/mock/laptop-smarti-limpio.png"
+              alt="La plataforma Tutoría SMART abierta en una laptop, con la pantalla de ingreso de Human Touch Books"
+              class="block w-full"
+              width="470"
+              height="712"
+              loading="lazy"
+            />
+          </div>
         </div>
       </div>
     </section>
 
-    <!-- NOSOTROS / AUTOR -->
-    <section id="nosotros" class="bg-paper py-16 md:py-24">
+    <!-- NOSOTROS -->
+    <section id="nosotros" class="bg-paper py-16 md:py-24" aria-labelledby="titulo-nosotros">
       <div class="mx-auto max-w-6xl px-4 md:px-8">
-        <div class="reveal-scroll grid items-center gap-10 rounded-2xl bg-surface p-6 shadow-md ring-1 ring-line md:grid-cols-[0.38fr_1fr] md:p-10">
-          <div class="mx-auto w-full max-w-[260px]">
-            <img
-              src="/mock/bisquerra.png"
-              alt="Retrato de Rafael Bisquerra Alzina"
-              class="w-full rounded-xl object-cover shadow-lg"
-              width="368"
-              height="586"
-              loading="lazy"
-            />
-          </div>
-          <div>
-            <h2 class="text-[clamp(1.5rem,3vw,2.1rem)] font-extrabold text-ink">
-              Rafael Bisquerra Alzina
-            </h2>
-            <div class="mt-4 space-y-4 leading-relaxed text-ink/70">
-              <p>
-                Rafael Bisquerra Alzina es un reconocido psicólogo, pedagogo e investigador
-                español, considerado uno de los principales referentes internacionales en el
-                ámbito de la educación emocional. Doctor en Ciencias de la Educación por la
-                Universidad de Barcelona, ha dedicado gran parte de su trayectoria académica al
-                estudio de las emociones y su impacto en el aprendizaje, el bienestar y el
-                desarrollo integral de las personas.
-              </p>
-              <p>
-                Es fundador del Grupo de Investigación en Orientación Psicopedagógica (GROP) de
-                la Universidad de Barcelona y autor de numerosas publicaciones sobre inteligencia
-                emocional, competencias emocionales y bienestar. Sus aportes han influido
-                significativamente en la incorporación de la educación emocional en instituciones
-                educativas de España y América Latina, convirtiéndose en una referencia obligada
-                para docentes, investigadores y profesionales de la educación.
-              </p>
+        <div class="reveal-scroll max-w-[54ch]">
+          <span class="text-xs font-bold tracking-[0.2em] text-brand uppercase">Nosotros</span>
+          <h2
+            id="titulo-nosotros"
+            class="mt-2 text-[clamp(1.6rem,3.2vw,2.3rem)] font-display leading-tight font-bold text-ink"
+          >
+            Una editorial peruana que pone lo humano en el centro
+          </h2>
+          <p class="mt-4 leading-relaxed text-ink/75">
+            Human Touch Books trabaja desde {ubicacion} con dos líneas editoriales: textos escolares
+            de tutoría, orientación educativa y convivencia escolar, y una línea de Plan Lector.
+            Atendemos consultas de colegios y de padres de familia, y coordinamos capacitaciones y
+            talleres.
+          </p>
+        </div>
+
+        {/* Respaldo academico: en tablet el retrato dejaba un hueco muerto por el
+            grid de dos columnas desde md. Ahora la columna del retrato aparece
+            recien en lg y antes se apila a ancho contenido. */}
+        <div
+          class="reveal-scroll mt-10 overflow-hidden rounded-2xl bg-surface shadow-md ring-1 ring-line"
+        >
+          <div class="grid gap-8 p-6 md:p-9 lg:grid-cols-[240px_1fr] lg:items-center lg:gap-10">
+            <div class="mx-auto w-full max-w-[240px] lg:mx-0">
+              {/* El PNG ya trae su propio marco blanco: sin rounded ni shadow extra. */}
+              <img
+                src="/mock/bisquerra.png"
+                alt="Retrato de Rafael Bisquerra Alzina"
+                class="w-full"
+                width="368"
+                height="586"
+                loading="lazy"
+              />
+            </div>
+            <div>
+              <span class="text-xs font-bold tracking-[0.2em] text-brand uppercase">
+                Respaldo académico
+              </span>
+              <h3 class="mt-2 text-[clamp(1.35rem,2.6vw,1.85rem)] font-extrabold text-ink">
+                Rafael Bisquerra Alzina
+              </h3>
+              <blockquote
+                class="mt-4 border-l-2 border-brand pl-4 text-[1.05rem] leading-snug font-semibold text-ink"
+              >
+                Uno de los principales referentes internacionales en el ámbito de la educación
+                emocional.
+              </blockquote>
+              <div class="mt-4 space-y-3 leading-relaxed text-ink/75">
+                <p>
+                  Psicólogo, pedagogo e investigador español. Doctor en Ciencias de la Educación por
+                  la Universidad de Barcelona y fundador del Grupo de Investigación en Orientación
+                  Psicopedagógica (GROP).
+                </p>
+                <p>
+                  Es autor de numerosas publicaciones sobre inteligencia emocional, competencias
+                  emocionales y bienestar. Sus aportes han influido en la incorporación de la
+                  educación emocional en instituciones educativas de España y América Latina.
+                </p>
+              </div>
             </div>
           </div>
         </div>
       </div>
     </section>
 
+    <!-- PREGUNTAS FRECUENTES -->
+    <section
+      id="preguntas"
+      class="border-t border-line bg-surface py-16 md:py-20"
+      aria-labelledby="titulo-preguntas"
+    >
+      <div class="mx-auto max-w-3xl px-4 md:px-8">
+        <div class="reveal-scroll">
+          <span class="text-xs font-bold tracking-[0.2em] text-brand uppercase">Antes de escribir</span>
+          <h2
+            id="titulo-preguntas"
+            class="mt-2 text-[clamp(1.6rem,3.2vw,2.3rem)] font-display leading-tight font-bold text-ink"
+          >
+            Preguntas frecuentes
+          </h2>
+        </div>
+
+        <div class="reveal-scroll mt-8 space-y-3">
+          {
+            preguntas.map((p) => (
+              <details class="faq-item rounded-xl bg-paper ring-1 ring-line">
+                <summary class="faq-resumen foco-marca flex cursor-pointer list-none items-center justify-between gap-4 px-5 py-4 text-[0.98rem] leading-snug font-bold text-ink">
+                  <span>{p.pregunta}</span>
+                  <span
+                    class="faq-signo grid h-7 w-7 shrink-0 place-items-center rounded-full bg-surface-2 text-brand"
+                    aria-hidden="true"
+                  >
+                    <svg viewBox="0 0 24 24" class="h-4 w-4 fill-current">
+                      <path d="M11 5h2v14h-2z" />
+                      <path d="M5 11h14v2H5z" />
+                    </svg>
+                  </span>
+                </summary>
+                <div class="px-5 pb-5 text-[0.9rem] leading-relaxed text-ink/75">
+                  <p>{p.respuesta}</p>
+                  {p.enlace && (
+                    <a
+                      href={p.enlace.href}
+                      class="foco-marca mt-2.5 inline-flex min-h-[44px] items-center gap-1.5 font-bold text-brand hover:text-brand-deep"
+                    >
+                      {p.enlace.texto}
+                      <svg viewBox="0 0 24 24" class="h-4 w-4 fill-current" aria-hidden="true">
+                        <path d="M10 17l5-5-5-5v10Z" />
+                      </svg>
+                    </a>
+                  )}
+                </div>
+              </details>
+            ))
+          }
+        </div>
+      </div>
+    </section>
+
     <!-- CONTACTO -->
-    <section id="contacto" class="relative overflow-hidden border-t border-line bg-surface-2/50">
-      <div class="mx-auto grid max-w-6xl gap-12 px-4 py-16 md:grid-cols-[0.9fr_1.1fr] md:px-8 md:py-24">
+    <section
+      id="contacto"
+      class="relative overflow-hidden border-t border-line bg-surface-2/50"
+      aria-labelledby="titulo-contacto"
+    >
+      {/* Las dos columnas entran en lg: en 768 el formulario quedaba con campos
+          de ~170 px y se volvia incomodo de completar. */}
+      <div class="mx-auto grid max-w-6xl gap-12 px-4 py-16 md:px-8 md:py-24 lg:grid-cols-[0.9fr_1.1fr]">
         <div class="reveal-scroll">
           <span class="text-xs font-bold tracking-[0.2em] text-brand uppercase">Contáctanos</span>
-          <h2 class="mt-2 max-w-[12ch] text-[clamp(1.9rem,4vw,2.8rem)] leading-tight font-extrabold text-ink">
+          <h2
+            id="titulo-contacto"
+            class="mt-2 max-w-[12ch] text-[clamp(1.9rem,4vw,2.8rem)] font-display leading-tight font-bold text-ink"
+          >
             Estamos aquí para <span class="text-brand">ayudarte</span>
           </h2>
-          <p class="mt-4 max-w-[42ch] leading-relaxed text-ink/70">
+          <p class="mt-4 max-w-[42ch] leading-relaxed text-ink/75">
             Déjanos tu mensaje y te responderemos lo antes posible.
           </p>
 
@@ -354,29 +697,33 @@ const chipsPlataforma = [
                 </span>
                 <div>
                   <p class="font-semibold text-ink">Correo electrónico</p>
-                  <p class="text-ink/60">{correoContacto}</p>
+                  <a href={`mailto:${correoContacto}`} class="foco-marca text-ink/75 hover:text-brand">
+                    {correoContacto}
+                  </a>
                 </div>
               </li>
               <li class="flex items-center gap-3.5">
                 <span class="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-[#e8f7ee]">
-                  <svg viewBox="0 0 24 24" class="h-4.5 w-4.5 fill-wa" aria-hidden="true">
+                  <svg viewBox="0 0 24 24" class="h-4.5 w-4.5 fill-wa-vivo" aria-hidden="true">
                     <path d="M12 2a10 10 0 0 0-8.6 15l-1.3 4.7 4.8-1.3A10 10 0 1 0 12 2Zm5.3 14.2c-.2.6-1.3 1.2-1.8 1.2-.5.1-1 .1-1.7-.1-.4-.2-.9-.3-1.6-.6-2.7-1.2-4.5-4-4.6-4.2-.2-.2-1.1-1.5-1.1-2.8 0-1.3.7-2 .9-2.2.2-.3.5-.3.7-.3h.5c.2 0 .4 0 .6.5l.8 2c.1.2.1.4 0 .5l-.4.6c-.2.2-.3.4-.1.7.2.3.9 1.4 1.9 2.3 1.3 1.1 2.3 1.4 2.6 1.6.3.1.5.1.7-.1l.7-.8c.2-.3.4-.2.7-.1l2 .9c.3.2.5.2.6.4.1.1.1.7-.1 1.3Z" />
                   </svg>
                 </span>
                 <div>
                   <p class="font-semibold text-ink">Celular · WhatsApp</p>
-                  <a href={`https://wa.me/${whatsapp}`} class="text-ink/60 hover:text-brand">{whatsappVisible}</a>
+                  <a href={`https://wa.me/${whatsapp}`} class="foco-marca text-ink/75 hover:text-brand">
+                    {whatsappVisible}
+                  </a>
                 </div>
               </li>
               <li class="flex items-center gap-3.5">
                 <span class="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-[#fdf3e0]">
-                  <svg viewBox="0 0 24 24" class="h-4.5 w-4.5 fill-[#f29900]" aria-hidden="true">
+                  <svg viewBox="0 0 24 24" class="h-4.5 w-4.5 fill-[#a15c00]" aria-hidden="true">
                     <path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2Zm4 11h-5V6h2v5h3v2Z" />
                   </svg>
                 </span>
                 <div>
                   <p class="font-semibold text-ink">Horario de atención</p>
-                  <p class="text-ink/60">
+                  <p class="text-ink/75">
                     {horarios.map((h, i) => (
                       <>
                         {i > 0 && <br />}
@@ -394,7 +741,7 @@ const chipsPlataforma = [
                 </span>
                 <div>
                   <p class="font-semibold text-ink">Ubicación</p>
-                  <p class="text-ink/60">{ubicacion}</p>
+                  <p class="text-ink/75">{ubicacion}</p>
                 </div>
               </li>
             </ul>
@@ -412,7 +759,7 @@ const chipsPlataforma = [
           >
             {
               estadoContacto === "ok" && (
-                <p class="mb-4 rounded-xl border border-wa/30 bg-wa/10 px-4 py-3 text-sm font-semibold text-[#15803d]">
+                <p class="mb-4 rounded-xl border border-wa/30 bg-wa/10 px-4 py-3 text-sm font-semibold text-wa">
                   Recibimos tu mensaje. Te contactaremos pronto.
                 </p>
               )
@@ -507,7 +854,7 @@ const chipsPlataforma = [
             <div class="mt-6 grid gap-3 sm:grid-cols-2">
               <button
                 type="submit"
-                class="inline-flex min-h-[48px] w-full items-center justify-center gap-2 rounded-full bg-brand px-7 text-sm font-bold text-white transition-colors hover:bg-brand-deep focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
+                class="foco-marca inline-flex min-h-[48px] w-full items-center justify-center gap-2 rounded-full bg-brand px-7 text-sm font-bold text-white transition-colors hover:bg-brand-deep"
               >
                 <svg viewBox="0 0 24 24" class="h-4 w-4 fill-current" aria-hidden="true">
                   <path d="M2 21 23 12 2 3v7l15 2-15 2v7Z" />
@@ -520,7 +867,7 @@ const chipsPlataforma = [
                 target="_blank"
                 rel="noopener"
                 data-whatsapp={whatsapp}
-                class="inline-flex min-h-[48px] w-full items-center justify-center gap-2 rounded-full border border-wa px-7 text-sm font-bold text-wa transition-colors hover:bg-wa/10 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-wa"
+                class="foco-marca inline-flex min-h-[48px] w-full items-center justify-center gap-2 rounded-full border border-wa px-7 text-sm font-bold text-wa transition-colors hover:bg-wa/10"
               >
                 <svg viewBox="0 0 24 24" class="h-4 w-4 fill-current" aria-hidden="true">
                   <path d="M12 2a10 10 0 0 0-8.6 15l-1.3 4.7 4.8-1.3A10 10 0 1 0 12 2Zm5.3 14.2c-.2.6-1.3 1.2-1.8 1.2-.5.1-1 .1-1.7-.1-.4-.2-.9-.3-1.6-.6-2.7-1.2-4.5-4-4.6-4.2-.2-.2-1.1-1.5-1.1-2.8 0-1.3.7-2 .9-2.2.2-.3.5-.3.7-.3h.5c.2 0 .4 0 .6.5l.8 2c.1.2.1.4 0 .5l-.4.6c-.2.2-.3.4-.1.7.2.3.9 1.4 1.9 2.3 1.3 1.1 2.3 1.4 2.6 1.6.3.1.5.1.7-.1l.7-.8c.2-.3.4-.2.7-.1l2 .9c.3.2.5.2.6.4.1.1.1.7-.1 1.3Z" />
@@ -529,7 +876,7 @@ const chipsPlataforma = [
               </a>
             </div>
 
-            <p class="mt-3 flex items-center justify-center gap-1.5 text-center text-xs text-ink/50">
+            <p class="mt-3 flex items-center justify-center gap-1.5 text-center text-xs text-ink/70">
               <svg viewBox="0 0 24 24" class="h-3.5 w-3.5 fill-brand" aria-hidden="true">
                 <path d="M12 2 4 5v6c0 5 3.4 9.7 8 11 4.6-1.3 8-6 8-11V5l-8-3Z" />
               </svg>
@@ -539,9 +886,57 @@ const chipsPlataforma = [
         </div>
       </div>
     </section>
+
+    <!-- CIERRE -->
+    <section class="relative overflow-hidden bg-navy text-white" aria-labelledby="titulo-cierre">
+      <div
+        class="pointer-events-none absolute inset-0 bg-[radial-gradient(48rem_24rem_at_80%_-20%,#1e6fd955,transparent_62%)]"
+        aria-hidden="true"
+      >
+      </div>
+      <div
+        class="relative mx-auto flex max-w-6xl flex-col items-start gap-8 px-4 py-14 md:flex-row md:items-center md:justify-between md:px-8 md:py-16"
+      >
+        <div class="max-w-[46ch]">
+          <h2 id="titulo-cierre" class="text-[clamp(1.5rem,3vw,2.1rem)] font-display leading-tight font-bold">
+            ¿Quieres Tutoría SMART en tu colegio?
+          </h2>
+          <p class="mt-3 leading-relaxed text-white/80">
+            Cuéntanos qué necesitas y te enviamos la información de la colección.
+          </p>
+        </div>
+        <div class="flex w-full flex-wrap items-center gap-3.5 md:w-auto">
+          <a
+            href="#contacto"
+            class="foco-claro inline-flex min-h-[52px] flex-1 items-center justify-center gap-2.5 rounded-full bg-white px-8 text-[0.95rem] font-extrabold whitespace-nowrap text-navy shadow-[0_12px_28px_-10px_rgba(0,0,0,0.65)] ring-1 ring-white/70 transition duration-300 ease-out hover:-translate-y-0.5 hover:bg-brand-bright md:flex-none"
+          >
+            <svg viewBox="0 0 24 24" class="h-4.5 w-4.5 fill-brand" aria-hidden="true">
+              <path d="M20 4H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2Zm0 4-8 5-8-5V6l8 5 8-5v2Z" />
+            </svg>
+            Solicitar información
+          </a>
+          <a
+            href={enlaceWhatsappGenerico}
+            target="_blank"
+            rel="noopener"
+            class="foco-claro inline-flex min-h-[52px] flex-1 items-center justify-center gap-2 rounded-full border border-white/45 px-7 text-[0.95rem] font-bold whitespace-nowrap text-white transition-colors hover:border-white hover:bg-white/10 md:flex-none"
+          >
+            <svg viewBox="0 0 24 24" class="h-4.5 w-4.5 fill-current" aria-hidden="true">
+              <path d="M12 2a10 10 0 0 0-8.6 15l-1.3 4.7 4.8-1.3A10 10 0 1 0 12 2Zm5.3 14.2c-.2.6-1.3 1.2-1.8 1.2-.5.1-1 .1-1.7-.1-.4-.2-.9-.3-1.6-.6-2.7-1.2-4.5-4-4.6-4.2-.2-.2-1.1-1.5-1.1-2.8 0-1.3.7-2 .9-2.2.2-.3.5-.3.7-.3h.5c.2 0 .4 0 .6.5l.8 2c.1.2.1.4 0 .5l-.4.6c-.2.2-.3.4-.1.7.2.3.9 1.4 1.9 2.3 1.3 1.1 2.3 1.4 2.6 1.6.3.1.5.1.7-.1l.7-.8c.2-.3.4-.2.7-.1l2 .9c.3.2.5.2.6.4.1.1.1.7-.1 1.3Z" />
+            </svg>
+            Escríbenos por WhatsApp
+          </a>
+        </div>
+      </div>
+    </section>
   </main>
 
-  <Footer />
+  <Footer
+    whatsapp={whatsapp}
+    correoContacto={correoContacto}
+    ubicacion={ubicacion}
+    hayColeccion={escolares.length > 0}
+  />
 
   {/* Lleva el foco al aviso de estado para que los lectores de pantalla lo anuncien. */}
   <script is:inline>

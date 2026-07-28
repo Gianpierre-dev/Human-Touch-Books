@@ -10,12 +10,15 @@
   /* Paleta del mock aprobado por el cliente */
   --color-ink: #12264d; /* texto principal */
   --color-navy: #0a2550; /* fondo hero */
-  --color-navy-2: #123a7a; /* degradado hero */
   --color-brand: #1e6fd9; /* azul primario */
   --color-brand-deep: #124a99; /* hover */
   --color-brand-bright: #35a3f5; /* celeste acentos */
   --color-violet: #6d28d9; /* degradado boton plataforma */
-  --color-wa: #22b95c; /* WhatsApp */
+  /* WhatsApp: el verde de marca (#22b95c) da 2.57:1 con texto blanco.
+     `wa` es la version accesible (5.02:1 con blanco) y carga botones, bordes y
+     texto; `wa-vivo` se reserva para iconos decorativos sobre chips claros. */
+  --color-wa: #12803c;
+  --color-wa-vivo: #22b95c;
   --color-accent: #d5232b; /* reservado */
   --color-accent-deep: #b01d24;
 
@@ -64,6 +67,63 @@ body {
 }
 
 /*
+  Foco visible: un solo anillo para toda la landing.
+  `foco-marca` sobre superficies claras, `foco-claro` sobre el navy.
+  Se declaran como clases (no utilidades) para que ganen por especificidad y no
+  haya que repetir cuatro utilidades en cada enlace.
+*/
+.foco-marca:focus-visible,
+.foco-claro:focus-visible {
+  outline: 2px solid var(--color-brand);
+  outline-offset: 3px;
+  border-radius: var(--radius-sm);
+}
+
+.foco-claro:focus-visible {
+  outline-color: #ffffff;
+}
+
+/* Salto al contenido: fuera de pantalla hasta que recibe el foco. */
+.salto-contenido {
+  position: absolute;
+  top: 0.5rem;
+  left: 0.5rem;
+  z-index: 100;
+  transform: translateY(-160%);
+  border-radius: var(--radius-sm);
+  background-color: var(--color-brand);
+  padding: 0.7rem 1.15rem;
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: #ffffff;
+  box-shadow: 0 10px 24px rgb(10 37 80 / 0.35);
+}
+
+.salto-contenido:focus {
+  transform: translateY(0);
+  outline: 2px solid var(--color-navy);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .salto-contenido {
+    transition: transform 0.18s ease-out;
+  }
+}
+
+/*
+  FAQ: <details> nativo. El marcador propio se oculta y se dibuja un signo
+  propio para que gire al abrir sin depender de JavaScript.
+*/
+.faq-resumen::-webkit-details-marker {
+  display: none;
+}
+
+.faq-item[open] .faq-signo {
+  transform: rotate(45deg);
+}
+
+/*
   Sistema de motion.
   Regla clave: el contenido es visible por defecto; el movimiento solo lo realza.
   Los reveals al scroll usan animation-timeline (CSS puro, sin JS) y se activan
@@ -86,29 +146,6 @@ body {
     animation: reveal-up 0.7s cubic-bezier(0.22, 1, 0.36, 1) both;
   }
 
-  /* Entrada escalonada de un grupo de hijos (portadas del hero) */
-  .stagger-in > * {
-    animation: reveal-up 0.6s cubic-bezier(0.22, 1, 0.36, 1) both;
-  }
-  .stagger-in > *:nth-child(1) {
-    animation-delay: 0.05s;
-  }
-  .stagger-in > *:nth-child(2) {
-    animation-delay: 0.12s;
-  }
-  .stagger-in > *:nth-child(3) {
-    animation-delay: 0.19s;
-  }
-  .stagger-in > *:nth-child(4) {
-    animation-delay: 0.26s;
-  }
-  .stagger-in > *:nth-child(5) {
-    animation-delay: 0.33s;
-  }
-  .stagger-in > *:nth-child(6) {
-    animation-delay: 0.4s;
-  }
-
   /* Entrada suave al cargar; SIEMPRE termina visible (robusto en print/headless).
      No se liga al scroll: gatear visibilidad al scroll deja secciones en blanco
      cuando la animacion no se dispara. */
@@ -116,19 +153,7 @@ body {
     animation: reveal-up 0.7s cubic-bezier(0.22, 1, 0.36, 1) 0.1s both;
   }
 
-  /* Carrusel de la coleccion: banner continuo de derecha a izquierda */
-  .marquee-track {
-    animation: marquee 32s linear infinite;
-  }
-  .marquee:hover .marquee-track {
-    animation-play-state: paused;
-  }
-  @keyframes marquee {
-    from {
-      transform: translateX(0);
-    }
-    to {
-      transform: translateX(-50%);
-    }
+  .faq-signo {
+    transition: transform 0.2s ease-out;
   }
 }

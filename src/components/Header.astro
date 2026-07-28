@@ -1,30 +1,42 @@
 ---
 interface Props {
   whatsapp?: string;
+  hayColeccion?: boolean;
 }
 
-const { whatsapp = "51982953436" } = Astro.props;
+const { whatsapp = "51982953436", hayColeccion = true } = Astro.props;
 const whatsappVisible = `+${whatsapp.slice(0, 2)} ${whatsapp.slice(2, 5)} ${whatsapp.slice(5, 8)} ${whatsapp.slice(8)}`;
 
+// La seccion #coleccion solo se renderiza cuando hay libros destacados;
+// sin ellos, su enlace se omite para no dejar navegacion muerta.
 const links = [
+  ...(hayColeccion ? [{ href: "#coleccion", label: "Colección" }] : []),
+  { href: "#plataforma", label: "Plataforma" },
   { href: "#nosotros", label: "Nosotros" },
-  { href: "#coleccion", label: "Nuestros Textos Educativos" },
-  { href: "#contacto", label: "Contacto" },
+  { href: "#preguntas", label: "Preguntas" },
 ];
 ---
 
 <header class="sticky top-0 z-40 border-b border-line bg-surface/95 backdrop-blur-md">
   <div class="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-3 md:px-8">
-    <a href="#inicio" class="flex items-center gap-3" aria-label="Human Touch Books, inicio">
-      <img src="/brand/logo.png" alt="Human Touch Books" class="h-14 w-auto md:h-16" width="128" height="64" />
+    <a href="#inicio" class="foco-marca flex items-center gap-3" aria-label="Human Touch Books, inicio">
+      <img
+        src="/brand/logo.png"
+        alt="Human Touch Books"
+        class="h-12 w-auto sm:h-14 lg:h-16"
+        width="128"
+        height="79"
+      />
     </a>
 
-    <nav class="hidden items-center gap-8 md:flex" aria-label="Navegación principal">
+    {/* La barra completa entra recien en lg: entre 768 y 1024 el label largo y el
+        numero de WhatsApp se peleaban la misma linea y el header se partia. */}
+    <nav class="hidden items-center gap-6 lg:flex xl:gap-8" aria-label="Navegación principal">
       {
         links.map((l) => (
           <a
             href={l.href}
-            class="text-[1.02rem] font-semibold text-ink/80 transition-colors hover:text-brand"
+            class="foco-marca text-[0.95rem] font-semibold whitespace-nowrap text-ink/80 transition-colors hover:text-brand xl:text-[1.02rem]"
           >
             {l.label}
           </a>
@@ -35,18 +47,30 @@ const links = [
     <div class="flex items-center gap-2">
       <a
         href={`https://wa.me/${whatsapp}`}
-        class="inline-flex min-h-[44px] items-center gap-2 rounded-full bg-wa px-5 text-sm font-bold text-white shadow-sm transition-colors hover:brightness-110 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-wa"
+        class="foco-marca inline-flex min-h-[44px] items-center gap-2 rounded-full bg-wa px-4 text-[0.8125rem] font-bold whitespace-nowrap text-white shadow-sm transition-colors hover:bg-[#0f6c33] sm:px-5 sm:text-sm"
+        aria-label={`Escríbenos por WhatsApp al ${whatsappVisible}`}
       >
-        <svg viewBox="0 0 24 24" class="h-4 w-4 fill-current" aria-hidden="true">
+        <svg viewBox="0 0 24 24" class="h-4 w-4 shrink-0 fill-current" aria-hidden="true">
           <path d="M12 2a10 10 0 0 0-8.6 15l-1.3 4.7 4.8-1.3A10 10 0 1 0 12 2Zm5.3 14.2c-.2.6-1.3 1.2-1.8 1.2-.5.1-1 .1-1.7-.1-.4-.2-.9-.3-1.6-.6-2.7-1.2-4.5-4-4.6-4.2-.2-.2-1.1-1.5-1.1-2.8 0-1.3.7-2 .9-2.2.2-.3.5-.3.7-.3h.5c.2 0 .4 0 .6.5l.8 2c.1.2.1.4 0 .5l-.4.6c-.2.2-.3.4-.1.7.2.3.9 1.4 1.9 2.3 1.3 1.1 2.3 1.4 2.6 1.6.3.1.5.1.7-.1l.7-.8c.2-.3.4-.2.7-.1l2 .9c.3.2.5.2.6.4.1.1.1.7-.1 1.3Z" />
         </svg>
-        <span class="hidden sm:inline">WhatsApp</span> {whatsappVisible}
+        {/* En lg+ el numero cede su sitio a la barra de navegacion y al CTA
+            primario; sigue disponible para lectores de pantalla por el aria-label,
+            y visible en el bloque de contacto y en el pie. */}
+        <span class="hidden sm:inline" aria-hidden="true">WhatsApp</span>
+        <span class="lg:hidden" aria-hidden="true">{whatsappVisible}</span>
+      </a>
+
+      <a
+        href="#contacto"
+        class="foco-marca hidden min-h-[44px] items-center rounded-full bg-brand px-5 text-sm font-bold whitespace-nowrap text-white transition-colors hover:bg-brand-deep lg:inline-flex"
+      >
+        Solicitar información
       </a>
 
       {/* Menu movil: <details> funciona con teclado y sin JavaScript. */}
-      <details id="menu-movil" class="relative md:hidden">
+      <details id="menu-movil" class="relative lg:hidden">
         <summary
-          class="inline-flex min-h-[44px] min-w-[44px] cursor-pointer list-none items-center justify-center gap-1.5 rounded-full border border-line px-3 text-sm font-semibold text-ink transition-colors hover:bg-surface-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand [&::-webkit-details-marker]:hidden"
+          class="foco-marca inline-flex min-h-[44px] min-w-[44px] cursor-pointer list-none items-center justify-center gap-1.5 rounded-full border border-line px-3 text-sm font-semibold text-ink transition-colors hover:bg-surface-2 [&::-webkit-details-marker]:hidden"
         >
           <svg viewBox="0 0 24 24" class="h-5 w-5 fill-current" aria-hidden="true">
             <path d="M3 6h18v2H3V6Zm0 5h18v2H3v-2Zm0 5h18v2H3v-2Z" />
@@ -62,7 +86,7 @@ const links = [
             links.map((l) => (
               <a
                 href={l.href}
-                class="flex min-h-[44px] items-center rounded-lg px-3 text-[0.95rem] font-semibold text-ink/80 transition-colors hover:bg-surface-2 hover:text-brand focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
+                class="foco-marca flex min-h-[44px] items-center rounded-lg px-3 text-[0.95rem] font-semibold text-ink/80 transition-colors hover:bg-surface-2 hover:text-brand"
               >
                 {l.label}
               </a>
@@ -70,7 +94,7 @@ const links = [
           }
           <a
             href="#contacto"
-            class="mt-2 flex min-h-[44px] items-center justify-center rounded-full bg-brand px-3 text-sm font-bold text-white transition-colors hover:bg-brand-deep focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
+            class="foco-marca mt-2 flex min-h-[44px] items-center justify-center rounded-full bg-brand px-3 text-sm font-bold text-white transition-colors hover:bg-brand-deep"
           >
             Solicitar información
           </a>
