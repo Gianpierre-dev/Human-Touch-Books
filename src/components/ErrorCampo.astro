@@ -1,0 +1,27 @@
+---
+// Mensaje de error inline de un campo del formulario de contacto.
+//
+// El banner de estado ya anuncia el fallo al recargar, pero quien recorre el
+// formulario campo por campo con lector de pantalla no vuelve a oirlo: este
+// parrafo es el destino del aria-describedby del campo invalido.
+//
+// El id lo consume el aria-describedby del input, asi que la convencion
+// `error-${campo}` tiene que coincidir con la de index.astro.
+interface Props {
+  campo: string;
+  mensaje: string;
+}
+
+const { campo, mensaje } = Astro.props;
+---
+
+<p
+  id={`error-${campo}`}
+  class="mt-1.5 flex items-start gap-1.5 text-[0.8125rem] leading-snug font-semibold text-accent-deep"
+>
+  <svg viewBox="0 0 24 24" class="mt-0.5 h-3.5 w-3.5 shrink-0 fill-current" aria-hidden="true">
+    <path d="M12 2 1 21h22L12 2Zm1 15h-2v-2h2v2Zm0-4h-2V9h2v4Z" />
+  </svg>
+  {/* No se apoya solo en el color: el lector anuncia la palabra "Error". */}
+  <span><span class="sr-only">Error: </span>{mensaje}</span>
+</p>

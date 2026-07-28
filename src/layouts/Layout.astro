@@ -33,7 +33,10 @@ const imagenSocial = new URL("/og/portada-social.jpg", base).href;
     <meta name="description" content={description} />
     <meta name="theme-color" content="#f6f9fd" />
     <meta name="color-scheme" content="light" />
-    <link rel="icon" type="image/png" href="/brand/logo.png" />
+    {/* Iconos cuadrados con el isotipo (no el logotipo apaisado, que a 32 px se
+        vuelve ilegible). Los genera scripts/generar-favicons.mjs. */}
+    <link rel="icon" type="image/png" sizes="512x512" href="/brand/icono-512.png" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/brand/icono-apple-180.png" />
     <link rel="canonical" href={urlCanonica} />
     {noindex && <meta name="robots" content="noindex" />}
     <title>{title}</title>

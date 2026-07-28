@@ -2,6 +2,7 @@
 import Layout from "../layouts/Layout.astro";
 import Header from "../components/Header.astro";
 import Footer from "../components/Footer.astro";
+import ErrorCampo from "../components/ErrorCampo.astro";
 import { bd } from "../lib/bd";
 
 export const prerender = false;
@@ -49,6 +50,24 @@ const MENSAJE_ERROR_GENERICO =
   "No pudimos enviar tu mensaje. Inténtalo de nuevo o escríbenos por WhatsApp.";
 const textoError = MENSAJES_ERROR[campoConError] ?? MENSAJE_ERROR_GENERICO;
 
+// El banner de arriba anuncia el fallo, pero un lector de pantalla que recorre
+// el formulario campo por campo no lo vuelve a oir. Marcamos ademas el campo
+// culpable con aria-invalid y le colgamos su mensaje con aria-describedby.
+// Solo aplica a los campos reales del formulario: "tamano" y "limite" describen
+// el envio completo, no un campo, y se quedan solo en el banner.
+const CAMPOS_DEL_FORMULARIO = ["nombre", "correo", "telefono", "asunto", "mensaje"] as const;
+type CampoFormulario = (typeof CAMPOS_DEL_FORMULARIO)[number];
+
+const campoInvalido = (CAMPOS_DEL_FORMULARIO as readonly string[]).includes(campoConError)
+  ? (campoConError as CampoFormulario)
+  : null;
+
+/** Atributos de validacion del campo: vacios salvo que este sea el que fallo. */
+function estadoCampo(campo: CampoFormulario) {
+  if (campo !== campoInvalido) return {};
+  return { "aria-invalid": "true", "aria-describedby": `error-${campo}` };
+}
+
 // Espeja la validacion del servidor. Va como constante porque escrito directo en
 // el atributo Astro se come los backslashes y el patron queda mal ("\s" -> "s").
 // Los parentesis van escapados: el flag `v` del atributo pattern los prohibe sueltos.
@@ -59,7 +78,7 @@ const TEXTO_WHATSAPP = "Hola, quiero información sobre el proyecto Tutoría SMA
 const enlaceWhatsappGenerico = `https://wa.me/${whatsapp}?text=${encodeURIComponent(TEXTO_WHATSAPP)}`;
 
 const clasesCampo =
-  "mt-1.5 min-h-[44px] w-full rounded-lg border border-line bg-paper px-3.5 py-3 text-sm outline-none placeholder:text-ink/65 focus-visible:border-brand focus-visible:ring-2 focus-visible:ring-brand/30";
+  "mt-1.5 min-h-[44px] w-full rounded-lg border border-line bg-paper px-3.5 py-3 text-sm outline-none placeholder:text-ink/65 focus-visible:border-brand focus-visible:ring-2 focus-visible:ring-brand/30 aria-[invalid]:border-accent-deep aria-[invalid]:ring-2 aria-[invalid]:ring-accent/25";
 
 const valores = [
   {
@@ -675,7 +694,9 @@ const preguntas: Pregunta[] = [
           de ~170 px y se volvia incomodo de completar. */}
       <div class="mx-auto grid max-w-6xl gap-12 px-4 py-16 md:px-8 md:py-24 lg:grid-cols-[0.9fr_1.1fr]">
         <div class="reveal-scroll">
-          <span class="text-xs font-bold tracking-[0.2em] text-brand uppercase">Contáctanos</span>
+          {/* Sobre `bg-surface-2/50` el azul `brand` se queda en 4.42:1; el resto
+              de antetitulos vive sobre superficies mas claras y si llega. */}
+          <span class="text-xs font-bold tracking-[0.2em] text-brand-deep uppercase">Contáctanos</span>
           <h2
             id="titulo-contacto"
             class="mt-2 max-w-[12ch] text-[clamp(1.9rem,4vw,2.8rem)] font-display leading-tight font-bold text-ink"
@@ -697,7 +718,10 @@ const preguntas: Pregunta[] = [
                 </span>
                 <div>
                   <p class="font-semibold text-ink">Correo electrónico</p>
-                  <a href={`mailto:${correoContacto}`} class="foco-marca text-ink/75 hover:text-brand">
+                  <a
+                    href={`mailto:${correoContacto}`}
+                    class="foco-marca inline-flex min-h-[44px] items-center text-ink/75 hover:text-brand"
+                  >
                     {correoContacto}
                   </a>
                 </div>
@@ -710,7 +734,10 @@ const preguntas: Pregunta[] = [
                 </span>
                 <div>
                   <p class="font-semibold text-ink">Celular · WhatsApp</p>
-                  <a href={`https://wa.me/${whatsapp}`} class="foco-marca text-ink/75 hover:text-brand">
+                  <a
+                    href={`https://wa.me/${whatsapp}`}
+                    class="foco-marca inline-flex min-h-[44px] items-center text-ink/75 hover:text-brand"
+                  >
                     {whatsappVisible}
                   </a>
                 </div>
@@ -759,7 +786,7 @@ const preguntas: Pregunta[] = [
           >
             {
               estadoContacto === "ok" && (
-                <p class="mb-4 rounded-xl border border-wa/30 bg-wa/10 px-4 py-3 text-sm font-semibold text-wa">
+                <p class="mb-4 rounded-xl border border-wa/30 bg-wa/10 px-4 py-3 text-sm font-semibold text-wa-deep">
                   Recibimos tu mensaje. Te contactaremos pronto.
                 </p>
               )
@@ -791,7 +818,9 @@ const preguntas: Pregunta[] = [
                   autocomplete="name"
                   placeholder="Escribe tu nombre"
                   class={clasesCampo}
+                  {...estadoCampo("nombre")}
                 />
+                {campoInvalido === "nombre" && <ErrorCampo campo="nombre" mensaje={textoError} />}
               </label>
               <label class="block">
                 <span class="text-sm font-semibold text-ink">Correo electrónico <span class="text-accent">*</span></span>
@@ -804,7 +833,9 @@ const preguntas: Pregunta[] = [
                   spellcheck="false"
                   placeholder="ejemplo@correo.com"
                   class={clasesCampo}
+                  {...estadoCampo("correo")}
                 />
+                {campoInvalido === "correo" && <ErrorCampo campo="correo" mensaje={textoError} />}
               </label>
               <label class="block">
                 <span class="text-sm font-semibold text-ink">Teléfono <span class="text-accent">*</span></span>
@@ -819,17 +850,25 @@ const preguntas: Pregunta[] = [
                   title="Entre 7 y 20 caracteres, con al menos 6 dígitos. Puedes usar espacios, +, paréntesis y guiones."
                   placeholder="Ej. 987 654 321"
                   class={clasesCampo}
+                  {...estadoCampo("telefono")}
                 />
+                {campoInvalido === "telefono" && <ErrorCampo campo="telefono" mensaje={textoError} />}
               </label>
               <label class="block">
                 <span class="text-sm font-semibold text-ink">Asunto <span class="text-accent">*</span></span>
-                <select name="asunto" required class={`${clasesCampo} text-ink`}>
+                <select
+                  name="asunto"
+                  required
+                  class={`${clasesCampo} text-ink`}
+                  {...estadoCampo("asunto")}
+                >
                   <option value="">Selecciona un asunto</option>
                   <option>Información para colegios</option>
                   <option>Información para padres de familia</option>
                   <option>Capacitaciones y talleres</option>
                   <option>Otro</option>
                 </select>
+                {campoInvalido === "asunto" && <ErrorCampo campo="asunto" mensaje={textoError} />}
               </label>
             </div>
             <label class="mt-4 block">
@@ -840,7 +879,9 @@ const preguntas: Pregunta[] = [
                 required
                 maxlength="2000"
                 placeholder="Escribe tu mensaje aquí…"
-                class={clasesCampo}></textarea>
+                class={clasesCampo}
+                {...estadoCampo("mensaje")}></textarea>
+              {campoInvalido === "mensaje" && <ErrorCampo campo="mensaje" mensaje={textoError} />}
             </label>
 
             {/* Trampa antispam: invisible para las personas, tentadora para los bots. */}

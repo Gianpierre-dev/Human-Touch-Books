@@ -19,11 +19,11 @@ const mensajes: Record<string, string> = {
     >
       <img src="/brand/logo.png" alt="Human Touch Books" class="mx-auto h-16 w-auto" />
       <h1 class="mt-4 text-center text-xl font-extrabold text-ink">Panel de administración</h1>
-      <p class="mt-1 text-center text-sm text-ink/60">Acceso exclusivo para usuarios autorizados</p>
+      <p class="mt-1 text-center text-sm text-ink/70">Acceso exclusivo para usuarios autorizados</p>
 
       {
         error && (
-          <p class="mt-4 rounded-lg bg-accent/10 px-4 py-2.5 text-sm font-semibold text-accent">
+          <p class="mt-4 rounded-lg bg-accent/10 px-4 py-2.5 text-sm font-semibold text-accent-deep">
             {mensajes[error] ?? "No se pudo iniciar sesión."}
           </p>
         )

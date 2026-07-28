@@ -22,7 +22,7 @@ const formatoFecha = new Intl.DateTimeFormat("es-PE", {
 
 <PanelLayout titulo="Mensajes" correo={Astro.locals.sesion?.correo}>
   <h1 class="text-2xl font-extrabold text-ink">Mensajes de contacto</h1>
-  <p class="mt-1 text-sm text-ink/60">
+  <p class="mt-1 text-sm text-ink/70">
     {mensajes.length} mensaje{mensajes.length === 1 ? "" : "s"} recibido{
       mensajes.length === 1 ? "" : "s"
     }. {pendientes} sin atender.
@@ -30,7 +30,7 @@ const formatoFecha = new Intl.DateTimeFormat("es-PE", {
 
   {
     ok && (
-      <p class="mt-4 rounded-lg bg-wa/10 px-4 py-2.5 text-sm font-semibold text-[#15803d]">
+      <p class="mt-4 rounded-lg bg-wa/10 px-4 py-2.5 text-sm font-semibold text-wa-deep">
         Estado actualizado.
       </p>
     )
@@ -45,14 +45,14 @@ const formatoFecha = new Intl.DateTimeFormat("es-PE", {
 
   {
     mensajes.length === 0 ? (
-      <p class="mt-6 rounded-xl border border-line bg-surface px-6 py-10 text-center text-sm text-ink/60">
+      <p class="mt-6 rounded-xl border border-line bg-surface px-6 py-10 text-center text-sm text-ink/70">
         Todavía no hay mensajes. Los envíos del formulario de la web aparecerán aquí.
       </p>
     ) : (
       <div class="mt-6 overflow-x-auto rounded-xl border border-line bg-surface shadow-sm">
         <table class="w-full text-sm">
           <thead>
-            <tr class="border-b border-line text-left text-xs font-bold tracking-wide text-ink/60 uppercase">
+            <tr class="border-b border-line text-left text-xs font-bold tracking-wide text-ink/70 uppercase">
               <th class="px-4 py-3">Fecha</th>
               <th class="px-4 py-3">Nombre</th>
               <th class="px-4 py-3">Contacto</th>
@@ -86,7 +86,7 @@ const formatoFecha = new Intl.DateTimeFormat("es-PE", {
                   <span
                     class:list={[
                       "inline-block rounded-full px-2.5 py-0.5 text-[0.7rem] font-bold",
-                      mensaje.atendido ? "bg-wa/15 text-[#15803d]" : "bg-surface-2 text-ink/70",
+                      mensaje.atendido ? "bg-wa/15 text-wa-deep" : "bg-surface-2 text-ink/70",
                     ]}
                   >
                     {mensaje.atendido ? "Atendido" : "Pendiente"}

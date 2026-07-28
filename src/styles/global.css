@@ -16,9 +16,12 @@
   --color-violet: #6d28d9; /* degradado boton plataforma */
   /* WhatsApp: el verde de marca (#22b95c) da 2.57:1 con texto blanco.
      `wa` es la version accesible (5.02:1 con blanco) y carga botones, bordes y
-     texto; `wa-vivo` se reserva para iconos decorativos sobre chips claros. */
+     texto; `wa-vivo` se reserva para iconos decorativos sobre chips claros.
+     `wa-deep` es para texto sobre superficies verdes claras (bg-wa/10, bg-wa/15):
+     ahi el fondo sube a ~0.79 de luminancia y `wa` se queda en 4.1:1. */
   --color-wa: #12803c;
   --color-wa-vivo: #22b95c;
+  --color-wa-deep: #0f6c33;
   --color-accent: #d5232b; /* reservado */
   --color-accent-deep: #b01d24;
 
