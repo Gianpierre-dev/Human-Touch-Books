@@ -1,5 +1,6 @@
 ---
 import Layout from "./Layout.astro";
+import { bd } from "./../lib/bd";
 
 interface Props {
   titulo: string;
@@ -7,9 +8,16 @@ interface Props {
 }
 
 const { titulo, correo } = Astro.props;
+
+// Conteo barato (una sola columna indexada por PK) para avisar de pendientes.
+const mensajesPendientes = correo ? await bd.mensaje.count({ where: { atendido: false } }) : 0;
 ---
 
-<Layout title={`${titulo} — Panel HTB`} description="Panel de administración de Human Touch Books">
+<Layout
+  title={`${titulo} — Panel HTB`}
+  description="Panel de administración de Human Touch Books"
+  noindex
+>
   <div class="min-h-screen bg-paper">
     <header class="border-b border-line bg-navy text-white">
       <div class="mx-auto flex max-w-5xl items-center justify-between gap-4 px-4 py-3 md:px-6">
@@ -21,6 +29,17 @@ const { titulo, correo } = Astro.props;
           correo && (
             <div class="flex items-center gap-4 text-sm">
               <a href="/" class="text-white/80 hover:text-white">Ver sitio</a>
+              <a href="/admin/mensajes" class="flex items-center gap-1.5 text-white/80 hover:text-white">
+                Mensajes
+                {mensajesPendientes > 0 && (
+                  <span
+                    class="grid min-w-[1.35rem] place-items-center rounded-full bg-accent px-1.5 py-0.5 text-[0.7rem] font-bold text-white"
+                    aria-label={`${mensajesPendientes} sin atender`}
+                  >
+                    {mensajesPendientes}
+                  </span>
+                )}
+              </a>
               <a href="/admin/ajustes" class="text-white/80 hover:text-white">Ajustes</a>
               <form method="post" action="/api/admin/salir">
                 <button

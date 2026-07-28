@@ -38,6 +38,8 @@
 html {
   color-scheme: light;
   scroll-behavior: smooth;
+  /* El header es sticky: las anclas deben frenar debajo de el, no detras. */
+  scroll-padding-top: 6rem;
 }
 
 @media (prefers-reduced-motion: reduce) {

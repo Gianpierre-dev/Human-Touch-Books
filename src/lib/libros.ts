@@ -64,5 +64,10 @@ export async function procesarPortada(
   if (!(archivo instanceof File) || archivo.size === 0) return {};
   const invalida = esPortadaValida(archivo);
   if (invalida) return { error: invalida };
-  return { url: await guardarPortada(archivo, titulo) };
+  try {
+    return { url: await guardarPortada(archivo, titulo) };
+  } catch {
+    // sharp lanza si el archivo no es una imagen real, aunque la extension lo parezca
+    return { error: "No pudimos procesar la imagen. Verifica que sea un JPG, PNG o WebP válido." };
+  }
 }

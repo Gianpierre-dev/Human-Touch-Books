@@ -42,6 +42,19 @@ model Usuario {
   @@map("usuarios")
 }
 
+model Mensaje {
+  id       String   @id @default(cuid())
+  nombre   String
+  correo   String
+  telefono String
+  asunto   String
+  mensaje  String
+  atendido Boolean  @default(false)
+  creadoEn DateTime @default(now()) @map("creado_en")
+
+  @@map("mensajes")
+}
+
 model Ajuste {
   clave     String   @id
   valor     String

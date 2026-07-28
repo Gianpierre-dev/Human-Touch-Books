@@ -1,0 +1,111 @@
+---
+import PanelLayout from "../../layouts/PanelLayout.astro";
+import { bd } from "../../lib/bd";
+
+export const prerender = false;
+
+const mensajes = await bd.mensaje.findMany({
+  orderBy: [{ atendido: "asc" }, { creadoEn: "desc" }],
+  take: 200,
+});
+const pendientes = mensajes.filter((m) => !m.atendido).length;
+
+const ok = Astro.url.searchParams.get("ok");
+const error = Astro.url.searchParams.get("error");
+
+const formatoFecha = new Intl.DateTimeFormat("es-PE", {
+  dateStyle: "short",
+  timeStyle: "short",
+  timeZone: "America/Lima",
+});
+---
+
+<PanelLayout titulo="Mensajes" correo={Astro.locals.sesion?.correo}>
+  <h1 class="text-2xl font-extrabold text-ink">Mensajes de contacto</h1>
+  <p class="mt-1 text-sm text-ink/60">
+    {mensajes.length} mensaje{mensajes.length === 1 ? "" : "s"} recibido{
+      mensajes.length === 1 ? "" : "s"
+    }. {pendientes} sin atender.
+  </p>
+
+  {
+    ok && (
+      <p class="mt-4 rounded-lg bg-wa/10 px-4 py-2.5 text-sm font-semibold text-[#15803d]">
+        Estado actualizado.
+      </p>
+    )
+  }
+  {
+    error && (
+      <p class="mt-4 rounded-lg bg-accent/10 px-4 py-2.5 text-sm font-semibold text-accent-deep">
+        No encontramos ese mensaje.
+      </p>
+    )
+  }
+
+  {
+    mensajes.length === 0 ? (
+      <p class="mt-6 rounded-xl border border-line bg-surface px-6 py-10 text-center text-sm text-ink/60">
+        Todavía no hay mensajes. Los envíos del formulario de la web aparecerán aquí.
+      </p>
+    ) : (
+      <div class="mt-6 overflow-x-auto rounded-xl border border-line bg-surface shadow-sm">
+        <table class="w-full text-sm">
+          <thead>
+            <tr class="border-b border-line text-left text-xs font-bold tracking-wide text-ink/60 uppercase">
+              <th class="px-4 py-3">Fecha</th>
+              <th class="px-4 py-3">Nombre</th>
+              <th class="px-4 py-3">Contacto</th>
+              <th class="px-4 py-3">Asunto</th>
+              <th class="px-4 py-3">Mensaje</th>
+              <th class="px-4 py-3">Estado</th>
+            </tr>
+          </thead>
+          <tbody>
+            {mensajes.map((mensaje) => (
+              <tr class:list={["border-b border-line/60 last:border-0", !mensaje.atendido && "bg-brand/5"]}>
+                <td class="px-4 py-3 whitespace-nowrap text-ink/70">
+                  {formatoFecha.format(mensaje.creadoEn)}
+                </td>
+                <td class="px-4 py-3 font-semibold text-ink">{mensaje.nombre}</td>
+                <td class="px-4 py-3 text-ink/70">
+                  <a href={`mailto:${mensaje.correo}`} class="text-brand hover:text-brand-deep">
+                    {mensaje.correo}
+                  </a>
+                  <br />
+                  <a href={`tel:${mensaje.telefono.replace(/\s/g, "")}`} class="hover:text-brand">
+                    {mensaje.telefono}
+                  </a>
+                </td>
+                <td class="px-4 py-3 text-ink/70">{mensaje.asunto}</td>
+                <td class="max-w-sm px-4 py-3 text-ink/70">
+                  <p class="whitespace-pre-line">{mensaje.mensaje}</p>
+                </td>
+                <td class="px-4 py-3">
+                  {/* El badge informa el estado; el boton describe la accion. */}
+                  <span
+                    class:list={[
+                      "inline-block rounded-full px-2.5 py-0.5 text-[0.7rem] font-bold",
+                      mensaje.atendido ? "bg-wa/15 text-[#15803d]" : "bg-surface-2 text-ink/70",
+                    ]}
+                  >
+                    {mensaje.atendido ? "Atendido" : "Pendiente"}
+                  </span>
+                  <form method="post" action={`/api/admin/mensajes/${mensaje.id}`} class="mt-2">
+                    <button
+                      type="submit"
+                      aria-label={`${mensaje.atendido ? "Marcar pendiente" : "Marcar atendido"} el mensaje de ${mensaje.nombre}`}
+                      class="min-h-[36px] rounded-full bg-brand px-4 text-xs font-bold whitespace-nowrap text-white transition-colors hover:bg-brand-deep focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
+                    >
+                      {mensaje.atendido ? "Marcar pendiente" : "Marcar atendido"}
+                    </button>
+                  </form>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    )
+  }
+</PanelLayout>
