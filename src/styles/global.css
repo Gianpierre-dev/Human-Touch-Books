@@ -127,6 +127,74 @@ body {
 }
 
 /*
+  Carrusel de la portada.
+  Sin JavaScript se maneja con las flechas-ancla de cada diapositiva y con los
+  puntos (enlaces a cada una); con JavaScript se sustituyen por un unico par de
+  flechas y se habilita el avance automatico. El scroll-snap es el que manda:
+  el arrastre con el dedo funciona igual en los dos casos.
+*/
+.hero-pista {
+  scroll-snap-type: x mandatory;
+  /* La barra sobra: hay flechas y puntos, y el arrastre sigue disponible. */
+  scrollbar-width: none;
+}
+
+.hero-pista::-webkit-scrollbar {
+  display: none;
+}
+
+.hero-diapositiva {
+  scroll-snap-align: center;
+}
+
+/*
+  Control circular sobre la imagen. El fondo navy opaco garantiza el contraste
+  del icono blanco sea cual sea la foto que quede debajo, y los 44 px cubren el
+  area minima de toque.
+*/
+.hero-control {
+  display: grid;
+  place-items: center;
+  width: 2.75rem;
+  height: 2.75rem;
+  border-radius: 9999px;
+  border: 1px solid rgb(255 255 255 / 0.45);
+  background-color: rgb(10 37 80 / 0.82);
+  color: #ffffff;
+  box-shadow: 0 6px 18px -6px rgb(0 0 0 / 0.6);
+}
+
+.hero-control:hover {
+  background-color: var(--color-navy);
+  border-color: #ffffff;
+}
+
+.hero-punto {
+  display: block;
+  width: 0.625rem;
+  height: 0.625rem;
+  border-radius: 9999px;
+  background-color: rgb(255 255 255 / 0.55);
+}
+
+[aria-current="true"] .hero-punto {
+  background-color: var(--color-brand-bright);
+  transform: scale(1.3);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .hero-pista {
+    scroll-behavior: smooth;
+  }
+
+  .hero-punto {
+    transition:
+      background-color 0.2s ease-out,
+      transform 0.2s ease-out;
+  }
+}
+
+/*
   Sistema de motion.
   Regla clave: el contenido es visible por defecto; el movimiento solo lo realza.
   Los reveals al scroll usan animation-timeline (CSS puro, sin JS) y se activan

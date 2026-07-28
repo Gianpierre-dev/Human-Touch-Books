@@ -4,6 +4,14 @@ import Header from "../components/Header.astro";
 import Footer from "../components/Footer.astro";
 import ErrorCampo from "../components/ErrorCampo.astro";
 import { bd } from "../lib/bd";
+import {
+  ESPACIO_NOSOTROS,
+  ESPACIO_PLATAFORMA,
+  HERO_POR_DEFECTO,
+  SUBTITULO_HERO_POR_DEFECTO,
+  textoNosotrosPorDefecto,
+  type EspacioImagen,
+} from "../lib/contenido";
 
 export const prerender = false;
 
@@ -31,6 +39,62 @@ const correoContacto = ajustes.correo_contacto ?? "informes@humantouchbooks.pe";
 const horarios = (ajustes.horario ?? "Lunes a viernes: 8:00 a. m. – 5:00 p. m.").split("|");
 const ubicacion = ajustes.ubicacion ?? "La Molina, Lima — Perú";
 const whatsappVisible = `+${whatsapp.slice(0, 2)} ${whatsapp.slice(2, 5)} ${whatsapp.slice(5, 8)} ${whatsapp.slice(8)}`;
+const subtituloHero = ajustes.hero_subtitulo ?? SUBTITULO_HERO_POR_DEFECTO;
+const textoNosotros = ajustes.nosotros_texto ?? textoNosotrosPorDefecto(ubicacion);
+
+// Portada: sin imagenes cargadas se mantiene la del diseno original; con una se
+// muestra fija y con dos o mas se arma el carrusel.
+const imagenesHero = await bd.imagenHero.findMany({
+  where: { activa: true },
+  orderBy: [{ orden: "asc" }, { creadoEn: "asc" }],
+});
+const hayCarrusel = imagenesHero.length > 1;
+const totalDiapositivas = imagenesHero.length;
+
+// Imagenes de secciones fijas: cada espacio cae al archivo del repositorio
+// mientras no se cargue una imagen desde el panel.
+const imagenesSitio = await bd.imagenSitio.findMany();
+const imagenPorClave = new Map(imagenesSitio.map((imagen) => [imagen.clave, imagen]));
+
+interface ImagenResuelta {
+  imagenUrl: string;
+  altTexto: string;
+  ancho: number;
+  alto: number;
+}
+
+interface FilaImagenSitio {
+  imagenUrl: string;
+  altTexto: string;
+  ancho: number | null;
+  alto: number | null;
+}
+
+// Las medidas mandan la proporcion del hueco reservado: se usan las reales de la
+// imagen cargada y, si falta la fila (o es anterior a que se guardaran), las del
+// archivo del repositorio.
+function resolverImagen(espacio: EspacioImagen, fila: FilaImagenSitio | undefined): ImagenResuelta {
+  if (!fila) {
+    return {
+      imagenUrl: espacio.imagenUrl,
+      altTexto: espacio.altTexto,
+      ancho: espacio.ancho,
+      alto: espacio.alto,
+    };
+  }
+  return {
+    imagenUrl: fila.imagenUrl,
+    altTexto: fila.altTexto,
+    ancho: fila.ancho ?? espacio.ancho,
+    alto: fila.alto ?? espacio.alto,
+  };
+}
+
+const retrato = resolverImagen(ESPACIO_NOSOTROS, imagenPorClave.get(ESPACIO_NOSOTROS.clave));
+const imagenPlataforma = resolverImagen(
+  ESPACIO_PLATAFORMA,
+  imagenPorClave.get(ESPACIO_PLATAFORMA.clave),
+);
 
 // Resultado del envio del formulario (lo define /api/contacto al redirigir)
 const estadoContacto = Astro.url.searchParams.get("contacto");
@@ -138,15 +202,16 @@ const chipsPlataforma = [
   },
 ];
 
-// Preguntas frecuentes: cada respuesta se apoya solo en datos que ya viven en la
-// base (catalogo, ajustes de contacto) o en el propio formulario. Nada nuevo.
-interface Pregunta {
+// Preguntas frecuentes: se administran desde el panel. Mientras la tabla este
+// vacia se usan estas, calculadas con datos que ya viven en la base (catalogo,
+// ajustes de contacto) o en el propio formulario. Nada nuevo.
+interface PreguntaVista {
   pregunta: string;
   respuesta: string;
-  enlace?: { href: string; texto: string; externo?: boolean };
+  enlace?: { href: string; texto: string };
 }
 
-const preguntas: Pregunta[] = [
+const preguntasPorDefecto: PreguntaVista[] = [
   {
     pregunta: "¿Para qué grados está disponible la colección?",
     respuesta:
@@ -176,6 +241,22 @@ const preguntas: Pregunta[] = [
     enlace: { href: "#contacto", texto: "Solicitar acceso" },
   },
 ];
+
+const preguntasCargadas = await bd.pregunta.findMany({
+  where: { activa: true },
+  orderBy: [{ orden: "asc" }, { creadoEn: "asc" }],
+});
+
+const preguntas: PreguntaVista[] =
+  preguntasCargadas.length > 0
+    ? preguntasCargadas.map((p) => ({
+        pregunta: p.pregunta,
+        respuesta: p.respuesta,
+        ...(p.enlaceHref && p.enlaceTexto
+          ? { enlace: { href: p.enlaceHref, texto: p.enlaceTexto } }
+          : {}),
+      }))
+    : preguntasPorDefecto;
 ---
 
 <Layout
@@ -210,7 +291,7 @@ const preguntas: Pregunta[] = [
             <span class="text-brand-bright">2027</span>
           </h1>
           <p class="mt-3 text-lg font-semibold text-brand-bright/95">
-            Formación integral para una nueva generación
+            {subtituloHero}
           </p>
           <p class="mt-4 max-w-[52ch] leading-relaxed text-white/80">
             Programa de tutoría y convivencia escolar diseñado para fortalecer habilidades
@@ -253,26 +334,154 @@ const preguntas: Pregunta[] = [
           </p>
         </div>
 
-        {/* Imagen del mock aprobado, recortada para quitar los restos de tipografia
-            de la maqueta original (ver scripts/limpiar-mocks.mjs). */}
+        {/* Portada: administrable desde /admin/portada. Sin imagenes cargadas se
+            mantiene la imagen del mock aprobado, recortada para quitar los restos
+            de tipografia de la maqueta original (ver scripts/limpiar-mocks.mjs). */}
         <div class="relative mx-auto w-full max-w-lg">
-          <div class="relative overflow-hidden rounded-2xl shadow-2xl ring-1 ring-white/15">
-            <img
-              src="/mock/hero-estudiantes-limpio.png"
-              alt="Estudiantes del proyecto Tutoría SMART junto a la tarjeta de Capacitaciones y Talleres y la distribuidora MBM"
-              class="block w-full"
-              width="505"
-              height="336"
-              loading="eager"
-              fetchpriority="high"
-            />
-            <div
-              class="pointer-events-none absolute inset-0"
-              style="background: linear-gradient(100deg, #0a255066 0%, #0a255022 34%, transparent 62%);"
-              aria-hidden="true"
-            >
-            </div>
-          </div>
+          {
+            totalDiapositivas === 0 ? (
+              <div class="relative overflow-hidden rounded-2xl shadow-2xl ring-1 ring-white/15">
+                <img
+                  src={HERO_POR_DEFECTO.imagenUrl}
+                  alt={HERO_POR_DEFECTO.altTexto}
+                  class="block w-full"
+                  width={HERO_POR_DEFECTO.ancho}
+                  height={HERO_POR_DEFECTO.alto}
+                  loading="eager"
+                  fetchpriority="high"
+                />
+                <div
+                  class="pointer-events-none absolute inset-0"
+                  style="background: linear-gradient(100deg, #0a255066 0%, #0a255022 34%, transparent 62%);"
+                  aria-hidden="true"
+                />
+              </div>
+            ) : (
+              // Con una sola imagen esto no es un carrusel y no debe anunciarse
+              // como tal: sin controles, el rol solo confundiría.
+              <div
+                id="hero-carrusel"
+                class="relative"
+                role={hayCarrusel ? "group" : undefined}
+                aria-roledescription={hayCarrusel ? "carrusel" : undefined}
+                aria-label={hayCarrusel ? "Imágenes del proyecto Tutoría SMART" : undefined}
+              >
+                {/* El marco conserva la proporcion de la imagen original: la
+                    portada ocupa el mismo lugar y tamano que antes y no hay
+                    salto de maquetado al cargar cada imagen. */}
+                <div
+                  id="hero-pista"
+                  class="hero-pista flex overflow-x-auto overscroll-x-contain rounded-2xl shadow-2xl ring-1 ring-white/15"
+                >
+                  {imagenesHero.map((imagen, indice) => (
+                    <div
+                      id={`hero-imagen-${indice + 1}`}
+                      data-diapositiva
+                      class="hero-diapositiva relative w-full shrink-0"
+                      role={hayCarrusel ? "group" : undefined}
+                      aria-roledescription={hayCarrusel ? "diapositiva" : undefined}
+                      aria-label={hayCarrusel ? `${indice + 1} de ${totalDiapositivas}` : undefined}
+                    >
+                      <img
+                        src={imagen.imagenUrl}
+                        alt={imagen.altTexto}
+                        class="block aspect-[505/336] w-full object-cover"
+                        width={HERO_POR_DEFECTO.ancho}
+                        height={HERO_POR_DEFECTO.alto}
+                        loading={indice === 0 ? "eager" : "lazy"}
+                        fetchpriority={indice === 0 ? "high" : undefined}
+                      />
+                      <div
+                        class="pointer-events-none absolute inset-0"
+                        style="background: linear-gradient(100deg, #0a255066 0%, #0a255022 34%, transparent 62%);"
+                        aria-hidden="true"
+                      />
+                      {hayCarrusel && (
+                        <div
+                          data-flechas-ancla
+                          class="pointer-events-none absolute inset-0 flex items-center justify-between px-2"
+                        >
+                          <a
+                            href={`#hero-imagen-${indice === 0 ? totalDiapositivas : indice}`}
+                            class="hero-control foco-claro pointer-events-auto"
+                            aria-label={`Ver imagen ${indice === 0 ? totalDiapositivas : indice} de ${totalDiapositivas}`}
+                          >
+                            <svg viewBox="0 0 24 24" class="h-5 w-5 fill-current" aria-hidden="true">
+                              <path d="M15 5 8 12l7 7V5Z" />
+                            </svg>
+                          </a>
+                          <a
+                            href={`#hero-imagen-${indice + 2 > totalDiapositivas ? 1 : indice + 2}`}
+                            class="hero-control foco-claro pointer-events-auto"
+                            aria-label={`Ver imagen ${indice + 2 > totalDiapositivas ? 1 : indice + 2} de ${totalDiapositivas}`}
+                          >
+                            <svg viewBox="0 0 24 24" class="h-5 w-5 fill-current" aria-hidden="true">
+                              <path d="M9 5l7 7-7 7V5Z" />
+                            </svg>
+                          </a>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+
+                {hayCarrusel && (
+                  <>
+                    {/* Par unico de flechas: solo con JavaScript, que es cuando
+                        se sabe que diapositiva esta a la vista. */}
+                    <div
+                      id="hero-controles"
+                      class="pointer-events-none absolute inset-0 flex items-center justify-between px-2"
+                      hidden
+                    >
+                      <button
+                        type="button"
+                        id="hero-anterior"
+                        class="hero-control foco-claro pointer-events-auto"
+                        aria-label="Imagen anterior"
+                      >
+                        <svg viewBox="0 0 24 24" class="h-5 w-5 fill-current" aria-hidden="true">
+                          <path d="M15 5 8 12l7 7V5Z" />
+                        </svg>
+                      </button>
+                      <button
+                        type="button"
+                        id="hero-siguiente"
+                        class="hero-control foco-claro pointer-events-auto"
+                        aria-label="Imagen siguiente"
+                      >
+                        <svg viewBox="0 0 24 24" class="h-5 w-5 fill-current" aria-hidden="true">
+                          <path d="M9 5l7 7-7 7V5Z" />
+                        </svg>
+                      </button>
+                    </div>
+
+                    <div class="mt-2 flex flex-wrap items-center justify-center gap-x-1 gap-y-1">
+                      {imagenesHero.map((_, indice) => (
+                        <a
+                          href={`#hero-imagen-${indice + 1}`}
+                          data-punto
+                          class="foco-claro grid h-11 w-11 place-items-center"
+                          aria-label={`Ver imagen ${indice + 1} de ${totalDiapositivas}`}
+                        >
+                          <span class="hero-punto" />
+                        </a>
+                      ))}
+                      <button
+                        type="button"
+                        id="hero-pausa"
+                        hidden
+                        aria-pressed="false"
+                        class="foco-claro ml-1 inline-flex min-h-[44px] items-center gap-1.5 rounded-full border border-white/40 px-4 text-xs font-bold text-white transition-colors hover:bg-white/10"
+                      >
+                        Pausar
+                      </button>
+                    </div>
+                  </>
+                )}
+              </div>
+            )
+          }
         </div>
       </div>
     </section>
@@ -550,11 +759,12 @@ const preguntas: Pregunta[] = [
               leia como una imagen suelta sobre el fondo de la seccion. */}
           <div class="overflow-hidden rounded-2xl shadow-xl shadow-navy/15 ring-1 ring-line">
             <img
-              src="/mock/laptop-smarti-limpio.png"
-              alt="La plataforma Tutoría SMART abierta en una laptop, con la pantalla de ingreso de Human Touch Books"
-              class="block w-full"
-              width="470"
-              height="712"
+              src={imagenPlataforma.imagenUrl}
+              alt={imagenPlataforma.altTexto}
+              class="block w-full object-cover"
+              style={`aspect-ratio: ${imagenPlataforma.ancho} / ${imagenPlataforma.alto};`}
+              width={imagenPlataforma.ancho}
+              height={imagenPlataforma.alto}
               loading="lazy"
             />
           </div>
@@ -573,12 +783,7 @@ const preguntas: Pregunta[] = [
           >
             Una editorial peruana que pone lo humano en el centro
           </h2>
-          <p class="mt-4 leading-relaxed text-ink/75">
-            Human Touch Books trabaja desde {ubicacion} con dos líneas editoriales: textos escolares
-            de tutoría, orientación educativa y convivencia escolar, y una línea de Plan Lector.
-            Atendemos consultas de colegios y de padres de familia, y coordinamos capacitaciones y
-            talleres.
-          </p>
+          <p class="mt-4 leading-relaxed text-ink/75">{textoNosotros}</p>
         </div>
 
         {/* Respaldo academico: en tablet el retrato dejaba un hueco muerto por el
@@ -589,13 +794,16 @@ const preguntas: Pregunta[] = [
         >
           <div class="grid gap-8 p-6 md:p-9 lg:grid-cols-[240px_1fr] lg:items-center lg:gap-10">
             <div class="mx-auto w-full max-w-[240px] lg:mx-0">
-              {/* El PNG ya trae su propio marco blanco: sin rounded ni shadow extra. */}
+              {/* El PNG ya trae su propio marco blanco: sin rounded ni shadow extra.
+                  La proporcion va en `style` porque las medidas son de la base:
+                  Tailwind solo compila las clases que ve escritas en el codigo. */}
               <img
-                src="/mock/bisquerra.png"
-                alt="Retrato de Rafael Bisquerra Alzina"
-                class="w-full"
-                width="368"
-                height="586"
+                src={retrato.imagenUrl}
+                alt={retrato.altTexto}
+                class="w-full object-cover"
+                style={`aspect-ratio: ${retrato.ancho} / ${retrato.alto};`}
+                width={retrato.ancho}
+                height={retrato.alto}
                 loading="lazy"
               />
             </div>
@@ -978,6 +1186,153 @@ const preguntas: Pregunta[] = [
     ubicacion={ubicacion}
     hayColeccion={escolares.length > 0}
   />
+
+  {/*
+    Carrusel de la portada: mejora progresiva.
+    Sin este script el carrusel ya funciona (flechas-ancla, puntos y arrastre).
+    Con el, las flechas se reducen a un unico par que sabe donde estamos y se
+    habilita el avance automatico, que solo arranca si la persona no pidio
+    reducir el movimiento y se frena con hover, foco dentro o cualquier
+    interaccion.
+  */}
+  <script is:inline>
+    (() => {
+      const region = document.getElementById("hero-carrusel");
+      const pista = document.getElementById("hero-pista");
+      const controles = document.getElementById("hero-controles");
+      if (!region || !pista || !controles) return;
+
+      const diapositivas = pista.querySelectorAll("[data-diapositiva]");
+      const total = diapositivas.length;
+      if (total < 2) return;
+
+      const anterior = document.getElementById("hero-anterior");
+      const siguiente = document.getElementById("hero-siguiente");
+      const pausa = document.getElementById("hero-pausa");
+      const puntos = Array.from(region.querySelectorAll("[data-punto]"));
+      if (!anterior || !siguiente) return;
+
+      // Primero se muestran los controles nuevos y despues se retiran los de
+      // respaldo: si algo fallara antes, siempre queda un juego utilizable.
+      controles.hidden = false;
+      region.querySelectorAll("[data-flechas-ancla]").forEach((flechas) => {
+        flechas.hidden = true;
+      });
+
+      const animacionPermitida = window.matchMedia("(prefers-reduced-motion: no-preference)").matches;
+      const INTERVALO = 6500;
+
+      let indice = 0;
+      let temporizador = null;
+      let detenido = false;
+
+      const marcar = () => {
+        puntos.forEach((punto, posicion) => {
+          if (posicion === indice) punto.setAttribute("aria-current", "true");
+          else punto.removeAttribute("aria-current");
+        });
+      };
+
+      const irA = (destino) => {
+        indice = (destino + total) % total;
+        pista.scrollTo({
+          left: pista.clientWidth * indice,
+          behavior: animacionPermitida ? "smooth" : "auto",
+        });
+        marcar();
+      };
+
+      const frenar = () => {
+        if (temporizador === null) return;
+        window.clearInterval(temporizador);
+        temporizador = null;
+      };
+
+      const arrancar = () => {
+        if (!animacionPermitida || detenido || temporizador !== null) return;
+        temporizador = window.setInterval(() => irA(indice + 1), INTERVALO);
+      };
+
+      // Cualquier interaccion deliberada detiene el avance automatico: quien
+      // esta mirando manda, y el boton queda listo para reanudarlo.
+      const detenerPorPersona = () => {
+        if (detenido) return;
+        detenido = true;
+        frenar();
+        if (pausa) {
+          pausa.setAttribute("aria-pressed", "true");
+          pausa.textContent = "Reanudar";
+        }
+      };
+
+      anterior.addEventListener("click", () => {
+        detenerPorPersona();
+        irA(indice - 1);
+      });
+      siguiente.addEventListener("click", () => {
+        detenerPorPersona();
+        irA(indice + 1);
+      });
+
+      puntos.forEach((punto, posicion) => {
+        punto.addEventListener("click", (evento) => {
+          evento.preventDefault(); // el ancla movería toda la página
+          detenerPorPersona();
+          irA(posicion);
+        });
+      });
+
+      ["pointerdown", "touchstart", "wheel", "keydown"].forEach((tipo) => {
+        pista.addEventListener(tipo, detenerPorPersona, { passive: true });
+      });
+
+      // El arrastre no dispara los controles: el indice se recalcula al parar.
+      let repaso = 0;
+      pista.addEventListener(
+        "scroll",
+        () => {
+          window.clearTimeout(repaso);
+          repaso = window.setTimeout(() => {
+            const visible = Math.round(pista.scrollLeft / pista.clientWidth);
+            if (visible !== indice && visible >= 0 && visible < total) {
+              indice = visible;
+              marcar();
+            }
+          }, 120);
+        },
+        { passive: true },
+      );
+
+      marcar();
+
+      if (!animacionPermitida || !pausa) return;
+
+      pausa.hidden = false;
+      pausa.addEventListener("click", () => {
+        if (!detenido) {
+          detenerPorPersona();
+          return;
+        }
+        detenido = false;
+        pausa.setAttribute("aria-pressed", "false");
+        pausa.textContent = "Pausar";
+        arrancar();
+      });
+
+      region.addEventListener("mouseenter", frenar);
+      region.addEventListener("mouseleave", arrancar);
+      region.addEventListener("focusin", frenar);
+      region.addEventListener("focusout", (evento) => {
+        if (!region.contains(evento.relatedTarget)) arrancar();
+      });
+      document.addEventListener("visibilitychange", () => {
+        if (document.hidden) frenar();
+        else arrancar();
+      });
+
+      arrancar();
+    })();
+  </script>
 
   {/* Lleva el foco al aviso de estado para que los lectores de pantalla lo anuncien. */}
   <script is:inline>

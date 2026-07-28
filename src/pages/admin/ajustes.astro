@@ -1,27 +1,42 @@
 ---
 import PanelLayout from "../../layouts/PanelLayout.astro";
 import { bd } from "../../lib/bd";
+import { LIMITES, SUBTITULO_HERO_POR_DEFECTO, textoNosotrosPorDefecto } from "../../lib/contenido";
 
 export const prerender = false;
 
 const filas = await bd.ajuste.findMany();
 const ajustes = Object.fromEntries(filas.map((a) => [a.clave, a.valor]));
 const ok = Astro.url.searchParams.get("ok");
+const error = Astro.url.searchParams.get("error");
+
+const MENSAJES_ERROR: Record<string, string> = {
+  largo: `Revisa los textos: el subtítulo admite hasta ${LIMITES.subtituloHero} caracteres y el párrafo de Nosotros hasta ${LIMITES.textoNosotros}.`,
+};
+
+const ubicacion = ajustes.ubicacion ?? "La Molina, Lima — Perú";
 
 const clasesCampo =
-  "mt-1.5 w-full rounded-lg border border-line bg-paper px-3.5 py-2.5 text-sm outline-none focus-visible:border-brand focus-visible:ring-2 focus-visible:ring-brand/30";
+  "mt-1.5 min-h-[44px] w-full rounded-lg border border-line bg-paper px-3.5 py-2.5 text-sm outline-none focus-visible:border-brand focus-visible:ring-2 focus-visible:ring-brand/30";
 ---
 
 <PanelLayout titulo="Ajustes" correo={Astro.locals.sesion?.correo}>
   <h1 class="text-2xl font-extrabold text-ink">Ajustes del sitio</h1>
-  <p class="mt-1 mb-6 text-sm text-ink/60">
-    Datos de contacto que se muestran en la página web.
+  <p class="mt-1 mb-6 text-sm text-ink/70">
+    Datos de contacto y textos que se muestran en la página web.
   </p>
 
   {
     ok && (
       <p class="mb-5 rounded-lg bg-wa/10 px-4 py-2.5 text-sm font-semibold text-[#15803d]">
         Cambios guardados.
+      </p>
+    )
+  }
+  {
+    error && (
+      <p class="mb-5 rounded-lg bg-accent/10 px-4 py-2.5 text-sm font-semibold text-accent-deep">
+        {MENSAJES_ERROR[error] ?? "No pudimos guardar los cambios."}
       </p>
     )
   }
@@ -47,6 +62,45 @@ const clasesCampo =
       <span class="text-sm font-semibold text-ink">Ubicación</span>
       <input type="text" name="ubicacion" value={ajustes.ubicacion ?? ""} class={clasesCampo} />
     </label>
+
+    <h2 class="mt-8 border-t border-line pt-6 text-lg font-bold text-ink">Textos de la página</h2>
+
+    {/* Estos dos campos van VACIOS cuando no hay valor propio: el texto que se
+        ve en gris es el que la web usa por defecto y se calcula solo (el de
+        Nosotros incluye la ubicación de arriba). Si se precargara como valor,
+        al guardar cualquier otro ajuste se congelaría ese texto para siempre. */}
+    <label class="mt-4 block">
+      <span class="text-sm font-semibold text-ink">Subtítulo de la portada</span>
+      <input
+        type="text"
+        name="hero_subtitulo"
+        maxlength={LIMITES.subtituloHero}
+        value={ajustes.hero_subtitulo ?? ""}
+        placeholder={SUBTITULO_HERO_POR_DEFECTO}
+        aria-describedby="ayuda-hero-subtitulo"
+        class={clasesCampo}
+      />
+    </label>
+    <p id="ayuda-hero-subtitulo" class="mt-1.5 text-xs text-ink/70">
+      Se muestra bajo el titular principal. Hasta {LIMITES.subtituloHero} caracteres. Déjalo vacío
+      para usar el texto por defecto.
+    </p>
+
+    <label class="mt-4 block">
+      <span class="text-sm font-semibold text-ink">Texto de la sección Nosotros</span>
+      {/* Sin saltos de línea alrededor: el contenido del textarea ES su valor. */}
+      <textarea
+        name="nosotros_texto"
+        rows="4"
+        maxlength={LIMITES.textoNosotros}
+        placeholder={textoNosotrosPorDefecto(ubicacion)}
+        aria-describedby="ayuda-nosotros-texto"
+        class={clasesCampo}>{ajustes.nosotros_texto ?? ""}</textarea>
+    </label>
+    <p id="ayuda-nosotros-texto" class="mt-1.5 text-xs text-ink/70">
+      Párrafo de presentación de la editorial. Hasta {LIMITES.textoNosotros} caracteres. Déjalo
+      vacío para usar el texto por defecto, que incluye la ubicación de arriba.
+    </p>
 
     <button
       type="submit"

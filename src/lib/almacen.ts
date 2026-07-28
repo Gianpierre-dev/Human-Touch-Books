@@ -27,6 +27,10 @@ const BUCKET = process.env.WASABI_BUCKET_NAME ?? "";
 // de alta densidad sin arrastrar los 3 MB que suele pesar el archivo original.
 const ANCHO_MAXIMO = 1200;
 
+// Las imagenes de portada del sitio (hero, secciones) ocupan hasta ~800 px de
+// ancho: 1600 les da el mismo margen de alta densidad que 1200 a las tapas.
+export const ANCHO_IMAGEN_SITIO = 1600;
+
 const cliente = new S3Client({
   region: process.env.WASABI_REGION,
   endpoint: process.env.WASABI_ENDPOINT,
@@ -51,38 +55,87 @@ function esNombreSeguro(nombre: string): boolean {
   return !nombre.includes("/") && !nombre.includes("\\") && !nombre.includes("..");
 }
 
-// Redimensiona y comprime la portada conservando su formato original, para que
-// la extension, el tipo MIME y la URL guardada en la base de datos no cambien.
-async function optimizarPortada(bytes: Buffer, ext: string): Promise<Buffer> {
-  const base = sharp(bytes)
-    .rotate() // respeta la orientacion EXIF de las fotos de camara
-    .resize({ width: ANCHO_MAXIMO, withoutEnlargement: true });
-
-  if (ext === ".png") return base.png({ compressionLevel: 9 }).toBuffer();
-  if (ext === ".webp") return base.webp({ quality: 82 }).toBuffer();
-  return base.jpeg({ quality: 82, progressive: true, mozjpeg: true }).toBuffer();
+interface ImagenOptimizada {
+  datos: Buffer;
+  ancho: number;
+  alto: number;
 }
 
-export async function guardarPortada(archivo: File, titulo: string): Promise<string> {
-  const ext = extname(archivo.name).toLowerCase();
-  const base = titulo
+// Redimensiona y comprime la imagen conservando su formato original, para que
+// la extension, el tipo MIME y la URL guardada en la base de datos no cambien.
+// Devuelve tambien las medidas del resultado: `resolveWithObject` las trae del
+// propio procesado, sin volver a leer el archivo.
+async function optimizarImagen(
+  bytes: Buffer,
+  ext: string,
+  ancho: number,
+): Promise<ImagenOptimizada> {
+  const base = sharp(bytes)
+    .rotate() // respeta la orientacion EXIF de las fotos de camara
+    .resize({ width: ancho, withoutEnlargement: true });
+
+  const salida =
+    ext === ".png"
+      ? base.png({ compressionLevel: 9 })
+      : ext === ".webp"
+        ? base.webp({ quality: 82 })
+        : base.jpeg({ quality: 82, progressive: true, mozjpeg: true });
+
+  const { data, info } = await salida.toBuffer({ resolveWithObject: true });
+  return { datos: data, ancho: info.width, alto: info.height };
+}
+
+/** Convierte un texto libre en un segmento de nombre de archivo seguro. */
+function aRanura(texto: string): string {
+  return texto
     .toLowerCase()
     .normalize("NFD")
     .replace(/[̀-ͯ]/g, "")
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/(^-|-$)/g, "")
     .slice(0, 40);
-  const nombre = `${base || "portada"}-${Date.now()}${ext}`;
-  const bytes = await optimizarPortada(Buffer.from(await archivo.arrayBuffer()), ext);
+}
+
+export interface ImagenGuardada {
+  url: string;
+  ancho: number;
+  alto: number;
+}
+
+/**
+ * Sube una imagen optimizada al bucket y devuelve su URL publica (/uploads/...)
+ * junto con las medidas reales del archivo subido. Todas las imagenes comparten
+ * el prefijo de portadas para que el endpoint que las sirve siga siendo uno solo.
+ */
+export async function guardarImagen(
+  archivo: File,
+  nombreBase: string,
+  opciones: { anchoMaximo?: number } = {},
+): Promise<ImagenGuardada> {
+  const ext = extname(archivo.name).toLowerCase();
+  const nombre = `${aRanura(nombreBase) || "imagen"}-${Date.now()}${ext}`;
+  const imagen = await optimizarImagen(
+    Buffer.from(await archivo.arrayBuffer()),
+    ext,
+    opciones.anchoMaximo ?? ANCHO_MAXIMO,
+  );
   await cliente.send(
     new PutObjectCommand({
       Bucket: BUCKET,
       Key: `${PREFIJO}${nombre}`,
-      Body: bytes,
+      Body: imagen.datos,
       ContentType: TIPOS_MIME[ext] ?? "application/octet-stream",
     }),
   );
-  return `/uploads/${nombre}`;
+  return { url: `/uploads/${nombre}`, ancho: imagen.ancho, alto: imagen.alto };
+}
+
+export async function guardarPortada(archivo: File, titulo: string): Promise<string> {
+  // `aRanura` es idempotente: el nombre final es el mismo de siempre.
+  const { url } = await guardarImagen(archivo, aRanura(titulo) || "portada", {
+    anchoMaximo: ANCHO_MAXIMO,
+  });
+  return url;
 }
 
 export async function eliminarPortada(url: string): Promise<void> {

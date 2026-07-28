@@ -62,3 +62,47 @@ model Ajuste {
 
   @@map("ajustes")
 }
+
+// Imagenes del carrusel del hero. Con cero filas la portada usa la imagen del
+// repositorio; con una se muestra sola; con dos o mas se arma el carrusel.
+model ImagenHero {
+  id        String   @id @default(cuid())
+  imagenUrl String   @map("imagen_url")
+  altTexto  String   @map("alt_texto")
+  orden     Int      @default(0)
+  activa    Boolean  @default(true)
+  creadoEn  DateTime @default(now()) @map("creado_en")
+
+  @@map("imagenes_hero")
+}
+
+// Imagenes de secciones fijas de la landing (una fila por espacio). La clave es
+// el identificador del espacio: sin fila, la landing cae al archivo del repo.
+model ImagenSitio {
+  id            String   @id @default(cuid())
+  clave         String   @unique
+  imagenUrl     String   @map("imagen_url")
+  altTexto      String   @map("alt_texto")
+  // Medidas reales de la imagen ya procesada: reservan su espacio exacto en la
+  // landing (CLS cero). Nullable por las filas creadas antes de guardarlas.
+  ancho         Int?
+  alto          Int?
+  actualizadoEn DateTime @updatedAt @map("actualizado_en")
+
+  @@map("imagenes_sitio")
+}
+
+// Preguntas frecuentes de la landing. Los campos de enlace son opcionales y
+// reproducen los enlaces de accion que la seccion ya mostraba.
+model Pregunta {
+  id          String   @id @default(cuid())
+  pregunta    String
+  respuesta   String
+  enlaceHref  String?  @map("enlace_href")
+  enlaceTexto String?  @map("enlace_texto")
+  orden       Int      @default(0)
+  activa      Boolean  @default(true)
+  creadoEn    DateTime @default(now()) @map("creado_en")
+
+  @@map("preguntas")
+}

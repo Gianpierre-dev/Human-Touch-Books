@@ -33,11 +33,59 @@ LIBROS.push({
   destacado: true,
 });
 
+// Solo datos de contacto. `hero_subtitulo` y `nosotros_texto` NO se siembran a
+// proposito: mientras no exista la fila, la landing calcula su texto por defecto
+// (el de Nosotros incluye la ubicacion). Sembrarlos congelaria esos textos.
 const AJUSTES = [
   ["correo_contacto", "informes@humantouchbooks.pe"],
   ["whatsapp", "51982953436"],
   ["horario", "Lunes a viernes: 8:00 a. m. – 5:00 p. m. | Sábados: 8:00 a. m. – 1:00 p. m."],
   ["ubicacion", "La Molina, Lima — Perú"],
+];
+
+// Las preguntas frecuentes que la web ya mostraba, con las plantillas resueltas
+// contra los datos actuales (6 titulos escolares, linea de Plan Lector, y los
+// ajustes de contacto de arriba). A partir de aqui se editan desde el panel.
+const PREGUNTAS = [
+  {
+    pregunta: "¿Para qué grados está disponible la colección?",
+    respuesta:
+      "Tutoría SMART reúne 6 títulos, uno por grado: de 1.° de Primaria a 6.° de Primaria. " +
+      "Además contamos con una línea de Plan Lector.",
+    orden: 1,
+  },
+  {
+    pregunta: "¿Trabajan con colegios o también con padres de familia?",
+    respuesta:
+      "Con ambos. En el formulario puedes elegir información para colegios, información para " +
+      "padres de familia o capacitaciones y talleres.",
+    orden: 2,
+  },
+  {
+    pregunta: "¿Cómo solicito información o una cotización?",
+    respuesta:
+      "Completa el formulario de contacto, escríbenos a informes@humantouchbooks.pe o " +
+      "contáctanos por WhatsApp al +51 982 953 436.",
+    enlaceHref: "#contacto",
+    enlaceTexto: "Ir al formulario",
+    orden: 3,
+  },
+  {
+    pregunta: "¿Dónde están y en qué horario atienden?",
+    respuesta:
+      "Estamos en La Molina, Lima — Perú. Horario de atención: Lunes a viernes: 8:00 a. m. – " +
+      "5:00 p. m. · Sábados: 8:00 a. m. – 1:00 p. m.",
+    orden: 4,
+  },
+  {
+    pregunta: "¿Cómo se accede a la plataforma Tutoría SMART?",
+    respuesta:
+      "La plataforma se habilita para las instituciones que trabajan con la editorial. " +
+      "Solicita el acceso desde el formulario y lo coordinamos con tu colegio.",
+    enlaceHref: "#contacto",
+    enlaceTexto: "Solicitar acceso",
+    orden: 5,
+  },
 ];
 
 async function main() {
@@ -72,6 +120,14 @@ async function main() {
     });
   }
   console.log("ajustes listos");
+
+  const preguntasExistentes = await prisma.pregunta.count();
+  if (preguntasExistentes === 0) {
+    await prisma.pregunta.createMany({ data: PREGUNTAS });
+    console.log(`preguntas sembradas: ${PREGUNTAS.length}`);
+  } else {
+    console.log(`preguntas ya existentes: ${preguntasExistentes} (sin cambios)`);
+  }
 }
 
 main()

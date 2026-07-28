@@ -1,0 +1,296 @@
+---
+import PanelLayout from "../../layouts/PanelLayout.astro";
+import { bd } from "../../lib/bd";
+import { LIMITES } from "../../lib/contenido";
+
+export const prerender = false;
+
+const preguntas = await bd.pregunta.findMany({
+  orderBy: [{ orden: "asc" }, { creadoEn: "asc" }],
+});
+const activas = preguntas.filter((pregunta) => pregunta.activa).length;
+
+const ok = Astro.url.searchParams.get("ok");
+const error = Astro.url.searchParams.get("error");
+
+const MENSAJES_OK: Record<string, string> = {
+  creada: "Pregunta agregada.",
+  guardada: "Cambios guardados.",
+  eliminada: "Pregunta eliminada.",
+  visible: "La pregunta ya se muestra en la web.",
+  oculta: "La pregunta dejó de mostrarse en la web.",
+  reordenada: "Orden actualizado.",
+  sincambios: "No había nada que cambiar.",
+};
+
+const MENSAJES_ERROR: Record<string, string> = {
+  sinpregunta: "La pregunta es obligatoria.",
+  preguntalarga: `La pregunta admite hasta ${LIMITES.pregunta} caracteres.`,
+  sinrespuesta: "La respuesta es obligatoria.",
+  respuestalarga: `La respuesta admite hasta ${LIMITES.respuesta} caracteres.`,
+  enlace: "Para agregar un enlace completa el texto y la sección de destino.",
+  orden: "El orden debe ser un número.",
+  noexiste: "No encontramos esa pregunta.",
+  accion: "No reconocimos la acción solicitada.",
+};
+
+const textoError = error ? (MENSAJES_ERROR[error] ?? error) : null;
+
+// Destinos posibles del enlace de acción: secciones que ya existen en la página.
+const SECCIONES = [
+  { valor: "", etiqueta: "Sin enlace" },
+  { valor: "#contacto", etiqueta: "Formulario de contacto" },
+  { valor: "#coleccion", etiqueta: "Colección Tutoría SMART" },
+  { valor: "#plan-lector", etiqueta: "Plan Lector" },
+  { valor: "#plataforma", etiqueta: "Plataforma Tutoría SMART" },
+  { valor: "#nosotros", etiqueta: "Nosotros" },
+];
+
+const clasesCampo =
+  "mt-1.5 min-h-[44px] w-full rounded-lg border border-line bg-paper px-3.5 py-2.5 text-sm outline-none focus-visible:border-brand focus-visible:ring-2 focus-visible:ring-brand/30";
+const clasesBoton =
+  "foco-marca inline-flex min-h-[44px] items-center justify-center gap-1.5 rounded-full border border-line bg-surface px-4 text-xs font-bold text-ink transition-colors hover:bg-surface-2 disabled:cursor-not-allowed disabled:opacity-40";
+const clasesBotonPeligro =
+  "foco-marca inline-flex min-h-[44px] items-center justify-center rounded-full border border-accent/40 bg-surface px-4 text-xs font-bold text-accent-deep transition-colors hover:bg-accent/10";
+---
+
+<PanelLayout titulo="Preguntas" correo={Astro.locals.sesion?.correo}>
+  <h1 class="text-2xl font-extrabold text-ink">Preguntas frecuentes</h1>
+  <p class="mt-1 text-sm text-ink/70">
+    {preguntas.length} pregunta{preguntas.length === 1 ? "" : "s"}, {activas} visible{
+      activas === 1 ? "" : "s"
+    } en la web. Se muestran en la sección <strong class="font-semibold text-ink">
+      Preguntas frecuentes</strong
+    > en el orden de esta lista.
+  </p>
+
+  {
+    ok && (
+      <p class="mt-4 rounded-lg bg-wa/10 px-4 py-2.5 text-sm font-semibold text-wa-deep">
+        {MENSAJES_OK[ok] ?? "Listo."}
+      </p>
+    )
+  }
+  {
+    textoError && (
+      <p class="mt-4 rounded-lg bg-accent/10 px-4 py-2.5 text-sm font-semibold text-accent-deep">
+        {textoError}
+      </p>
+    )
+  }
+
+  {
+    preguntas.length === 0 && (
+      <p class="mt-6 rounded-xl border border-line bg-surface px-6 py-10 text-center text-sm text-ink/70">
+        Todavía no hay preguntas cargadas. Mientras la lista esté vacía, la página muestra las
+        preguntas frecuentes originales.
+      </p>
+    )
+  }
+
+  <div class="mt-6 space-y-5">
+    {
+      preguntas.map((pregunta, posicion) => (
+        <article
+          id={`pregunta-${pregunta.id}`}
+          class="rounded-xl border border-line bg-surface p-6 shadow-sm"
+          aria-labelledby={`titulo-${pregunta.id}`}
+        >
+          <div class="flex flex-wrap items-start justify-between gap-3">
+            <h2 id={`titulo-${pregunta.id}`} class="text-base font-bold text-ink">
+              {posicion + 1}. {pregunta.pregunta}
+            </h2>
+            <span
+              class:list={[
+                "inline-block rounded-full px-2.5 py-0.5 text-[0.7rem] font-bold",
+                pregunta.activa ? "bg-wa/15 text-wa-deep" : "bg-surface-2 text-ink/70",
+              ]}
+            >
+              {pregunta.activa ? "Visible" : "Oculta"}
+            </span>
+          </div>
+
+          <div class="mt-4 flex flex-wrap items-center gap-2">
+            <form method="post" action={`/api/admin/preguntas/${pregunta.id}`}>
+              <input type="hidden" name="_accion" value="subir" />
+              <button
+                type="submit"
+                class={clasesBoton}
+                disabled={posicion === 0}
+                aria-label={`Subir la pregunta «${pregunta.pregunta}» una posición`}
+              >
+                <svg viewBox="0 0 24 24" class="h-4 w-4 fill-current" aria-hidden="true">
+                  <path d="M12 6l6 6h-4v6h-4v-6H6l6-6Z" />
+                </svg>
+                Subir
+              </button>
+            </form>
+            <form method="post" action={`/api/admin/preguntas/${pregunta.id}`}>
+              <input type="hidden" name="_accion" value="bajar" />
+              <button
+                type="submit"
+                class={clasesBoton}
+                disabled={posicion === preguntas.length - 1}
+                aria-label={`Bajar la pregunta «${pregunta.pregunta}» una posición`}
+              >
+                <svg viewBox="0 0 24 24" class="h-4 w-4 fill-current" aria-hidden="true">
+                  <path d="M12 18l-6-6h4V6h4v6h4l-6 6Z" />
+                </svg>
+                Bajar
+              </button>
+            </form>
+            <form method="post" action={`/api/admin/preguntas/${pregunta.id}`}>
+              <input type="hidden" name="_accion" value="activar" />
+              <button
+                type="submit"
+                class={clasesBoton}
+                aria-label={`${pregunta.activa ? "Ocultar" : "Mostrar"} en la web la pregunta «${pregunta.pregunta}»`}
+              >
+                {pregunta.activa ? "Ocultar" : "Mostrar"}
+              </button>
+            </form>
+            <form
+              method="post"
+              action={`/api/admin/preguntas/${pregunta.id}`}
+              onsubmit="return confirm('¿Eliminar esta pregunta? No se puede deshacer.')"
+            >
+              <input type="hidden" name="_accion" value="eliminar" />
+              <button
+                type="submit"
+                class={clasesBotonPeligro}
+                aria-label={`Eliminar la pregunta «${pregunta.pregunta}»`}
+              >
+                Eliminar
+              </button>
+            </form>
+          </div>
+
+          <form
+            method="post"
+            action={`/api/admin/preguntas/${pregunta.id}`}
+            class="mt-5 border-t border-line pt-5"
+          >
+            <label class="block">
+              <span class="text-sm font-semibold text-ink">
+                Pregunta <span class="text-accent-deep">*</span>
+              </span>
+              <input
+                type="text"
+                name="pregunta"
+                required
+                maxlength={LIMITES.pregunta}
+                value={pregunta.pregunta}
+                class={clasesCampo}
+              />
+            </label>
+            <label class="mt-4 block">
+              <span class="text-sm font-semibold text-ink">
+                Respuesta <span class="text-accent-deep">*</span>
+              </span>
+              {/* Sin saltos de línea alrededor: el contenido del textarea ES su valor. */}
+              <textarea name="respuesta" rows="3" required maxlength={LIMITES.respuesta} class={clasesCampo}>{pregunta.respuesta}</textarea>
+            </label>
+            <div class="mt-4 grid gap-4 sm:grid-cols-3">
+              <label class="block">
+                <span class="text-sm font-semibold text-ink">Enlace: sección de destino</span>
+                <select name="enlace_href" class={clasesCampo}>
+                  {SECCIONES.map((seccion) => (
+                    <option value={seccion.valor} selected={(pregunta.enlaceHref ?? "") === seccion.valor}>
+                      {seccion.etiqueta}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label class="block">
+                <span class="text-sm font-semibold text-ink">Enlace: texto</span>
+                <input
+                  type="text"
+                  name="enlace_texto"
+                  maxlength={LIMITES.altTexto}
+                  value={pregunta.enlaceTexto ?? ""}
+                  placeholder="Ej. Ir al formulario"
+                  class={clasesCampo}
+                />
+              </label>
+              <label class="block">
+                <span class="text-sm font-semibold text-ink">Orden</span>
+                <input type="number" name="orden" value={pregunta.orden} class={clasesCampo} />
+              </label>
+            </div>
+            <button
+              type="submit"
+              class="foco-marca mt-5 inline-flex min-h-[44px] items-center rounded-full bg-brand px-7 text-sm font-bold text-white transition-colors hover:bg-brand-deep"
+            >
+              Guardar cambios
+            </button>
+          </form>
+        </article>
+      ))
+    }
+  </div>
+
+  <form
+    method="post"
+    action="/api/admin/preguntas"
+    class="mt-8 max-w-2xl rounded-xl border border-line bg-surface p-6 shadow-sm md:p-8"
+  >
+    <h2 class="text-lg font-bold text-ink">Agregar pregunta</h2>
+
+    <label class="mt-5 block">
+      <span class="text-sm font-semibold text-ink">
+        Pregunta <span class="text-accent-deep">*</span>
+      </span>
+      <input
+        type="text"
+        name="pregunta"
+        required
+        maxlength={LIMITES.pregunta}
+        placeholder="¿Qué suelen preguntarte?"
+        class={clasesCampo}
+      />
+    </label>
+
+    <label class="mt-4 block">
+      <span class="text-sm font-semibold text-ink">
+        Respuesta <span class="text-accent-deep">*</span>
+      </span>
+      <textarea
+        name="respuesta"
+        rows="3"
+        required
+        maxlength={LIMITES.respuesta}
+        placeholder="Responde en pocas líneas"
+        class={clasesCampo}></textarea>
+    </label>
+
+    <div class="mt-4 grid gap-4 sm:grid-cols-3">
+      <label class="block">
+        <span class="text-sm font-semibold text-ink">Enlace: sección de destino</span>
+        <select name="enlace_href" class={clasesCampo}>
+          {SECCIONES.map((seccion) => <option value={seccion.valor}>{seccion.etiqueta}</option>)}
+        </select>
+      </label>
+      <label class="block">
+        <span class="text-sm font-semibold text-ink">Enlace: texto</span>
+        <input
+          type="text"
+          name="enlace_texto"
+          maxlength={LIMITES.altTexto}
+          placeholder="Ej. Ir al formulario"
+          class={clasesCampo}
+        />
+      </label>
+      <label class="block">
+        <span class="text-sm font-semibold text-ink">Orden</span>
+        <input type="number" name="orden" value={preguntas.length + 1} class={clasesCampo} />
+      </label>
+    </div>
+
+    <button
+      type="submit"
+      class="foco-marca mt-6 inline-flex min-h-[44px] items-center rounded-full bg-brand px-7 text-sm font-bold text-white transition-colors hover:bg-brand-deep"
+    >
+      Agregar pregunta
+    </button>
+  </form>
+</PanelLayout>

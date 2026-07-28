@@ -1,0 +1,265 @@
+---
+import PanelLayout from "../../layouts/PanelLayout.astro";
+import { bd } from "../../lib/bd";
+import { HERO_POR_DEFECTO, LIMITES } from "../../lib/contenido";
+
+export const prerender = false;
+
+const imagenes = await bd.imagenHero.findMany({
+  orderBy: [{ orden: "asc" }, { creadoEn: "asc" }],
+});
+const activas = imagenes.filter((imagen) => imagen.activa).length;
+
+const ok = Astro.url.searchParams.get("ok");
+const error = Astro.url.searchParams.get("error");
+
+const MENSAJES_OK: Record<string, string> = {
+  creada: "Imagen agregada.",
+  eliminada: "Imagen eliminada.",
+  visible: "La imagen ya se muestra en la web.",
+  oculta: "La imagen dejó de mostrarse en la web.",
+  reordenada: "Orden actualizado.",
+  sincambios: "No había nada que cambiar.",
+};
+
+// Los códigos cubren la validación propia; si llega el texto de otro validador
+// (formato o peso del archivo) se muestra tal cual, que ya viene redactado.
+const MENSAJES_ERROR: Record<string, string> = {
+  sinimagen: "Selecciona una imagen para agregarla.",
+  sinalt: "El texto alternativo es obligatorio.",
+  altlargo: `El texto alternativo admite hasta ${LIMITES.altTexto} caracteres.`,
+  orden: "El orden debe ser un número.",
+  procesar: "No pudimos procesar la imagen. Verifica que sea un JPG, PNG o WebP válido.",
+  noexiste: "No encontramos esa imagen.",
+  accion: "No reconocimos la acción solicitada.",
+};
+
+const textoError = error ? (MENSAJES_ERROR[error] ?? error) : null;
+
+const clasesCampo =
+  "mt-1.5 min-h-[44px] w-full rounded-lg border border-line bg-paper px-3.5 py-2.5 text-sm outline-none focus-visible:border-brand focus-visible:ring-2 focus-visible:ring-brand/30";
+const clasesBoton =
+  "foco-marca inline-flex min-h-[44px] items-center justify-center gap-1.5 rounded-full border border-line bg-surface px-4 text-xs font-bold text-ink transition-colors hover:bg-surface-2 disabled:cursor-not-allowed disabled:opacity-40";
+const clasesBotonPeligro =
+  "foco-marca inline-flex min-h-[44px] items-center justify-center rounded-full border border-accent/40 bg-surface px-4 text-xs font-bold text-accent-deep transition-colors hover:bg-accent/10";
+---
+
+<PanelLayout titulo="Portada" correo={Astro.locals.sesion?.correo}>
+  <h1 class="text-2xl font-extrabold text-ink">Imágenes de portada</h1>
+  <p class="mt-1 text-sm text-ink/70">
+    Estas imágenes se muestran en la parte superior de la página, junto al título
+    <strong class="font-semibold text-ink">Tutoría SMART 2027</strong>. Con dos o más imágenes
+    visibles se arma un carrusel; con una sola se muestra fija.
+  </p>
+
+  {
+    ok && (
+      <p class="mt-4 rounded-lg bg-wa/10 px-4 py-2.5 text-sm font-semibold text-wa-deep">
+        {MENSAJES_OK[ok] ?? "Listo."}
+      </p>
+    )
+  }
+  {
+    textoError && (
+      <p class="mt-4 rounded-lg bg-accent/10 px-4 py-2.5 text-sm font-semibold text-accent-deep">
+        {textoError}
+      </p>
+    )
+  }
+
+  {
+    imagenes.length === 0 ? (
+      <div class="mt-6 rounded-xl border border-line bg-surface p-6 shadow-sm">
+        <h2 class="text-sm font-bold text-ink">Imagen actual de la web</h2>
+        <p class="mt-1 text-sm text-ink/70">
+          Todavía no cargaste ninguna imagen: la página muestra la imagen que viene con el diseño.
+          La primera que agregues la reemplaza.
+        </p>
+        <img
+          src={HERO_POR_DEFECTO.imagenUrl}
+          alt=""
+          width={HERO_POR_DEFECTO.ancho}
+          height={HERO_POR_DEFECTO.alto}
+          class="mt-4 w-full max-w-xs rounded-lg ring-1 ring-line"
+        />
+      </div>
+    ) : (
+      <>
+        <p class="mt-4 text-sm text-ink/70">
+          {imagenes.length} imagen{imagenes.length === 1 ? "" : "es"} cargada
+          {imagenes.length === 1 ? "" : "s"}, {activas} visible{activas === 1 ? "" : "s"} en la web.
+          {activas === 0 && " Sin imágenes visibles la página usa la imagen del diseño original."}
+        </p>
+
+        <div class="mt-6 overflow-x-auto rounded-xl border border-line bg-surface shadow-sm">
+          <table class="w-full text-sm">
+            <caption class="sr-only">
+              Imágenes de la portada, en el orden en que se muestran
+            </caption>
+            <thead>
+              <tr class="border-b border-line text-left text-xs font-bold tracking-wide text-ink/70 uppercase">
+                <th scope="col" class="px-4 py-3">
+                  Imagen
+                </th>
+                <th scope="col" class="px-4 py-3">
+                  Texto alternativo
+                </th>
+                <th scope="col" class="px-4 py-3">
+                  Orden
+                </th>
+                <th scope="col" class="px-4 py-3">
+                  Estado
+                </th>
+                <th scope="col" class="px-4 py-3 text-right">
+                  Acciones
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              {imagenes.map((imagen, posicion) => (
+                <tr class="border-b border-line/60 last:border-0">
+                  <td class="px-4 py-3">
+                    <img
+                      src={imagen.imagenUrl}
+                      alt=""
+                      width="120"
+                      height="80"
+                      class="h-20 w-30 rounded object-cover ring-1 ring-line"
+                      loading="lazy"
+                    />
+                  </td>
+                  <td class="max-w-xs px-4 py-3 text-ink/75">{imagen.altTexto}</td>
+                  <td class="px-4 py-3 text-ink/70">{imagen.orden}</td>
+                  <td class="px-4 py-3">
+                    <span
+                      class:list={[
+                        "inline-block rounded-full px-2.5 py-0.5 text-[0.7rem] font-bold",
+                        imagen.activa ? "bg-wa/15 text-wa-deep" : "bg-surface-2 text-ink/70",
+                      ]}
+                    >
+                      {imagen.activa ? "Visible" : "Oculta"}
+                    </span>
+                  </td>
+                  <td class="px-4 py-3">
+                    <div class="flex flex-wrap items-center justify-end gap-2">
+                      <form method="post" action={`/api/admin/portada/${imagen.id}`}>
+                        <input type="hidden" name="_accion" value="subir" />
+                        <button
+                          type="submit"
+                          class={clasesBoton}
+                          disabled={posicion === 0}
+                          aria-label={`Subir la imagen «${imagen.altTexto}» una posición`}
+                        >
+                          <svg viewBox="0 0 24 24" class="h-4 w-4 fill-current" aria-hidden="true">
+                            <path d="M12 6l6 6h-4v6h-4v-6H6l6-6Z" />
+                          </svg>
+                          Subir
+                        </button>
+                      </form>
+                      <form method="post" action={`/api/admin/portada/${imagen.id}`}>
+                        <input type="hidden" name="_accion" value="bajar" />
+                        <button
+                          type="submit"
+                          class={clasesBoton}
+                          disabled={posicion === imagenes.length - 1}
+                          aria-label={`Bajar la imagen «${imagen.altTexto}» una posición`}
+                        >
+                          <svg viewBox="0 0 24 24" class="h-4 w-4 fill-current" aria-hidden="true">
+                            <path d="M12 18l-6-6h4V6h4v6h4l-6 6Z" />
+                          </svg>
+                          Bajar
+                        </button>
+                      </form>
+                      <form method="post" action={`/api/admin/portada/${imagen.id}`}>
+                        <input type="hidden" name="_accion" value="activar" />
+                        <button
+                          type="submit"
+                          class={clasesBoton}
+                          aria-label={`${imagen.activa ? "Ocultar" : "Mostrar"} en la web la imagen «${imagen.altTexto}»`}
+                        >
+                          {imagen.activa ? "Ocultar" : "Mostrar"}
+                        </button>
+                      </form>
+                      <form
+                        method="post"
+                        action={`/api/admin/portada/${imagen.id}`}
+                        onsubmit="return confirm('¿Eliminar esta imagen de la portada? No se puede deshacer.')"
+                      >
+                        <input type="hidden" name="_accion" value="eliminar" />
+                        <button
+                          type="submit"
+                          class={clasesBotonPeligro}
+                          aria-label={`Eliminar la imagen «${imagen.altTexto}»`}
+                        >
+                          Eliminar
+                        </button>
+                      </form>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </>
+    )
+  }
+
+  <form
+    method="post"
+    action="/api/admin/portada"
+    enctype="multipart/form-data"
+    class="mt-8 max-w-xl rounded-xl border border-line bg-surface p-6 shadow-sm md:p-8"
+  >
+    <h2 class="text-lg font-bold text-ink">Agregar imagen</h2>
+
+    <div class="mt-5">
+      <label class="block text-sm font-semibold text-ink" for="imagen-hero">
+        Imagen <span class="text-accent-deep">*</span>
+      </label>
+      <input
+        type="file"
+        id="imagen-hero"
+        name="imagen"
+        accept=".jpg,.jpeg,.png,.webp"
+        required
+        class="mt-2 block w-full text-sm text-ink/75 file:mr-3 file:min-h-[44px] file:rounded-full file:border-0 file:bg-surface-2 file:px-4 file:text-sm file:font-semibold file:text-brand-deep hover:file:bg-line"
+        aria-describedby="ayuda-imagen-hero"
+      />
+      <p id="ayuda-imagen-hero" class="mt-1.5 text-xs text-ink/70">
+        JPG, PNG o WebP. Máximo 5 MB. Se recomienda orientación horizontal (proporción 3:2, por
+        ejemplo 1500 × 1000 px): la imagen se recorta al marco de la portada.
+      </p>
+    </div>
+
+    <label class="mt-4 block">
+      <span class="text-sm font-semibold text-ink">
+        Texto alternativo <span class="text-accent-deep">*</span>
+      </span>
+      <input
+        type="text"
+        name="alt_texto"
+        required
+        maxlength={LIMITES.altTexto}
+        placeholder="Describe qué se ve en la imagen"
+        class={clasesCampo}
+        aria-describedby="ayuda-alt-hero"
+      />
+    </label>
+    <p id="ayuda-alt-hero" class="mt-1.5 text-xs text-ink/70">
+      Lo leen las personas que navegan con lector de pantalla y se muestra si la imagen no carga.
+    </p>
+
+    <label class="mt-4 block max-w-[10rem]">
+      <span class="text-sm font-semibold text-ink">Orden</span>
+      <input type="number" name="orden" value={imagenes.length + 1} class={clasesCampo} />
+    </label>
+
+    <button
+      type="submit"
+      class="foco-marca mt-6 inline-flex min-h-[44px] items-center rounded-full bg-brand px-7 text-sm font-bold text-white transition-colors hover:bg-brand-deep"
+    >
+      Agregar imagen
+    </button>
+  </form>
+</PanelLayout>

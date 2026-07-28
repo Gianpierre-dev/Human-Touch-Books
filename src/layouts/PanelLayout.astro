@@ -11,6 +11,21 @@ const { titulo, correo } = Astro.props;
 
 // Conteo barato (una sola columna indexada por PK) para avisar de pendientes.
 const mensajesPendientes = correo ? await bd.mensaje.count({ where: { atendido: false } }) : 0;
+
+// Secciones del panel, en el orden en que aparecen en la página pública.
+const SECCIONES = [
+  { href: "/admin", etiqueta: "Libros" },
+  { href: "/admin/portada", etiqueta: "Portada" },
+  { href: "/admin/imagenes", etiqueta: "Imágenes" },
+  { href: "/admin/preguntas", etiqueta: "Preguntas" },
+  { href: "/admin/mensajes", etiqueta: "Mensajes" },
+  { href: "/admin/ajustes", etiqueta: "Ajustes" },
+];
+
+// `/admin` es prefijo de todo el panel: solo coincide de forma exacta.
+const rutaActual = Astro.url.pathname.replace(/\/$/, "") || "/admin";
+const esActual = (href: string): boolean =>
+  href === "/admin" ? rutaActual === "/admin" : rutaActual.startsWith(href);
 ---
 
 <Layout
@@ -27,24 +42,45 @@ const mensajesPendientes = correo ? await bd.mensaje.count({ where: { atendido: 
         </a>
         {
           correo && (
-            <div class="flex items-center gap-4 text-sm">
-              <a href="/" class="text-white/80 hover:text-white">Ver sitio</a>
-              <a href="/admin/mensajes" class="flex items-center gap-1.5 text-white/80 hover:text-white">
-                Mensajes
-                {mensajesPendientes > 0 && (
-                  <span
-                    class="grid min-w-[1.35rem] place-items-center rounded-full bg-accent px-1.5 py-0.5 text-[0.7rem] font-bold text-white"
-                    aria-label={`${mensajesPendientes} sin atender`}
-                  >
-                    {mensajesPendientes}
-                  </span>
-                )}
+            <div class="flex flex-wrap items-center justify-end gap-x-4 gap-y-1 text-sm">
+              <nav aria-label="Secciones del panel">
+                <ul class="flex flex-wrap items-center gap-x-4 gap-y-1">
+                  {SECCIONES.map((seccion) => (
+                    <li>
+                      <a
+                        href={seccion.href}
+                        aria-current={esActual(seccion.href) ? "page" : undefined}
+                        class:list={[
+                          "foco-claro inline-flex min-h-[44px] items-center gap-1.5 transition-colors hover:text-white",
+                          esActual(seccion.href)
+                            ? "font-bold text-white underline decoration-2 underline-offset-8"
+                            : "text-white/85",
+                        ]}
+                      >
+                        {seccion.etiqueta}
+                        {seccion.href === "/admin/mensajes" && mensajesPendientes > 0 && (
+                          <span
+                            class="grid min-w-[1.35rem] place-items-center rounded-full bg-accent px-1.5 py-0.5 text-[0.7rem] font-bold text-white"
+                            aria-label={`${mensajesPendientes} sin atender`}
+                          >
+                            {mensajesPendientes}
+                          </span>
+                        )}
+                      </a>
+                    </li>
+                  ))}
+                </ul>
+              </nav>
+              <a
+                href="/"
+                class="foco-claro inline-flex min-h-[44px] items-center text-white/85 transition-colors hover:text-white"
+              >
+                Ver sitio
               </a>
-              <a href="/admin/ajustes" class="text-white/80 hover:text-white">Ajustes</a>
               <form method="post" action="/api/admin/salir">
                 <button
                   type="submit"
-                  class="rounded-full border border-white/40 px-4 py-1.5 font-semibold transition-colors hover:bg-white/10"
+                  class="foco-claro inline-flex min-h-[44px] items-center rounded-full border border-white/40 px-4 font-semibold transition-colors hover:bg-white/10"
                 >
                   Salir
                 </button>
