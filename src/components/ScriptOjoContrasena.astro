@@ -1,0 +1,35 @@
+---
+// Activa el ojo de todos los CampoContrasena de la pagina. Va una sola vez por
+// pagina, despues de los campos: destapa cada boton y alterna el tipo del
+// campo. Sin este script los botones quedan ocultos y el formulario funciona
+// igual, solo que sin poder revisar lo escrito.
+---
+
+<script is:inline>
+  (() => {
+    const MOSTRAR = "Mostrar contraseña";
+    const OCULTAR = "Ocultar contraseña";
+
+    document.querySelectorAll("[data-ojo]").forEach((boton) => {
+      const campo = document.getElementById(boton.getAttribute("aria-controls"));
+      if (!(campo instanceof HTMLInputElement)) return;
+
+      const ojoVer = boton.querySelector("[data-ojo-ver]");
+      const ojoOcultar = boton.querySelector("[data-ojo-ocultar]");
+      if (!ojoVer || !ojoOcultar) return;
+
+      boton.hidden = false;
+
+      boton.addEventListener("click", () => {
+        const mostrar = campo.type === "password";
+        // Solo cambia el type: el name y el autocomplete siguen intactos, asi
+        // que el gestor de contrasenas del navegador no se pierde.
+        campo.type = mostrar ? "text" : "password";
+        boton.setAttribute("aria-pressed", String(mostrar));
+        boton.setAttribute("aria-label", mostrar ? OCULTAR : MOSTRAR);
+        ojoVer.classList.toggle("hidden", mostrar);
+        ojoOcultar.classList.toggle("hidden", !mostrar);
+      });
+    });
+  })();
+</script>

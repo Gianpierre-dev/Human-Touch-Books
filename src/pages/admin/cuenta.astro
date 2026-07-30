@@ -1,0 +1,90 @@
+---
+import CampoContrasena from "../../components/CampoContrasena.astro";
+import ScriptOjoContrasena from "../../components/ScriptOjoContrasena.astro";
+import PanelLayout from "../../layouts/PanelLayout.astro";
+import { LARGO_MAXIMO_CLAVE, LARGO_MINIMO_CLAVE } from "../../lib/sesion";
+
+export const prerender = false;
+
+const correo = Astro.locals.sesion?.correo ?? "";
+const ok = Astro.url.searchParams.get("ok");
+const error = Astro.url.searchParams.get("error");
+
+const MENSAJES_ERROR: Record<string, string> = {
+  campos: "Completa los tres campos.",
+  largo: `La nueva contraseña debe tener entre ${LARGO_MINIMO_CLAVE} y ${LARGO_MAXIMO_CLAVE} caracteres.`,
+  confirmacion: "La confirmación no coincide con la nueva contraseña.",
+  actual: "La contraseña actual no es correcta.",
+  limite: "Demasiados intentos. Espera 15 minutos e inténtalo de nuevo.",
+  usuario: "No encontramos tu usuario. Vuelve a iniciar sesión.",
+};
+---
+
+<PanelLayout titulo="Mi cuenta" correo={correo}>
+  <h1 class="text-2xl font-extrabold text-ink">Mi cuenta</h1>
+  <p class="mt-1 mb-6 text-sm text-ink/70">Datos de tu acceso al panel.</p>
+
+  {
+    ok && (
+      <p class="mb-5 rounded-lg bg-wa/10 px-4 py-2.5 text-sm font-semibold text-wa-deep">
+        Contraseña actualizada.
+      </p>
+    )
+  }
+  {
+    error && (
+      <p class="mb-5 rounded-lg bg-accent/10 px-4 py-2.5 text-sm font-semibold text-accent-deep">
+        {MENSAJES_ERROR[error] ?? "No pudimos cambiar la contraseña."}
+      </p>
+    )
+  }
+
+  <div class="max-w-xl rounded-xl border border-line bg-surface p-6 shadow-sm md:p-8">
+    {/* El correo no se edita desde aqui: identifica la cuenta y solo se informa. */}
+    <h2 class="text-lg font-bold text-ink">Correo de acceso</h2>
+    <p class="mt-1.5 rounded-lg bg-surface-2 px-3.5 py-2.5 text-sm text-ink">{correo}</p>
+    <p class="mt-1.5 text-xs text-ink/70">
+      Para cambiar el correo de acceso, escribe a quien administra el sitio.
+    </p>
+
+    <h2 class="mt-8 border-t border-line pt-6 text-lg font-bold text-ink">Cambiar contraseña</h2>
+
+    <form method="post" action="/api/admin/cuenta">
+      <CampoContrasena
+        id="clave-actual"
+        nombre="actual"
+        etiqueta="Contraseña actual"
+        autocomplete="current-password"
+        clase="mt-4"
+      />
+      <CampoContrasena
+        id="clave-nueva"
+        nombre="nueva"
+        etiqueta="Contraseña nueva"
+        autocomplete="new-password"
+        minlength={LARGO_MINIMO_CLAVE}
+        maxlength={LARGO_MAXIMO_CLAVE}
+        ayuda={`Entre ${LARGO_MINIMO_CLAVE} y ${LARGO_MAXIMO_CLAVE} caracteres. Usa una frase larga que solo tú recuerdes.`}
+        clase="mt-4"
+      />
+      <CampoContrasena
+        id="clave-confirmacion"
+        nombre="confirmacion"
+        etiqueta="Repite la contraseña nueva"
+        autocomplete="new-password"
+        minlength={LARGO_MINIMO_CLAVE}
+        maxlength={LARGO_MAXIMO_CLAVE}
+        clase="mt-4"
+      />
+
+      <button
+        type="submit"
+        class="foco-marca mt-6 inline-flex min-h-[44px] items-center rounded-full bg-brand px-7 text-sm font-bold text-white transition-colors hover:bg-brand-deep"
+      >
+        Guardar contraseña
+      </button>
+    </form>
+  </div>
+
+  <ScriptOjoContrasena />
+</PanelLayout>

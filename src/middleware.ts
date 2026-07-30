@@ -1,5 +1,6 @@
 import { defineMiddleware } from "astro:middleware";
-import { COOKIE_SESION, verificarToken } from "./lib/sesion";
+import { bd } from "./lib/bd";
+import { COOKIE_SESION, verificarToken, versionClave, type CargaSesion } from "./lib/sesion";
 
 const METODOS_SEGUROS = new Set(["GET", "HEAD", "OPTIONS"]);
 
@@ -18,8 +19,20 @@ function origenValido(request: Request): boolean {
   }
 }
 
+// La firma del token solo prueba que lo emitimos nosotros, no que siga
+// valiendo. Un JWT no se puede revocar, asi que la contrasena lleva version:
+// si cambio despues de emitirse el token, ese token ya no sirve.
+async function sesionVigente(sesion: CargaSesion): Promise<boolean> {
+  const usuario = await bd.usuario.findUnique({
+    where: { id: sesion.usuarioId },
+    select: { claveActualizadaEn: true },
+  });
+  if (!usuario) return false;
+  return sesion.claveActualizadaEn >= versionClave(usuario.claveActualizadaEn);
+}
+
 // Protege el panel y su API. Todo lo demas es publico.
-export const onRequest = defineMiddleware((contexto, siguiente) => {
+export const onRequest = defineMiddleware(async (contexto, siguiente) => {
   const { request, url, cookies } = contexto;
 
   if (!METODOS_SEGUROS.has(request.method) && !origenValido(request)) {
@@ -35,14 +48,14 @@ export const onRequest = defineMiddleware((contexto, siguiente) => {
   const sesion = verificarToken(cookies.get(COOKIE_SESION)?.value);
 
   if (esLogin) {
-    // Si ya hay sesion, no tiene sentido ver el login.
-    if (sesion && pathname === "/admin/login") {
+    // Si ya hay sesion (y sigue vigente), no tiene sentido ver el login.
+    if (sesion && pathname === "/admin/login" && (await sesionVigente(sesion))) {
       return contexto.redirect("/admin", 302);
     }
     return siguiente();
   }
 
-  if (!sesion) {
+  if (!sesion || !(await sesionVigente(sesion))) {
     if (esApiPanel) {
       return new Response(JSON.stringify({ error: "No autorizado" }), {
         status: 401,

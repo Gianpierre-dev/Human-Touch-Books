@@ -1,10 +1,7 @@
 # Human-Touch-Books
 
-## Acceso al panel administrativo
+Sitio web y panel de administración de Human Touch Books (Astro 5 SSR + Prisma + PostgreSQL + Wasabi S3).
 
-Ruta: `/admin/login`
+## Panel administrativo
 
-| Campo | Valor |
-| --- | --- |
-| Correo | `admin@humantouchbooks.pe` |
-| Contraseña | `Admin123!` |
+Ruta: `/admin/login`. Las credenciales se gestionan fuera del repositorio (variables de entorno y base de datos).

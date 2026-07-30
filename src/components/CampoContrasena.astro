@@ -1,0 +1,91 @@
+---
+// Campo de contrasena con boton de mostrar/ocultar.
+//
+// Mejora progresiva: el boton nace con el atributo `hidden`, asi que sin
+// JavaScript no existe para nadie (ni para el lector de pantalla) y el campo
+// funciona como un password normal. ScriptOjoContrasena.astro lo destapa.
+//
+// La etiqueta va con `for` en vez de envolver al input: un <button> dentro de
+// un <label> es terreno resbaloso (el click puede reenviarse al campo).
+interface Props {
+  id: string;
+  nombre: string;
+  etiqueta: string;
+  autocomplete: "current-password" | "new-password";
+  minlength?: number;
+  maxlength?: number;
+  ayuda?: string;
+  clase?: string;
+}
+
+const { id, nombre, etiqueta, autocomplete, minlength, maxlength, ayuda, clase } = Astro.props;
+const idAyuda = ayuda ? `ayuda-${id}` : undefined;
+---
+
+<div class={clase}>
+  <label class="block text-sm font-semibold text-ink" for={id}>{etiqueta}</label>
+  <div class="relative mt-1.5">
+    {/* El pr-12 reserva el hueco del boton para que no tape lo que se escribe. */}
+    <input
+      type="password"
+      id={id}
+      name={nombre}
+      required
+      autocomplete={autocomplete}
+      minlength={minlength}
+      maxlength={maxlength}
+      aria-describedby={idAyuda}
+      autocapitalize="off"
+      autocorrect="off"
+      spellcheck="false"
+      class="min-h-[44px] w-full rounded-lg border border-line bg-paper py-2.5 pr-12 pl-3.5 text-sm outline-none focus-visible:border-brand focus-visible:ring-2 focus-visible:ring-brand/30"
+    />
+    {/*
+      type="button" para que no envie el formulario.
+      Sin texto visible, el nombre accesible lo pone el aria-label y cambia con
+      el estado, asi que no hay conflicto con "Etiqueta en el nombre" (2.5.3).
+      44x44 px de area de toque: inset-y-0 sobre un campo de 44 px de alto.
+    */}
+    <button
+      type="button"
+      hidden
+      data-ojo
+      aria-controls={id}
+      aria-pressed="false"
+      aria-label="Mostrar contraseña"
+      class="foco-marca absolute inset-y-0 right-0 grid w-11 place-items-center rounded-lg text-ink/60 transition-colors hover:text-ink"
+    >
+      <svg
+        data-ojo-ver
+        viewBox="0 0 24 24"
+        class="h-5 w-5"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+        aria-hidden="true"
+      >
+        <path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7-10-7-10-7Z"></path>
+        <circle cx="12" cy="12" r="3"></circle>
+      </svg>
+      <svg
+        data-ojo-ocultar
+        viewBox="0 0 24 24"
+        class="hidden h-5 w-5"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+        aria-hidden="true"
+      >
+        <path d="M2 12s3.6-7 10-7c2 0 3.8.7 5.2 1.6"></path>
+        <path d="M22 12s-3.6 7-10 7c-2 0-3.8-.7-5.2-1.6"></path>
+        <path d="M9.9 9.9a3 3 0 0 0 4.2 4.2"></path>
+        <path d="m3 3 18 18"></path>
+      </svg>
+    </button>
+  </div>
+  {ayuda && <p id={idAyuda} class="mt-1.5 text-xs text-ink/70">{ayuda}</p>}
+</div>

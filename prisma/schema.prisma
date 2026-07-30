@@ -38,6 +38,10 @@ model Usuario {
   nombre         String
   hashContrasena String   @map("hash_contrasena")
   creadoEn       DateTime @default(now()) @map("creado_en")
+  // Version de la credencial: el token de sesion la lleva dentro y el
+  // middleware la compara con esta. Al cambiar la contrasena sube y todas las
+  // sesiones emitidas antes dejan de valer (un JWT no se puede revocar solo).
+  claveActualizadaEn DateTime @default(now()) @map("clave_actualizada_en")
 
   @@map("usuarios")
 }

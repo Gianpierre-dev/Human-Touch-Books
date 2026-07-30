@@ -1,5 +1,6 @@
 import type { APIRoute } from "astro";
 import { bd } from "../../lib/bd";
+import { ipDelCliente } from "../../lib/limite-intentos";
 
 export const prerender = false;
 
@@ -21,6 +22,7 @@ const TAMANO_MAXIMO_CUERPO = 100_000; // bytes
 // Limite de envios por IP: 3 cada 10 minutos, en memoria del proceso.
 const VENTANA_MS = 10 * 60 * 1000;
 const ENVIOS_MAXIMOS = 3;
+const IPS_MAXIMAS = 10_000;
 const enviosPorIp = new Map<string, number[]>();
 
 const LIMITES = {
@@ -39,28 +41,30 @@ interface DatosMensaje {
   mensaje: string;
 }
 
-function obtenerIp(request: Request, direccionCliente: string): string {
-  const reenviada = request.headers.get("x-forwarded-for");
-  if (!reenviada) return direccionCliente;
-  const primera = reenviada.split(",")[0]?.trim();
-  return primera || direccionCliente;
+// Consultar y registrar van separados a proposito: si el registro ocurriera en
+// la consulta, un formulario mal llenado (o un bot mandando basura) gastaria el
+// cupo de una persona que todavia no logro enviar nada.
+function superaLimite(ip: string): boolean {
+  return vigentes(ip).length >= ENVIOS_MAXIMOS;
 }
 
-function superaLimite(ip: string): boolean {
-  const ahora = Date.now();
-
-  // Purga las IPs cuya ventana ya vencio para que el Map no crezca sin control.
-  for (const [clave, marcas] of enviosPorIp) {
-    const vigentes = marcas.filter((marca) => ahora - marca < VENTANA_MS);
-    if (vigentes.length === 0) enviosPorIp.delete(clave);
-    else enviosPorIp.set(clave, vigentes);
+function registrarEnvio(ip: string): void {
+  const marcas = vigentes(ip);
+  // Techo de claves: descarta la mas antigua (Map itera por orden de insercion).
+  if (!enviosPorIp.has(ip) && enviosPorIp.size >= IPS_MAXIMAS) {
+    const masAntigua = enviosPorIp.keys().next().value;
+    if (masAntigua !== undefined) enviosPorIp.delete(masAntigua);
   }
+  enviosPorIp.set(ip, [...marcas, Date.now()]);
+}
 
-  const marcas = enviosPorIp.get(ip) ?? [];
-  if (marcas.length >= ENVIOS_MAXIMOS) return true;
-
-  enviosPorIp.set(ip, [...marcas, ahora]);
-  return false;
+// Purga perezosa: solo la IP consultada, no el Map entero en cada peticion.
+function vigentes(ip: string): number[] {
+  const ahora = Date.now();
+  const marcas = (enviosPorIp.get(ip) ?? []).filter((marca) => ahora - marca < VENTANA_MS);
+  if (marcas.length === 0) enviosPorIp.delete(ip);
+  else enviosPorIp.set(ip, marcas);
+  return marcas;
 }
 
 function texto(formulario: FormData, clave: string): string {
@@ -92,7 +96,8 @@ export const POST: APIRoute = async ({ request, redirect, clientAddress }) => {
     const tamano = Number(request.headers.get("content-length") ?? "0");
     if (tamano > TAMANO_MAXIMO_CUERPO) return redirect(destinoError("tamano"), 303);
 
-    if (superaLimite(obtenerIp(request, clientAddress))) {
+    const ip = ipDelCliente(request, clientAddress);
+    if (superaLimite(ip)) {
       return redirect(destinoError("limite"), 303);
     }
 
@@ -106,6 +111,8 @@ export const POST: APIRoute = async ({ request, redirect, clientAddress }) => {
     if (!datos) return redirect(destinoError(campo), 303);
 
     await bd.mensaje.create({ data: datos });
+    // El cupo se gasta solo cuando el mensaje entra de verdad.
+    registrarEnvio(ip);
     return redirect(DESTINO_OK, 303);
   } catch {
     return redirect(destinoError(), 303);
