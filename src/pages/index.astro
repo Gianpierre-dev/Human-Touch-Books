@@ -928,9 +928,9 @@ const preguntas: PreguntaVista[] =
                   <p class="font-semibold text-ink">Correo electrónico</p>
                   <a
                     href={`mailto:${correoContacto}`}
-                    class="foco-marca inline-flex min-h-[44px] items-center text-ink/75 hover:text-brand"
+                    class="foco-marca inline-flex min-h-[44px] items-center text-ink/75"
                   >
-                    {correoContacto}
+                    <span class="enlace-sub">{correoContacto}</span>
                   </a>
                 </div>
               </li>
@@ -944,9 +944,9 @@ const preguntas: PreguntaVista[] =
                   <p class="font-semibold text-ink">Celular · WhatsApp</p>
                   <a
                     href={`https://wa.me/${whatsapp}`}
-                    class="foco-marca inline-flex min-h-[44px] items-center text-ink/75 hover:text-brand"
+                    class="foco-marca inline-flex min-h-[44px] items-center text-ink/75"
                   >
-                    {whatsappVisible}
+                    <span class="enlace-sub">{whatsappVisible}</span>
                   </a>
                 </div>
               </li>

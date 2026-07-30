@@ -27,3 +27,4 @@ proforma-*.html
 .env
 /uploads/
 pgvars.tmp.json
+hovers.html

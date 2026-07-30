@@ -17,8 +17,7 @@ const whatsappVisible = `+${whatsapp.slice(0, 2)} ${whatsapp.slice(2, 5)} ${what
 const year = new Date().getFullYear();
 
 // Area tactil de 44 px de alto en cada enlace del pie (WCAG 2.5.8).
-const claseEnlace =
-  "foco-marca inline-flex min-h-[44px] items-center text-ink/75 transition-colors hover:text-brand";
+const claseEnlace = "foco-marca inline-flex min-h-[44px] items-center text-ink/75";
 
 // El enlace a #coleccion se omite cuando la seccion no se renderiza.
 const explora = [
@@ -47,7 +46,7 @@ const explora = [
             {explora.map((e) => (
               <li>
                 <a href={e.href} class={claseEnlace}>
-                  {e.label}
+                  <span class="enlace-sub">{e.label}</span>
                 </a>
               </li>
             ))}
@@ -57,13 +56,13 @@ const explora = [
           <h2 class="font-display text-base text-ink">Contacto</h2>
           <ul class="mt-2">
             <li>
-              <a href={`https://wa.me/${whatsapp}`} class={claseEnlace}>{whatsappVisible}</a>
+              <a href={`https://wa.me/${whatsapp}`} class={claseEnlace}><span class="enlace-sub">{whatsappVisible}</span></a>
             </li>
             <li>
-              <a href={`mailto:${correoContacto}`} class={claseEnlace}>{correoContacto}</a>
+              <a href={`mailto:${correoContacto}`} class={claseEnlace}><span class="enlace-sub">{correoContacto}</span></a>
             </li>
             <li>
-              <a href="#contacto" class={claseEnlace}>Solicitar información</a>
+              <a href="#contacto" class={claseEnlace}><span class="enlace-sub">Solicitar información</span></a>
             </li>
             <li class="flex min-h-[44px] items-center text-ink/75">{ubicacion}</li>
           </ul>

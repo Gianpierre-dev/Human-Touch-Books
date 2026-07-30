@@ -36,9 +36,9 @@ const links = [
         links.map((l) => (
           <a
             href={l.href}
-            class="foco-marca inline-flex min-h-[44px] items-center text-[0.95rem] font-semibold whitespace-nowrap text-ink/80 transition-colors hover:text-brand xl:text-[1.02rem]"
+            class="foco-marca inline-flex min-h-[44px] items-center text-[0.95rem] font-semibold whitespace-nowrap text-ink/80 xl:text-[1.02rem]"
           >
-            {l.label}
+            <span class="enlace-sub">{l.label}</span>
           </a>
         ))
       }
@@ -47,7 +47,7 @@ const links = [
     <div class="flex items-center gap-2">
       <a
         href={`https://wa.me/${whatsapp}`}
-        class="foco-marca inline-flex min-h-[44px] items-center gap-2 rounded-full bg-wa px-4 text-[0.8125rem] font-bold whitespace-nowrap text-white shadow-sm transition-colors hover:bg-[#0f6c33] sm:px-5 sm:text-sm"
+        class="foco-marca boton-elevar [--sombra-hover:rgb(10_92_43_/_0.5)] inline-flex min-h-[44px] items-center gap-2 rounded-full bg-wa px-4 text-[0.8125rem] font-bold whitespace-nowrap text-white shadow-sm hover:bg-wa-mas sm:px-5 sm:text-sm"
         aria-label={`Escríbenos por WhatsApp al ${whatsappVisible}`}
       >
         <svg viewBox="0 0 24 24" class="h-4 w-4 shrink-0 fill-current" aria-hidden="true">
@@ -62,7 +62,7 @@ const links = [
 
       <a
         href="#contacto"
-        class="foco-marca hidden min-h-[44px] items-center rounded-full bg-brand px-5 text-sm font-bold whitespace-nowrap text-white transition-colors hover:bg-brand-deep lg:inline-flex"
+        class="foco-marca boton-elevar [--sombra-hover:rgb(18_74_153_/_0.5)] hidden min-h-[44px] items-center rounded-full bg-brand px-5 text-sm font-bold whitespace-nowrap text-white hover:bg-brand-deep lg:inline-flex"
       >
         Solicitar información
       </a>
@@ -94,7 +94,7 @@ const links = [
           }
           <a
             href="#contacto"
-            class="foco-marca mt-2 flex min-h-[44px] items-center justify-center rounded-full bg-brand px-3 text-sm font-bold text-white transition-colors hover:bg-brand-deep"
+            class="foco-marca boton-elevar [--sombra-hover:rgb(18_74_153_/_0.5)] mt-2 flex min-h-[44px] items-center justify-center rounded-full bg-brand px-3 text-sm font-bold text-white hover:bg-brand-deep"
           >
             Solicitar información
           </a>
