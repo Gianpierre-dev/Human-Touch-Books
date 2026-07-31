@@ -1,5 +1,6 @@
 ---
 import Layout from "./Layout.astro";
+import NavPanel from "../components/NavPanel.astro";
 import { bd } from "./../lib/bd";
 
 interface Props {
@@ -12,87 +13,136 @@ const { titulo, correo } = Astro.props;
 // Conteo barato (una sola columna indexada por PK) para avisar de pendientes.
 const mensajesPendientes = correo ? await bd.mensaje.count({ where: { atendido: false } }) : 0;
 
-// Secciones del panel, en el orden en que aparecen en la página pública.
-const SECCIONES = [
-  { href: "/admin", etiqueta: "Libros" },
-  { href: "/admin/portada", etiqueta: "Portada" },
-  { href: "/admin/imagenes", etiqueta: "Imágenes" },
-  { href: "/admin/preguntas", etiqueta: "Preguntas" },
-  { href: "/admin/mensajes", etiqueta: "Mensajes" },
-  { href: "/admin/ajustes", etiqueta: "Ajustes" },
-  { href: "/admin/cuenta", etiqueta: "Mi cuenta" },
-];
-
-// `/admin` es prefijo de todo el panel: solo coincide de forma exacta.
 const rutaActual = Astro.url.pathname.replace(/\/$/, "") || "/admin";
-const esActual = (href: string): boolean =>
-  href === "/admin" ? rutaActual === "/admin" : rutaActual.startsWith(href);
 ---
 
 <Layout
   title={`${titulo} — Panel HTB`}
   description="Panel de administración de Human Touch Books"
+  anclaContenido="#contenido-panel"
   noindex
 >
-  <div class="min-h-screen bg-paper">
-    <header class="border-b border-line bg-navy text-white">
-      <div class="mx-auto flex max-w-5xl items-center justify-between gap-4 px-4 py-3 md:px-6">
-        <a href="/admin" class="flex items-center gap-3 font-bold">
-          <img src="/brand/logo.png" alt="" class="h-9 w-auto rounded bg-white/95 px-1.5 py-0.5" />
-          Panel de administración
+  <div class="min-h-screen bg-paper lg:grid lg:grid-cols-[17rem_1fr]">
+    {/* Barra lateral fija en escritorio: con una decena de secciones, una barra
+        horizontal obliga a repartir los enlaces en dos lineas y deja de leerse
+        de un vistazo. La lateral crece sin romperse. */}
+    <aside
+      class="sticky top-0 hidden h-screen flex-col border-r border-white/10 bg-navy text-white lg:flex"
+    >
+      <a
+        href="/admin"
+        class="foco-claro flex items-center gap-3 border-b border-white/10 px-4 py-4 font-bold"
+      >
+        <img src="/brand/logo.png" alt="" class="h-9 w-auto rounded bg-white/95 px-1.5 py-0.5" />
+        <span class="text-[0.95rem] leading-tight">Panel de<br />administración</span>
+      </a>
+
+      <div class="flex-1 overflow-y-auto px-3 py-5">
+        {correo && <NavPanel rutaActual={rutaActual} mensajesPendientes={mensajesPendientes} />}
+      </div>
+
+      {
+        correo && (
+          <div class="border-t border-white/10 px-3 py-3">
+            <p class="truncate px-3 pb-1 text-xs text-white/60" title={correo}>
+              {correo}
+            </p>
+            <a
+              href="/"
+              class="foco-claro flex min-h-[44px] items-center gap-3 rounded-lg px-3 text-[0.9375rem] font-semibold text-white/80 transition-colors hover:bg-white/10 hover:text-white"
+            >
+              <svg viewBox="0 0 24 24" class="h-5 w-5 shrink-0 fill-current" aria-hidden="true">
+                <path d="M12 3 2 12h3v8h6v-5h2v5h6v-8h3L12 3Z" />
+              </svg>
+              Ver sitio
+            </a>
+            <form method="post" action="/api/admin/salir">
+              <button
+                type="submit"
+                class="foco-claro flex w-full min-h-[44px] items-center gap-3 rounded-lg px-3 text-[0.9375rem] font-semibold text-white/80 transition-colors hover:bg-white/10 hover:text-white"
+              >
+                <svg viewBox="0 0 24 24" class="h-5 w-5 shrink-0 fill-current" aria-hidden="true">
+                  <path d="M10 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h5v-2H5V5h5V3Zm6.2 4.6-1.4 1.4 2 2H8v2h8.8l-2 2 1.4 1.4L21 12l-4.8-4.4Z" />
+                </svg>
+                Cerrar sesión
+              </button>
+            </form>
+          </div>
+        )
+      }
+    </aside>
+
+    {/* En pantallas menores la misma navegacion vive en un cajon desplegable.
+        Es <details>: funciona con teclado y sin JavaScript. */}
+    <header class="sticky top-0 z-40 border-b border-white/10 bg-navy text-white lg:hidden">
+      <div class="flex items-center justify-between gap-3 px-4 py-2.5">
+        <a href="/admin" class="foco-claro flex items-center gap-2.5 font-bold">
+          <img src="/brand/logo.png" alt="" class="h-8 w-auto rounded bg-white/95 px-1.5 py-0.5" />
+          <span class="text-sm">Panel</span>
         </a>
+
         {
           correo && (
-            <div class="flex flex-wrap items-center justify-end gap-x-4 gap-y-1 text-sm">
-              <nav aria-label="Secciones del panel">
-                <ul class="flex flex-wrap items-center gap-x-4 gap-y-1">
-                  {SECCIONES.map((seccion) => (
-                    <li>
-                      <a
-                        href={seccion.href}
-                        aria-current={esActual(seccion.href) ? "page" : undefined}
-                        class:list={[
-                          "foco-claro inline-flex min-h-[44px] items-center gap-1.5 transition-colors hover:text-white",
-                          esActual(seccion.href)
-                            ? "font-bold text-white underline decoration-2 underline-offset-8"
-                            : "text-white/85",
-                        ]}
-                      >
-                        {seccion.etiqueta}
-                        {seccion.href === "/admin/mensajes" && mensajesPendientes > 0 && (
-                          <span
-                            class="grid min-w-[1.35rem] place-items-center rounded-full bg-accent px-1.5 py-0.5 text-[0.7rem] font-bold text-white"
-                            aria-label={`${mensajesPendientes} sin atender`}
-                          >
-                            {mensajesPendientes}
-                          </span>
-                        )}
-                      </a>
-                    </li>
-                  ))}
-                </ul>
-              </nav>
-              <a
-                href="/"
-                class="foco-claro inline-flex min-h-[44px] items-center text-white/85 transition-colors hover:text-white"
-              >
-                Ver sitio
-              </a>
-              <form method="post" action="/api/admin/salir">
-                <button
-                  type="submit"
-                  class="foco-claro inline-flex min-h-[44px] items-center rounded-full border border-white/40 px-4 font-semibold transition-colors hover:bg-white/10"
-                >
-                  Salir
-                </button>
-              </form>
-            </div>
+            <details id="menu-panel" class="relative">
+              <summary class="foco-claro inline-flex min-h-[44px] min-w-[44px] cursor-pointer list-none items-center justify-center gap-2 rounded-full border border-white/35 px-3 text-sm font-semibold transition-colors hover:bg-white/10 [&::-webkit-details-marker]:hidden">
+                <svg viewBox="0 0 24 24" class="h-5 w-5 fill-current" aria-hidden="true">
+                  <path d="M3 6h18v2H3V6Zm0 5h18v2H3v-2Zm0 5h18v2H3v-2Z" />
+                </svg>
+                <span class="sr-only">Abrir menú del panel</span>
+                {mensajesPendientes > 0 && (
+                  <span
+                    class="grid min-w-[1.3rem] place-items-center rounded-full bg-accent px-1.5 text-[0.7rem] font-bold"
+                    aria-label={`${mensajesPendientes} mensajes sin atender`}
+                  >
+                    {mensajesPendientes}
+                  </span>
+                )}
+              </summary>
+
+              <div class="absolute right-0 z-50 mt-2.5 w-72 rounded-xl border border-white/15 bg-navy p-3 shadow-2xl">
+                <NavPanel rutaActual={rutaActual} mensajesPendientes={mensajesPendientes} />
+                <div class="mt-4 border-t border-white/10 pt-3">
+                  <p class="truncate px-3 pb-1 text-xs text-white/60">{correo}</p>
+                  <a
+                    href="/"
+                    class="foco-claro flex min-h-[44px] items-center rounded-lg px-3 text-[0.9375rem] font-semibold text-white/80 transition-colors hover:bg-white/10 hover:text-white"
+                  >
+                    Ver sitio
+                  </a>
+                  <form method="post" action="/api/admin/salir">
+                    <button
+                      type="submit"
+                      class="foco-claro flex w-full min-h-[44px] items-center rounded-lg px-3 text-[0.9375rem] font-semibold text-white/80 transition-colors hover:bg-white/10 hover:text-white"
+                    >
+                      Cerrar sesión
+                    </button>
+                  </form>
+                </div>
+              </div>
+            </details>
           )
         }
       </div>
     </header>
-    <main class="mx-auto max-w-5xl px-4 py-8 md:px-6">
-      <slot />
-    </main>
+
+    <div class="min-w-0">
+      <main id="contenido-panel" tabindex="-1" class="mx-auto max-w-5xl px-4 py-8 md:px-6">
+        <slot />
+      </main>
+    </div>
   </div>
+
+  <script is:inline>
+    (() => {
+      const menu = document.getElementById("menu-panel");
+      if (!menu) return;
+      // Al elegir una seccion el cajon se cierra solo; en un enlace que navega
+      // no se nota, pero evita que quede abierto si el destino es la misma pagina.
+      menu.addEventListener("click", (evento) => {
+        if (evento.target instanceof Element && evento.target.closest("a")) {
+          menu.removeAttribute("open");
+        }
+      });
+    })();
+  </script>
 </Layout>

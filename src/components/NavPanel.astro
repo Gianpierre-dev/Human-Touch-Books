@@ -1,0 +1,125 @@
+---
+// Navegacion del panel. Vive en un solo componente porque la usan la barra
+// lateral de escritorio y el cajon desplegable de movil: si se duplicara el
+// marcado, cualquier seccion nueva habria que agregarla en dos sitios.
+interface Props {
+  rutaActual: string;
+  mensajesPendientes: number;
+}
+
+const { rutaActual, mensajesPendientes } = Astro.props;
+
+interface Enlace {
+  href: string;
+  etiqueta: string;
+  icono: string;
+  /** `/admin` es prefijo de todo el panel: solo puede coincidir de forma exacta. */
+  exacto?: boolean;
+  insignia?: number;
+}
+
+// Agrupadas por la tarea que resuelven, no por como estan hechas por dentro:
+// quien administra piensa en "la web", "las consultas" y "mi configuracion".
+const GRUPOS: { titulo: string; enlaces: Enlace[] }[] = [
+  {
+    titulo: "Contenido de la web",
+    enlaces: [
+      {
+        href: "/admin/portada",
+        etiqueta: "Portada",
+        icono:
+          "M21 5H3a1 1 0 0 0-1 1v12a1 1 0 0 0 1 1h18a1 1 0 0 0 1-1V6a1 1 0 0 0-1-1Zm-1 11.6-4.3-5.2-3.2 3.9-2.2-2.4L4 17V7h16v9.6ZM8.5 11a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3Z",
+      },
+      {
+        href: "/admin/imagenes",
+        etiqueta: "Imágenes",
+        icono: "M4 16V4h12v2H6v10H4Zm4 4V8h12v12H8Zm2-2h8v-3.2l-2.4-2.9-2 2.4-1.4-1.5L10 15v3Z",
+      },
+      {
+        href: "/admin",
+        etiqueta: "Libros",
+        exacto: true,
+        icono:
+          "M4 3h6a3 3 0 0 1 2 .8A3 3 0 0 1 14 3h6v15h-6a2 2 0 0 0-2 1.6A2 2 0 0 0 10 18H4V3Zm2 2v11h4a4 4 0 0 1 1 .1V6.9A1.9 1.9 0 0 0 9.6 5H6Zm12 0h-3.6A1.9 1.9 0 0 0 13 6.9v10.2a4 4 0 0 1 1-.1h4V5Z",
+      },
+      {
+        href: "/admin/preguntas",
+        etiqueta: "Preguntas",
+        icono:
+          "M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20Zm.9 15.2h-1.8v-1.8h1.8v1.8Zm1.6-6.6-.8.9c-.6.6-1 1.1-1 2.2h-1.8v-.5c0-.8.4-1.5 1-2.1l1.1-1.2a1.8 1.8 0 1 0-3-1.3H8.2a3.6 3.6 0 1 1 6.3 2Z",
+      },
+    ],
+  },
+  {
+    titulo: "Consultas",
+    enlaces: [
+      {
+        href: "/admin/mensajes",
+        etiqueta: "Mensajes",
+        insignia: mensajesPendientes,
+        icono: "M20 4H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2Zm0 4-8 5-8-5V6l8 5 8-5v2Z",
+      },
+    ],
+  },
+  {
+    titulo: "Configuración",
+    enlaces: [
+      {
+        href: "/admin/ajustes",
+        etiqueta: "Ajustes",
+        icono:
+          "M19.1 12.9a7.5 7.5 0 0 0 0-1.8l2-1.5-2-3.4-2.3 1a7.4 7.4 0 0 0-1.6-.9L14.8 4h-4l-.4 2.3c-.6.2-1.1.5-1.6.9l-2.3-1-2 3.4 2 1.5a7.5 7.5 0 0 0 0 1.8l-2 1.5 2 3.4 2.3-1c.5.4 1 .7 1.6.9l.4 2.3h4l.4-2.3c.6-.2 1.1-.5 1.6-.9l2.3 1 2-3.4-2-1.5ZM12.8 15a3 3 0 1 1 0-6 3 3 0 0 1 0 6Z",
+      },
+      {
+        href: "/admin/cuenta",
+        etiqueta: "Mi cuenta",
+        icono: "M12 12a5 5 0 1 0 0-10 5 5 0 0 0 0 10Zm0 2c-4.1 0-9 2.1-9 5v3h18v-3c0-2.9-4.9-5-9-5Z",
+      },
+    ],
+  },
+];
+
+const esActual = (enlace: Enlace): boolean =>
+  enlace.exacto ? rutaActual === enlace.href : rutaActual.startsWith(enlace.href);
+---
+
+<nav aria-label="Secciones del panel" class="flex flex-col gap-6">
+  {
+    GRUPOS.map((grupo) => (
+      <div>
+        <h2 class="px-3 pb-2 text-[0.7rem] font-bold tracking-[0.14em] text-white/55 uppercase">
+          {grupo.titulo}
+        </h2>
+        <ul class="flex flex-col gap-0.5">
+          {grupo.enlaces.map((enlace) => (
+            <li>
+              <a
+                href={enlace.href}
+                aria-current={esActual(enlace) ? "page" : undefined}
+                class:list={[
+                  "foco-claro flex min-h-[44px] items-center gap-3 rounded-lg px-3 text-[0.9375rem] transition-colors",
+                  esActual(enlace)
+                    ? "bg-white/15 font-bold text-white"
+                    : "font-semibold text-white/80 hover:bg-white/10 hover:text-white",
+                ]}
+              >
+                <svg viewBox="0 0 24 24" class="h-5 w-5 shrink-0 fill-current" aria-hidden="true">
+                  <path d={enlace.icono} />
+                </svg>
+                <span class="flex-1">{enlace.etiqueta}</span>
+                {enlace.insignia !== undefined && enlace.insignia > 0 && (
+                  <span
+                    class="grid min-w-[1.4rem] place-items-center rounded-full bg-accent px-1.5 py-0.5 text-[0.7rem] font-bold text-white"
+                    aria-label={`${enlace.insignia} sin atender`}
+                  >
+                    {enlace.insignia}
+                  </span>
+                )}
+              </a>
+            </li>
+          ))}
+        </ul>
+      </div>
+    ))
+  }
+</nav>
