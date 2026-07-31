@@ -216,25 +216,39 @@ body {
 }
 
 /*
-  Velo entre la foto y el texto: garantiza el contraste AA del blanco sea cual
-  sea la imagen subida al panel. En pantallas anchas el texto vive a la
-  izquierda y el velo se abre hacia la derecha para dejar ver la foto; en
-  angostas el texto ocupa todo el ancho y el velo es casi uniforme.
+  Velo entre la foto y el texto.
+  Se mide, no se estima: sin nada de velo el blanco del titular cae a 1:1
+  sobre las portadas cargadas (tienen zonas blancas justo detras del texto),
+  o sea texto invisible. Por eso el velo se queda, pero acotado: cubre solo
+  la franja donde vive el texto y desaparece del todo antes de la mitad
+  derecha, que es la parte de la foto que se luce. La sombra del texto
+  (`.hero-texto`) hace el resto, y permite que el velo sea mas suave.
 */
 .hero-velo {
-  background: linear-gradient(180deg, rgb(0 0 0 / 0.82) 0%, rgb(0 0 0 / 0.74) 100%);
+  background: linear-gradient(180deg, rgb(0 0 0 / 0.72) 0%, rgb(0 0 0 / 0.6) 100%);
 }
 
 @media (min-width: 768px) {
   .hero-velo {
     background: linear-gradient(
-      100deg,
-      rgb(0 0 0 / 0.88) 0%,
-      rgb(0 0 0 / 0.78) 42%,
-      rgb(0 0 0 / 0.5) 66%,
-      rgb(0 0 0 / 0.25) 100%
+      95deg,
+      rgb(0 0 0 / 0.8) 0%,
+      rgb(0 0 0 / 0.62) 34%,
+      rgb(0 0 0 / 0.24) 52%,
+      transparent 62%
     );
   }
+}
+
+/*
+  Sombra propia del texto del hero: agarra el contraste pegado a cada letra,
+  sin oscurecer la fotografia alrededor. Permite bajar el velo sin perder
+  legibilidad.
+*/
+.hero-texto {
+  text-shadow:
+    0 1px 2px rgb(0 0 0 / 0.55),
+    0 2px 12px rgb(0 0 0 / 0.45);
 }
 
 /*
