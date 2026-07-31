@@ -1,7 +1,7 @@
 import type { APIRoute } from "astro";
 import { bd } from "../../../../lib/bd";
 import { eliminarPortada } from "../../../../lib/almacen";
-import { leerDatosLibro, procesarPortada } from "../../../../lib/libros";
+import { leerDatosLibro, procesarPortada, verificarLinea } from "../../../../lib/libros";
 
 export const prerender = false;
 
@@ -21,6 +21,11 @@ export const POST: APIRoute = async ({ params, request, redirect }) => {
   const { datos, error } = leerDatosLibro(formulario);
   if (!datos) {
     return redirect(`/admin/libros/${id}?error=${encodeURIComponent(error ?? "")}`, 303);
+  }
+
+  const errorLinea = await verificarLinea(datos.lineaId);
+  if (errorLinea) {
+    return redirect(`/admin/libros/${id}?error=${encodeURIComponent(errorLinea)}`, 303);
   }
 
   const portada = await procesarPortada(formulario, datos.titulo);

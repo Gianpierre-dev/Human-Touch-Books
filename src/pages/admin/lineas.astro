@@ -1,0 +1,386 @@
+---
+import PanelLayout from "../../layouts/PanelLayout.astro";
+import { bd } from "../../lib/bd";
+import { LIMITES_LINEA } from "../../lib/lineas";
+
+export const prerender = false;
+
+// El conteo de libros viaja en la misma consulta (`_count`): evita una consulta
+// por linea al pintar la lista.
+const lineas = await bd.linea.findMany({
+  orderBy: [{ orden: "asc" }, { creadoEn: "asc" }],
+  include: { _count: { select: { libros: true } } },
+});
+const activas = lineas.filter((linea) => linea.activa).length;
+const sinLinea = await bd.libro.count({ where: { lineaId: null } });
+
+const ok = Astro.url.searchParams.get("ok");
+const error = Astro.url.searchParams.get("error");
+
+const MENSAJES_OK: Record<string, string> = {
+  creada: "Línea agregada.",
+  guardada: "Cambios guardados.",
+  eliminada: "Línea eliminada. Sus libros quedaron sin línea asignada.",
+  visible: "La línea quedó activa.",
+  oculta: "La línea quedó desactivada.",
+  reordenada: "Orden actualizado.",
+  sincambios: "No había nada que cambiar.",
+};
+
+const MENSAJES_ERROR: Record<string, string> = {
+  sinnombre: "El nombre es obligatorio.",
+  nombrelargo: `El nombre admite hasta ${LIMITES_LINEA.nombre} caracteres.`,
+  sinetiqueta: "La etiqueta corta es obligatoria.",
+  etiquetalarga: `La etiqueta corta admite hasta ${LIMITES_LINEA.etiquetaCorta} caracteres.`,
+  sinclave: "La clave es obligatoria.",
+  clavelarga: `La clave admite hasta ${LIMITES_LINEA.clave} caracteres.`,
+  claveformato:
+    "La clave solo admite minúsculas, números y guiones internos. Por ejemplo: tutoria-primaria.",
+  claverepetida: "Ya existe otra línea con esa clave. Elige una diferente.",
+  sindescripcion: "La descripción es obligatoria.",
+  descripcionlarga: `La descripción admite hasta ${LIMITES_LINEA.descripcion} caracteres.`,
+  color: "Elige un color de identidad válido.",
+  orden: "El orden debe ser un número.",
+  noexiste: "No encontramos esa línea.",
+  accion: "No reconocimos la acción solicitada.",
+};
+
+const textoError = error ? (MENSAJES_ERROR[error] ?? error) : null;
+
+const clasesCampo =
+  "mt-1.5 min-h-[44px] w-full rounded-lg border border-line bg-paper px-3.5 py-2.5 text-sm outline-none focus-visible:border-brand focus-visible:ring-2 focus-visible:ring-brand/30";
+const clasesBoton =
+  "foco-marca inline-flex min-h-[44px] items-center justify-center gap-1.5 rounded-full border border-line bg-surface px-4 text-xs font-bold text-ink transition-colors hover:bg-surface-2 disabled:cursor-not-allowed disabled:opacity-40";
+const clasesBotonPeligro =
+  "foco-marca inline-flex min-h-[44px] items-center justify-center rounded-full border border-accent/40 bg-surface px-4 text-xs font-bold text-accent-deep transition-colors hover:bg-accent/10";
+const clasesBotonPrincipal =
+  "foco-marca inline-flex min-h-[44px] items-center rounded-full bg-brand px-7 text-sm font-bold text-white transition-colors hover:bg-brand-deep";
+
+const AYUDA_CLAVE =
+  "Identificador para las direcciones de la web. Solo minúsculas, números y guiones. No se repite entre líneas.";
+---
+
+<PanelLayout titulo="Líneas" correo={Astro.locals.sesion?.correo}>
+  <h1 class="text-2xl font-extrabold text-ink">Líneas de producto</h1>
+  <p class="mt-1 text-sm text-ink/70">
+    {lineas.length} línea{lineas.length === 1 ? "" : "s"}, {activas} activa{
+      activas === 1 ? "" : "s"
+    }. Cada línea agrupa los libros de su colección y aporta el color y el texto con los que se
+    presenta.
+  </p>
+
+  {
+    ok && (
+      <p class="mt-4 rounded-lg bg-wa/10 px-4 py-2.5 text-sm font-semibold text-wa-deep">
+        {MENSAJES_OK[ok] ?? "Listo."}
+      </p>
+    )
+  }
+  {
+    textoError && (
+      <p class="mt-4 rounded-lg bg-accent/10 px-4 py-2.5 text-sm font-semibold text-accent-deep">
+        {textoError}
+      </p>
+    )
+  }
+
+  {
+    lineas.length === 0 && (
+      <p class="mt-6 rounded-xl border border-line bg-surface px-6 py-10 text-center text-sm text-ink/70">
+        Todavía no hay líneas cargadas. Agrega la primera con el formulario de abajo.
+      </p>
+    )
+  }
+
+  {
+    sinLinea > 0 && (
+      <p class="mt-6 rounded-lg border border-line bg-surface-2 px-4 py-3 text-sm text-ink/75">
+        Hay {sinLinea} libro{sinLinea === 1 ? "" : "s"} sin línea asignada. Puedes asignar la línea
+        desde la ficha de cada libro, en <strong class="font-semibold text-ink">Libros</strong>.
+      </p>
+    )
+  }
+
+  <div class="mt-6 space-y-5">
+    {
+      lineas.map((linea, posicion) => (
+        <article
+          id={`linea-${linea.id}`}
+          class="rounded-xl border border-line bg-surface p-6 shadow-sm"
+          aria-labelledby={`titulo-${linea.id}`}
+        >
+          <div class="flex flex-wrap items-start justify-between gap-3">
+            <div class="flex items-center gap-3">
+              {/* El color es dato del cliente, no marcado: va como estilo de una
+                  muestra decorativa y el valor tambien se escribe en texto para
+                  quien no distingue colores. */}
+              <span
+                class="h-7 w-7 shrink-0 rounded-full ring-1 ring-line"
+                style={`background-color:${linea.colorHex}`}
+                aria-hidden="true"
+              />
+              <h2 id={`titulo-${linea.id}`} class="text-base font-bold text-ink">
+                {posicion + 1}. {linea.nombre}
+              </h2>
+            </div>
+            <span
+              class:list={[
+                "inline-block rounded-full px-2.5 py-0.5 text-[0.7rem] font-bold",
+                linea.activa ? "bg-wa/15 text-wa-deep" : "bg-surface-2 text-ink/70",
+              ]}
+            >
+              {linea.activa ? "Activa" : "Desactivada"}
+            </span>
+          </div>
+
+          <dl class="mt-3 flex flex-wrap gap-x-6 gap-y-1 text-sm text-ink/70">
+            <div class="flex gap-1.5">
+              <dt class="font-semibold text-ink">Etiqueta corta:</dt>
+              <dd>{linea.etiquetaCorta}</dd>
+            </div>
+            <div class="flex gap-1.5">
+              <dt class="font-semibold text-ink">Clave:</dt>
+              <dd><code>{linea.clave}</code></dd>
+            </div>
+            <div class="flex gap-1.5">
+              <dt class="font-semibold text-ink">Color:</dt>
+              <dd><code>{linea.colorHex}</code></dd>
+            </div>
+            <div class="flex gap-1.5">
+              <dt class="font-semibold text-ink">Libros:</dt>
+              <dd>{linea._count.libros}</dd>
+            </div>
+            <div class="flex gap-1.5">
+              <dt class="font-semibold text-ink">Orden:</dt>
+              <dd>{linea.orden}</dd>
+            </div>
+          </dl>
+
+          <div class="mt-4 flex flex-wrap items-center gap-2">
+            <form method="post" action={`/api/admin/lineas/${linea.id}`}>
+              <input type="hidden" name="_accion" value="subir" />
+              <button
+                type="submit"
+                class={clasesBoton}
+                disabled={posicion === 0}
+                aria-label={`Subir la línea «${linea.nombre}» una posición`}
+              >
+                <svg viewBox="0 0 24 24" class="h-4 w-4 fill-current" aria-hidden="true">
+                  <path d="M12 6l6 6h-4v6h-4v-6H6l6-6Z" />
+                </svg>
+                Subir
+              </button>
+            </form>
+            <form method="post" action={`/api/admin/lineas/${linea.id}`}>
+              <input type="hidden" name="_accion" value="bajar" />
+              <button
+                type="submit"
+                class={clasesBoton}
+                disabled={posicion === lineas.length - 1}
+                aria-label={`Bajar la línea «${linea.nombre}» una posición`}
+              >
+                <svg viewBox="0 0 24 24" class="h-4 w-4 fill-current" aria-hidden="true">
+                  <path d="M12 18l-6-6h4V6h4v6h4l-6 6Z" />
+                </svg>
+                Bajar
+              </button>
+            </form>
+            <form method="post" action={`/api/admin/lineas/${linea.id}`}>
+              <input type="hidden" name="_accion" value="activar" />
+              <button
+                type="submit"
+                class={clasesBoton}
+                aria-label={`${linea.activa ? "Desactivar" : "Activar"} la línea «${linea.nombre}»`}
+              >
+                {linea.activa ? "Desactivar" : "Activar"}
+              </button>
+            </form>
+            <form
+              method="post"
+              action={`/api/admin/lineas/${linea.id}`}
+              {/* El nombre no se interpola dentro del literal de JavaScript:
+                  escaparlo a mano es fragil y el boton ya lo dice en su
+                  aria-label. El resto del panel usa avisos fijos igual. */}
+              onsubmit={`return confirm('¿Eliminar esta línea? Sus ${linea._count.libros} libro(s) no se borran: quedan sin línea asignada. No se puede deshacer.')`}
+            >
+              <input type="hidden" name="_accion" value="eliminar" />
+              <button
+                type="submit"
+                class={clasesBotonPeligro}
+                aria-label={`Eliminar la línea «${linea.nombre}»`}
+              >
+                Eliminar
+              </button>
+            </form>
+          </div>
+
+          <form
+            method="post"
+            action={`/api/admin/lineas/${linea.id}`}
+            class="mt-5 border-t border-line pt-5"
+          >
+            <div class="grid gap-4 sm:grid-cols-2">
+              <label class="block">
+                <span class="text-sm font-semibold text-ink">
+                  Nombre <span class="text-accent-deep">*</span>
+                </span>
+                <input
+                  type="text"
+                  name="nombre"
+                  required
+                  maxlength={LIMITES_LINEA.nombre}
+                  value={linea.nombre}
+                  class={clasesCampo}
+                />
+              </label>
+              <label class="block">
+                <span class="text-sm font-semibold text-ink">
+                  Etiqueta corta <span class="text-accent-deep">*</span>
+                </span>
+                <input
+                  type="text"
+                  name="etiqueta_corta"
+                  required
+                  maxlength={LIMITES_LINEA.etiquetaCorta}
+                  value={linea.etiquetaCorta}
+                  class={clasesCampo}
+                />
+              </label>
+              <label class="block">
+                <span class="text-sm font-semibold text-ink">
+                  Clave <span class="text-accent-deep">*</span>
+                </span>
+                <input
+                  type="text"
+                  name="clave"
+                  required
+                  maxlength={LIMITES_LINEA.clave}
+                  pattern="[a-z0-9]+(-[a-z0-9]+)*"
+                  value={linea.clave}
+                  aria-describedby={`ayuda-clave-${linea.id}`}
+                  class={clasesCampo}
+                />
+                <span id={`ayuda-clave-${linea.id}`} class="mt-1.5 block text-xs text-ink/70">
+                  {AYUDA_CLAVE}
+                </span>
+              </label>
+              <div class="grid grid-cols-2 gap-4">
+                <label class="block">
+                  <span class="text-sm font-semibold text-ink">Color</span>
+                  <input
+                    type="color"
+                    name="color_hex"
+                    value={linea.colorHex}
+                    aria-label={`Color de identidad de ${linea.nombre}`}
+                    class="mt-1.5 h-[44px] w-full cursor-pointer rounded-lg border border-line bg-paper px-1.5 py-1"
+                  />
+                </label>
+                <label class="block">
+                  <span class="text-sm font-semibold text-ink">Orden</span>
+                  <input type="number" name="orden" value={linea.orden} class={clasesCampo} />
+                </label>
+              </div>
+              <label class="block sm:col-span-2">
+                <span class="text-sm font-semibold text-ink">
+                  Descripción <span class="text-accent-deep">*</span>
+                </span>
+                {/* Sin saltos de línea alrededor: el contenido del textarea ES su valor. */}
+                <textarea name="descripcion" rows="3" required maxlength={LIMITES_LINEA.descripcion} class={clasesCampo}>{linea.descripcion}</textarea>
+              </label>
+            </div>
+            <button type="submit" class:list={[clasesBotonPrincipal, "mt-5"]}>
+              Guardar cambios
+            </button>
+          </form>
+        </article>
+      ))
+    }
+  </div>
+
+  <form
+    method="post"
+    action="/api/admin/lineas"
+    class="mt-8 max-w-2xl rounded-xl border border-line bg-surface p-6 shadow-sm md:p-8"
+  >
+    <h2 class="text-lg font-bold text-ink">Agregar línea</h2>
+
+    <div class="mt-5 grid gap-4 sm:grid-cols-2">
+      <label class="block">
+        <span class="text-sm font-semibold text-ink">
+          Nombre <span class="text-accent-deep">*</span>
+        </span>
+        <input
+          type="text"
+          name="nombre"
+          required
+          maxlength={LIMITES_LINEA.nombre}
+          placeholder="Ej. Tutoría SMART Secundaria"
+          class={clasesCampo}
+        />
+      </label>
+      <label class="block">
+        <span class="text-sm font-semibold text-ink">
+          Etiqueta corta <span class="text-accent-deep">*</span>
+        </span>
+        <input
+          type="text"
+          name="etiqueta_corta"
+          required
+          maxlength={LIMITES_LINEA.etiquetaCorta}
+          placeholder="Ej. Secundaria"
+          class={clasesCampo}
+        />
+      </label>
+      <label class="block">
+        <span class="text-sm font-semibold text-ink">
+          Clave <span class="text-accent-deep">*</span>
+        </span>
+        <input
+          type="text"
+          name="clave"
+          required
+          maxlength={LIMITES_LINEA.clave}
+          pattern="[a-z0-9]+(-[a-z0-9]+)*"
+          placeholder="Ej. secundaria"
+          aria-describedby="ayuda-clave-nueva"
+          class={clasesCampo}
+        />
+        <span id="ayuda-clave-nueva" class="mt-1.5 block text-xs text-ink/70">{AYUDA_CLAVE}</span>
+      </label>
+      <div class="grid grid-cols-2 gap-4">
+        <label class="block">
+          <span class="text-sm font-semibold text-ink">Color</span>
+          <input
+            type="color"
+            name="color_hex"
+            value="#1e6fd9"
+            aria-label="Color de identidad de la nueva línea"
+            class="mt-1.5 h-[44px] w-full cursor-pointer rounded-lg border border-line bg-paper px-1.5 py-1"
+          />
+        </label>
+        <label class="block">
+          <span class="text-sm font-semibold text-ink">Orden</span>
+          <input type="number" name="orden" value={lineas.length + 1} class={clasesCampo} />
+        </label>
+      </div>
+      <label class="block sm:col-span-2">
+        <span class="text-sm font-semibold text-ink">
+          Descripción <span class="text-accent-deep">*</span>
+        </span>
+        <textarea
+          name="descripcion"
+          rows="3"
+          required
+          maxlength={LIMITES_LINEA.descripcion}
+          placeholder="Párrafo de presentación de la línea"
+          aria-describedby="ayuda-descripcion-nueva"
+          class={clasesCampo}></textarea>
+        <span id="ayuda-descripcion-nueva" class="mt-1.5 block text-xs text-ink/70">
+          Hasta {LIMITES_LINEA.descripcion} caracteres.
+        </span>
+      </label>
+    </div>
+
+    <button type="submit" class:list={[clasesBotonPrincipal, "mt-6"]}>Agregar línea</button>
+  </form>
+</PanelLayout>

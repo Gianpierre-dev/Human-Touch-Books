@@ -1,13 +1,21 @@
 ---
 import type { Libro } from "@prisma/client";
+import { LIMITE_DESCRIPCION_CORTA } from "../lib/libros";
+
+/** Lo minimo que el `<select>` de linea necesita saber de cada linea. */
+export interface OpcionLinea {
+  id: string;
+  nombre: string;
+}
 
 interface Props {
   accion: string;
   libro?: Libro;
   error?: string | null;
+  lineas: readonly OpcionLinea[];
 }
 
-const { accion, libro, error } = Astro.props;
+const { accion, libro, error, lineas } = Astro.props;
 const clasesCampo =
   "mt-1.5 w-full rounded-lg border border-line bg-paper px-3.5 py-2.5 text-sm outline-none focus-visible:border-brand focus-visible:ring-2 focus-visible:ring-brand/30";
 ---
@@ -48,6 +56,37 @@ const clasesCampo =
     <label class="block">
       <span class="text-sm font-semibold text-ink">Orden</span>
       <input type="number" name="orden" value={libro?.orden ?? 0} class={clasesCampo} />
+    </label>
+
+    <label class="block sm:col-span-2">
+      <span class="text-sm font-semibold text-ink">Línea de producto</span>
+      <select name="linea_id" class={clasesCampo}>
+        <option value="" selected={!libro?.lineaId}>Sin línea asignada</option>
+        {
+          lineas.map((linea) => (
+            <option value={linea.id} selected={libro?.lineaId === linea.id}>
+              {linea.nombre}
+            </option>
+          ))
+        }
+      </select>
+    </label>
+
+    <label class="block sm:col-span-2">
+      <span class="text-sm font-semibold text-ink">Descripción breve</span>
+      <input
+        type="text"
+        name="descripcion_corta"
+        maxlength={LIMITE_DESCRIPCION_CORTA}
+        value={libro?.descripcionCorta ?? ""}
+        aria-describedby="ayuda-descripcion-corta"
+        class={clasesCampo}
+      />
+      <span id="ayuda-descripcion-corta" class="mt-1.5 block text-xs text-ink/70">
+        Frase breve que acompaña al libro en la página de su línea. Hasta {
+          LIMITE_DESCRIPCION_CORTA
+        } caracteres.
+      </span>
     </label>
 
     <label class="block">

@@ -9,6 +9,11 @@ const { id } = Astro.params;
 const libro = await bd.libro.findUnique({ where: { id: id ?? "" } });
 if (!libro) return Astro.redirect("/admin?error=noexiste", 302);
 
+const lineas = await bd.linea.findMany({
+  orderBy: [{ orden: "asc" }, { creadoEn: "asc" }],
+  select: { id: true, nombre: true },
+});
+
 const error = Astro.url.searchParams.get("error");
 ---
 
@@ -34,6 +39,11 @@ const error = Astro.url.searchParams.get("error");
   </div>
 
   <div class="mt-6">
-    <FormularioLibro accion={`/api/admin/libros/${libro.id}`} libro={libro} error={error} />
+    <FormularioLibro
+      accion={`/api/admin/libros/${libro.id}`}
+      libro={libro}
+      error={error}
+      lineas={lineas}
+    />
   </div>
 </PanelLayout>

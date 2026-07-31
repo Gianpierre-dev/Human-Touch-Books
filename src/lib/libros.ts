@@ -1,10 +1,16 @@
 import type { LineaLibro } from "@prisma/client";
 import { esPortadaValida, guardarPortada } from "./almacen";
+import { bd } from "./bd";
+
+/** Limite de la frase breve que acompana al libro en la pagina de su linea. */
+export const LIMITE_DESCRIPCION_CORTA = 160;
 
 export interface DatosLibro {
   titulo: string;
   subtitulo: string | null;
   linea: LineaLibro;
+  lineaId: string | null;
+  descripcionCorta: string | null;
   grado: string | null;
   nivel: string | null;
   autor: string | null;
@@ -39,11 +45,19 @@ export function leerDatosLibro(datos: FormData): { datos?: DatosLibro; error?: s
   const orden = Number.parseInt(ordenTexto === "" ? "0" : ordenTexto, 10);
   if (Number.isNaN(orden)) return { error: "El orden debe ser un número." };
 
+  // El `maxlength` del navegador se puede saltar: el limite se comprueba aqui.
+  const descripcionCorta = textoONulo(datos, "descripcion_corta");
+  if (descripcionCorta !== null && descripcionCorta.length > LIMITE_DESCRIPCION_CORTA) {
+    return { error: `La descripción breve admite hasta ${LIMITE_DESCRIPCION_CORTA} caracteres.` };
+  }
+
   return {
     datos: {
       titulo,
       subtitulo: textoONulo(datos, "subtitulo"),
       linea,
+      lineaId: textoONulo(datos, "linea_id"),
+      descripcionCorta,
       grado: textoONulo(datos, "grado"),
       nivel: textoONulo(datos, "nivel"),
       autor: textoONulo(datos, "autor"),
@@ -54,6 +68,18 @@ export function leerDatosLibro(datos: FormData): { datos?: DatosLibro; error?: s
       destacado: datos.get("destacado") === "si",
     },
   };
+}
+
+/**
+ * Comprueba que la linea elegida exista. El `<select>` solo ofrece lineas
+ * reales, pero el formulario se puede enviar a mano y sin esta comprobacion la
+ * clave foranea reventaria con un error 500 en vez de un mensaje entendible.
+ * Devuelve el texto del error o `null` si todo esta bien.
+ */
+export async function verificarLinea(lineaId: string | null): Promise<string | null> {
+  if (lineaId === null) return null;
+  const existentes = await bd.linea.count({ where: { id: lineaId } });
+  return existentes === 0 ? "La línea seleccionada ya no existe." : null;
 }
 
 export async function procesarPortada(

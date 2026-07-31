@@ -1,8 +1,14 @@
 ---
 import PanelLayout from "../../../layouts/PanelLayout.astro";
 import FormularioLibro from "../../../components/FormularioLibro.astro";
+import { bd } from "../../../lib/bd";
 
 export const prerender = false;
+
+const lineas = await bd.linea.findMany({
+  orderBy: [{ orden: "asc" }, { creadoEn: "asc" }],
+  select: { id: true, nombre: true },
+});
 
 const error = Astro.url.searchParams.get("error");
 ---
@@ -10,5 +16,5 @@ const error = Astro.url.searchParams.get("error");
 <PanelLayout titulo="Nuevo libro" correo={Astro.locals.sesion?.correo}>
   <h1 class="text-2xl font-extrabold text-ink">Agregar libro</h1>
   <p class="mt-1 mb-6 text-sm text-ink/60">Completa los datos y sube la portada.</p>
-  <FormularioLibro accion="/api/admin/libros" error={error} />
+  <FormularioLibro accion="/api/admin/libros" error={error} lineas={lineas} />
 </PanelLayout>

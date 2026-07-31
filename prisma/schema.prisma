@@ -12,32 +12,62 @@ enum LineaLibro {
   literatura
 }
 
-model Libro {
-  id         String     @id @default(cuid())
-  titulo     String
-  subtitulo  String?
-  linea      LineaLibro
-  grado      String?
-  nivel      String?
-  autor      String?
-  ilustrador String?
-  anio       Int?
-  sinopsis   String
-  portadaUrl String     @map("portada_url")
-  orden      Int        @default(0)
-  destacado  Boolean    @default(false)
-  creadoEn   DateTime   @default(now()) @map("creado_en")
-  editadoEn  DateTime   @updatedAt @map("editado_en")
+// Lineas de producto del catalogo: cada una agrupa libros y aporta su identidad
+// (nombre comercial, color y texto de presentacion) a la pagina de la linea.
+//
+// Convive a proposito con el enum `LineaLibro` de Libro: la landing todavia
+// filtra por ese campo. La migracion de datos y el retiro del enum quedan para
+// una etapa posterior; mientras tanto la relacion es opcional y aditiva.
+model Linea {
+  id            String   @id @default(cuid())
+  clave         String   @unique
+  nombre        String
+  etiquetaCorta String   @map("etiqueta_corta")
+  descripcion   String
+  colorHex      String   @map("color_hex")
+  orden         Int      @default(0)
+  activa        Boolean  @default(true)
+  creadoEn      DateTime @default(now()) @map("creado_en")
+  actualizadoEn DateTime @updatedAt @map("actualizado_en")
 
+  libros Libro[]
+
+  @@map("lineas")
+}
+
+model Libro {
+  id               String     @id @default(cuid())
+  titulo           String
+  subtitulo        String?
+  linea            LineaLibro
+  grado            String?
+  nivel            String?
+  autor            String?
+  ilustrador       String?
+  anio             Int?
+  sinopsis         String
+  // Frase breve que acompana al libro en la pagina de su linea.
+  descripcionCorta String?    @map("descripcion_corta")
+  portadaUrl       String     @map("portada_url")
+  orden            Int        @default(0)
+  destacado        Boolean    @default(false)
+  creadoEn         DateTime   @default(now()) @map("creado_en")
+  editadoEn        DateTime   @updatedAt @map("editado_en")
+
+  // Al borrar una linea los libros no se pierden: quedan sin linea asignada.
+  lineaId  String? @map("linea_id")
+  lineaRel Linea?  @relation(fields: [lineaId], references: [id], onDelete: SetNull)
+
+  @@index([lineaId])
   @@map("libros")
 }
 
 model Usuario {
-  id             String   @id @default(cuid())
-  correo         String   @unique
-  nombre         String
-  hashContrasena String   @map("hash_contrasena")
-  creadoEn       DateTime @default(now()) @map("creado_en")
+  id                 String   @id @default(cuid())
+  correo             String   @unique
+  nombre             String
+  hashContrasena     String   @map("hash_contrasena")
+  creadoEn           DateTime @default(now()) @map("creado_en")
   // Version de la credencial: el token de sesion la lleva dentro y el
   // middleware la compara con esta. Al cambiar la contrasena sube y todas las
   // sesiones emitidas antes dejan de valer (un JWT no se puede revocar solo).
