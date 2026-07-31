@@ -9,10 +9,16 @@
 @theme {
   /* Paleta del mock aprobado por el cliente */
   --color-ink: #12264d; /* texto principal */
-  --color-navy: #0a2550; /* fondo hero */
+  --color-navy: #0a2550; /* banda de cierre y botones */
+  /* Grafito neutro: base del hero a sangre. Sustituye al navy para que la
+     portada mande y el bloque no se lea azul. */
+  --color-grafito: #17191f;
   --color-brand: #1e6fd9; /* azul primario */
   --color-brand-deep: #124a99; /* hover */
-  --color-brand-bright: #35a3f5; /* celeste acentos */
+  --color-brand-bright: #35a3f5; /* celeste acentos sobre fondo plano */
+  /* Celeste palido para los acentos que van sobre fotografia: el saturado se
+     queda en 2,5:1 contra una portada clara y este llega a 9:1. */
+  --color-brand-suave: #bfe0ff;
   --color-violet: #6d28d9; /* degradado boton plataforma */
   /* WhatsApp: el verde de marca (#22b95c) da 2.57:1 con texto blanco.
      `wa` es la version accesible (5.02:1 con blanco) y carga botones, bordes y
@@ -216,54 +222,57 @@ body {
   angostas el texto ocupa todo el ancho y el velo es casi uniforme.
 */
 .hero-velo {
-  background: linear-gradient(180deg, rgb(10 37 80 / 0.9) 0%, rgb(10 37 80 / 0.82) 100%);
+  background: linear-gradient(180deg, rgb(0 0 0 / 0.82) 0%, rgb(0 0 0 / 0.74) 100%);
 }
 
 @media (min-width: 768px) {
   .hero-velo {
     background: linear-gradient(
       100deg,
-      rgb(10 37 80 / 0.95) 0%,
-      rgb(10 37 80 / 0.87) 42%,
-      rgb(10 37 80 / 0.5) 66%,
-      rgb(10 37 80 / 0.22) 100%
+      rgb(0 0 0 / 0.88) 0%,
+      rgb(0 0 0 / 0.78) 42%,
+      rgb(0 0 0 / 0.5) 66%,
+      rgb(0 0 0 / 0.25) 100%
     );
   }
 }
 
 /*
-  Control circular sobre la imagen. El fondo navy opaco garantiza el contraste
-  del icono blanco sea cual sea la foto que quede debajo, y los 44 px cubren el
-  area minima de toque.
+  Control circular sobre la imagen: negro translucido con desenfoque, neutro
+  como el resto del hero. El fondo oscuro garantiza el contraste del icono
+  blanco sea cual sea la foto que quede debajo, y los 44 px cubren el area
+  minima de toque. El `display` lo pone el marcado, para que la utilidad que
+  las oculta en movil no pierda contra esta regla.
 */
 .hero-control {
-  display: grid;
   place-items: center;
   width: 2.75rem;
   height: 2.75rem;
   border-radius: 9999px;
-  border: 1px solid rgb(255 255 255 / 0.45);
-  background-color: rgb(10 37 80 / 0.82);
+  border: 1px solid rgb(255 255 255 / 0.4);
+  background-color: rgb(0 0 0 / 0.4);
+  -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(6px);
   color: #ffffff;
-  box-shadow: 0 6px 18px -6px rgb(0 0 0 / 0.6);
 }
 
 .hero-control:hover {
-  background-color: var(--color-navy);
+  background-color: rgb(0 0 0 / 0.65);
   border-color: #ffffff;
 }
 
+/* Indicador: punto pequeno; el de la imagen a la vista se alarga en pastilla. */
 .hero-punto {
   display: block;
   width: 0.625rem;
   height: 0.625rem;
   border-radius: 9999px;
-  background-color: rgb(255 255 255 / 0.55);
+  background-color: rgb(255 255 255 / 0.5);
 }
 
 [aria-current="true"] .hero-punto {
-  background-color: var(--color-brand-bright);
-  transform: scale(1.3);
+  width: 1.75rem;
+  background-color: #ffffff;
 }
 
 @media (prefers-reduced-motion: no-preference) {
@@ -277,8 +286,8 @@ body {
 
   .hero-punto {
     transition:
-      background-color 0.2s ease-out,
-      transform 0.2s ease-out;
+      width 0.25s ease-out,
+      background-color 0.2s ease-out;
   }
 }
 
