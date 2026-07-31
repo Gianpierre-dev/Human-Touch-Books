@@ -1,0 +1,179 @@
+---
+import PanelLayout from "../../layouts/PanelLayout.astro";
+import { bd } from "../../lib/bd";
+import {
+  CAMPOS_TEXTO,
+  GRUPOS_TEXTO,
+  campoTexto,
+  descripcionColeccionPorDefecto,
+  valorPorDefecto,
+  type CampoTexto,
+} from "../../lib/textos";
+
+export const prerender = false;
+
+const filas = await bd.textoSitio.findMany();
+const propios = new Map(filas.map((fila) => [fila.clave, fila.valor]));
+
+// La descripción de la colección se calcula con el catálogo de libros, igual
+// que en la web: así el placeholder muestra el texto real que se está viendo.
+const escolares = await bd.libro.findMany({
+  where: { destacado: true, linea: "escolar" },
+  orderBy: { orden: "asc" },
+});
+const grados = escolares.map((libro) => libro.grado).filter((grado): grado is string => Boolean(grado));
+const contexto = {
+  descripcionColeccion: descripcionColeccionPorDefecto(
+    escolares.at(0)?.subtitulo ?? "",
+    grados.at(0),
+    grados.at(-1),
+  ),
+};
+
+const ok = Astro.url.searchParams.get("ok");
+const error = Astro.url.searchParams.get("error");
+const claveConError = Astro.url.searchParams.get("campo") ?? "";
+const campoConError = campoTexto(claveConError);
+
+const MENSAJES_OK: Record<string, string> = {
+  guardado: "Cambios guardados.",
+  sincambios: "No había nada que cambiar.",
+};
+
+const textoError =
+  error === "largo" && campoConError
+    ? `No se guardó nada: «${campoConError.etiqueta}» admite hasta ${campoConError.limite} caracteres.`
+    : error
+      ? "No pudimos guardar los cambios."
+      : null;
+
+const camposPorGrupo = new Map<string, CampoTexto[]>();
+for (const campo of CAMPOS_TEXTO) {
+  const lista = camposPorGrupo.get(campo.grupo);
+  if (lista) lista.push(campo);
+  else camposPorGrupo.set(campo.grupo, [campo]);
+}
+
+const clasesCampo =
+  "mt-1.5 min-h-[44px] w-full rounded-lg border border-line bg-paper px-3.5 py-2.5 text-sm outline-none placeholder:text-ink/55 focus-visible:border-brand focus-visible:ring-2 focus-visible:ring-brand/30";
+---
+
+<PanelLayout titulo="Textos" correo={Astro.locals.sesion?.correo}>
+  <h1 class="text-2xl font-extrabold text-ink">Textos de la página</h1>
+  <p class="mt-1 max-w-[70ch] text-sm text-ink/70">
+    Cada campo llega vacío y en gris se ve el texto que la web está mostrando. Escribe encima para
+    reemplazarlo y <strong class="font-semibold text-ink">bórralo para volver al original</strong>.
+    Cada sección se guarda por separado.
+  </p>
+
+  {
+    ok && (
+      <p class="mt-4 rounded-lg bg-wa/10 px-4 py-2.5 text-sm font-semibold text-wa-deep">
+        {MENSAJES_OK[ok] ?? "Listo."}
+      </p>
+    )
+  }
+  {
+    textoError && (
+      <p class="mt-4 rounded-lg bg-accent/10 px-4 py-2.5 text-sm font-semibold text-accent-deep">
+        {textoError}
+      </p>
+    )
+  }
+
+  {/* Índice: con once secciones, bajar a la de contacto a puro scroll es incómodo. */}
+  <nav aria-label="Secciones de esta página" class="mt-6">
+    <ul class="flex flex-wrap gap-2">
+      {
+        GRUPOS_TEXTO.map((grupo) => (
+          <li>
+            <a
+              href={`#grupo-${grupo.id}`}
+              class="foco-marca inline-flex min-h-[44px] items-center rounded-full border border-line bg-surface px-4 text-xs font-bold text-ink transition-colors hover:bg-surface-2"
+            >
+              {grupo.titulo}
+            </a>
+          </li>
+        ))
+      }
+    </ul>
+  </nav>
+
+  <div class="mt-8 space-y-6">
+    {
+      GRUPOS_TEXTO.map((grupo) => {
+        const campos = camposPorGrupo.get(grupo.id) ?? [];
+        return (
+          <section
+            id={`grupo-${grupo.id}`}
+            class="scroll-mt-6 rounded-xl border border-line bg-surface p-6 shadow-sm md:p-8"
+            aria-labelledby={`encabezado-${grupo.id}`}
+          >
+            <h2 id={`encabezado-${grupo.id}`} class="text-lg font-bold text-ink">
+              {grupo.titulo}
+            </h2>
+            <p class="mt-1 text-sm text-ink/70">{grupo.ayuda}</p>
+
+            <form method="post" action="/api/admin/textos" class="mt-5">
+              <input type="hidden" name="_grupo" value={grupo.id} />
+
+              {campos.map((campo) => {
+                const valor = propios.get(campo.clave) ?? "";
+                const defecto = valorPorDefecto(campo, contexto);
+                const idAyuda = `ayuda-${campo.clave}`;
+                const personalizado = propios.has(campo.clave);
+
+                return (
+                  <div class="mt-5 first:mt-0">
+                    <label class="block">
+                      <span class="flex flex-wrap items-center gap-2 text-sm font-semibold text-ink">
+                        {campo.etiqueta}
+                        {personalizado && (
+                          <span class="rounded-full bg-brand/10 px-2 py-0.5 text-[0.7rem] font-bold text-brand-deep">
+                            Personalizado
+                          </span>
+                        )}
+                      </span>
+                      {campo.multilinea ? (
+                        // Sin saltos de línea alrededor: el contenido del textarea ES su valor.
+                        <textarea
+                          name={campo.clave}
+                          rows="3"
+                          maxlength={campo.limite}
+                          placeholder={defecto}
+                          aria-describedby={idAyuda}
+                          class={clasesCampo}
+                        >{valor}</textarea>
+                      ) : (
+                        <input
+                          type="text"
+                          name={campo.clave}
+                          maxlength={campo.limite}
+                          value={valor}
+                          placeholder={defecto}
+                          aria-describedby={idAyuda}
+                          class={clasesCampo}
+                        />
+                      )}
+                    </label>
+                    <p id={idAyuda} class="mt-1.5 text-xs text-ink/70">
+                      {campo.ayuda} Hasta {campo.limite} caracteres. Déjalo vacío para usar el texto
+                      original.
+                    </p>
+                  </div>
+                );
+              })}
+
+              <button
+                type="submit"
+                class="foco-marca mt-6 inline-flex min-h-[44px] items-center rounded-full bg-brand px-7 text-sm font-bold text-white transition-colors hover:bg-brand-deep"
+              >
+                Guardar {grupo.titulo.toLowerCase()}
+              </button>
+            </form>
+          </section>
+        );
+      })
+    }
+  </div>
+</PanelLayout>

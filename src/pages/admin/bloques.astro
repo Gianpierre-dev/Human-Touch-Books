@@ -1,0 +1,30 @@
+---
+import PanelLayout from "../../layouts/PanelLayout.astro";
+import ListaBloques from "../../components/ListaBloques.astro";
+import { bd } from "../../lib/bd";
+import { LIMITES_BLOQUE } from "../../lib/bloques";
+
+export const prerender = false;
+
+const bloques = await bd.bloqueValor.findMany({
+  orderBy: [{ orden: "asc" }, { creadoEn: "asc" }],
+});
+---
+
+<PanelLayout titulo="Bloques" correo={Astro.locals.sesion?.correo}>
+  <ListaBloques
+    encabezado="Bloques de la propuesta"
+    descripcion="Se muestran en la sección «Qué aporta Tutoría SMART» en el orden de esta lista. El icono de cada bloque viene con el diseño y no se edita: se asigna por posición."
+    vacio="Todavía no hay bloques cargados. Mientras la lista esté vacía, la página muestra los cuatro bloques originales del diseño."
+    singular="bloque"
+    plural="bloques"
+    articulo="el"
+    rutaApi="/api/admin/bloques"
+    limites={LIMITES_BLOQUE}
+    elementos={bloques}
+    ok={Astro.url.searchParams.get("ok")}
+    error={Astro.url.searchParams.get("error")}
+    ayudaTitulo="Idea principal del bloque, en pocas palabras."
+    ayudaTexto="Una o dos líneas que expliquen el beneficio."
+  />
+</PanelLayout>

@@ -96,6 +96,45 @@ model ImagenSitio {
   @@map("imagenes_sitio")
 }
 
+// Textos comerciales sueltos de la landing (titulares, antetitulos, parrafos,
+// botones). Una fila por texto y solo cuando se personaliza: el valor por
+// defecto vive en el codigo (src/lib/textos.ts) y sin fila la web lo usa. Por
+// eso vaciar el campo en el panel borra la fila en vez de guardar "".
+model TextoSitio {
+  id            String   @id @default(cuid())
+  clave         String   @unique
+  valor         String
+  actualizadoEn DateTime @updatedAt @map("actualizado_en")
+
+  @@map("textos_sitio")
+}
+
+// Bloques de la seccion "Que aporta Tutoria SMART". Con cero filas la landing
+// muestra los cuatro bloques que trae el diseno (src/lib/bloques.ts).
+model BloqueValor {
+  id       String   @id @default(cuid())
+  titulo   String
+  texto    String
+  orden    Int      @default(0)
+  activa   Boolean  @default(true)
+  creadoEn DateTime @default(now()) @map("creado_en")
+
+  @@map("bloques_valor")
+}
+
+// Tarjetas pequenas de la seccion Plataforma. Mismo criterio que BloqueValor:
+// con la tabla vacia se muestran las del diseno.
+model ChipPlataforma {
+  id       String   @id @default(cuid())
+  titulo   String
+  texto    String
+  orden    Int      @default(0)
+  activa   Boolean  @default(true)
+  creadoEn DateTime @default(now()) @map("creado_en")
+
+  @@map("chips_plataforma")
+}
+
 // Preguntas frecuentes de la landing. Los campos de enlace son opcionales y
 // reproducen los enlaces de accion que la seccion ya mostraba.
 model Pregunta {

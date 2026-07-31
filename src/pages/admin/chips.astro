@@ -1,0 +1,30 @@
+---
+import PanelLayout from "../../layouts/PanelLayout.astro";
+import ListaBloques from "../../components/ListaBloques.astro";
+import { bd } from "../../lib/bd";
+import { LIMITES_CHIP } from "../../lib/bloques";
+
+export const prerender = false;
+
+const chips = await bd.chipPlataforma.findMany({
+  orderBy: [{ orden: "asc" }, { creadoEn: "asc" }],
+});
+---
+
+<PanelLayout titulo="Tarjetas de la plataforma" correo={Astro.locals.sesion?.correo}>
+  <ListaBloques
+    encabezado="Tarjetas de la plataforma"
+    descripcion="Se muestran en la sección «Plataforma Tutoría SMART» en el orden de esta lista. El icono y el color de cada tarjeta vienen con el diseño y no se editan: se asignan por posición."
+    vacio="Todavía no hay tarjetas cargadas. Mientras la lista esté vacía, la página muestra las cuatro tarjetas originales del diseño."
+    singular="tarjeta"
+    plural="tarjetas"
+    articulo="la"
+    rutaApi="/api/admin/chips"
+    limites={LIMITES_CHIP}
+    elementos={chips}
+    ok={Astro.url.searchParams.get("ok")}
+    error={Astro.url.searchParams.get("error")}
+    ayudaTitulo="Nombre corto de la ventaja. En la web se ve en letra pequeña."
+    ayudaTexto="Una línea. Las tarjetas son angostas: los textos largos se ven apretados."
+  />
+</PanelLayout>

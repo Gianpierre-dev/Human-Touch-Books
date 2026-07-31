@@ -1,16 +1,25 @@
 ---
+import { defectoFijo } from "../lib/textos";
+
 interface Props {
   whatsapp?: string;
   correoContacto?: string;
   ubicacion?: string;
   hayColeccion?: boolean;
+  /** Párrafo bajo el logotipo. Administrable desde /admin/textos. */
+  descripcion?: string;
 }
+
+// El texto del catálogo es la única fuente del valor por defecto: así el pie no
+// se desincroniza del placeholder que ve el panel.
+const DESCRIPCION_POR_DEFECTO = defectoFijo("pie_descripcion");
 
 const {
   whatsapp = "51982953436",
   correoContacto = "informes@humantouchbooks.pe",
   ubicacion = "La Molina, Lima — Perú",
   hayColeccion = true,
+  descripcion = DESCRIPCION_POR_DEFECTO,
 } = Astro.props;
 
 const whatsappVisible = `+${whatsapp.slice(0, 2)} ${whatsapp.slice(2, 5)} ${whatsapp.slice(5, 8)} ${whatsapp.slice(8)}`;
@@ -33,10 +42,7 @@ const explora = [
     <div class="flex flex-col gap-10 md:flex-row md:items-start md:justify-between">
       <div class="max-w-sm">
         <img src="/brand/logo.png" alt="Human Touch Books" class="h-14 w-auto" width="113" height="70" />
-        <p class="mt-4 text-sm leading-relaxed text-ink/75">
-          Editorial peruana que pone lo humano en el centro de cada página. Textos escolares y
-          literatura que acompañan a crecer.
-        </p>
+        <p class="mt-4 text-sm leading-relaxed text-ink/75">{descripcion}</p>
       </div>
 
       <div class="grid grid-cols-1 gap-8 text-sm sm:grid-cols-2 sm:gap-10">

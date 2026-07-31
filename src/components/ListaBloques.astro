@@ -1,0 +1,292 @@
+---
+// Lista administrable de bloques cortos (título + texto + orden + visibilidad).
+// La usan /admin/bloques y /admin/chips: comparten exactamente la misma
+// mecánica y sólo cambian el copy, los límites y el endpoint. Duplicar el
+// marcado obligaría a corregir cualquier detalle de accesibilidad dos veces.
+import type { LimitesBloque } from "../lib/bloques";
+
+interface Elemento {
+  id: string;
+  titulo: string;
+  texto: string;
+  orden: number;
+  activa: boolean;
+}
+
+interface Props {
+  encabezado: string;
+  descripcion: string;
+  /** Aviso que se muestra cuando la lista está vacía. */
+  vacio: string;
+  /** Nombre del elemento en singular y plural, para los textos de la pantalla. */
+  singular: string;
+  plural: string;
+  /** "el" o "la": concuerda los mensajes con el género del nombre. */
+  articulo: string;
+  rutaApi: string;
+  limites: LimitesBloque;
+  elementos: Elemento[];
+  ok: string | null;
+  error: string | null;
+  ayudaTitulo: string;
+  ayudaTexto: string;
+}
+
+const {
+  encabezado,
+  descripcion,
+  vacio,
+  singular,
+  plural,
+  articulo,
+  rutaApi,
+  limites,
+  elementos,
+  ok,
+  error,
+  ayudaTitulo,
+  ayudaTexto,
+} = Astro.props;
+
+const activos = elementos.filter((elemento) => elemento.activa).length;
+
+// Concuerda el demostrativo con el género del nombre: "este bloque", "esta tarjeta".
+const demostrativo = articulo === "la" ? "esta" : "este";
+
+const MENSAJES_OK: Record<string, string> = {
+  creado: `Se agregó ${articulo} ${singular}.`,
+  guardado: "Cambios guardados.",
+  eliminado: `Se eliminó ${articulo} ${singular}.`,
+  visible: `Ya se muestra en la web.`,
+  oculto: `Dejó de mostrarse en la web.`,
+  reordenado: "Orden actualizado.",
+  sincambios: "No había nada que cambiar.",
+};
+
+const MENSAJES_ERROR: Record<string, string> = {
+  sintitulo: "El título es obligatorio.",
+  titulolargo: `El título admite hasta ${limites.titulo} caracteres.`,
+  sintexto: "El texto es obligatorio.",
+  textolargo: `El texto admite hasta ${limites.texto} caracteres.`,
+  orden: "El orden debe ser un número.",
+  noexiste: `No encontramos ${articulo} ${singular}.`,
+  accion: "No reconocimos la acción solicitada.",
+};
+
+const textoError = error ? (MENSAJES_ERROR[error] ?? error) : null;
+
+const clasesCampo =
+  "mt-1.5 min-h-[44px] w-full rounded-lg border border-line bg-paper px-3.5 py-2.5 text-sm outline-none focus-visible:border-brand focus-visible:ring-2 focus-visible:ring-brand/30";
+const clasesBoton =
+  "foco-marca inline-flex min-h-[44px] items-center justify-center gap-1.5 rounded-full border border-line bg-surface px-4 text-xs font-bold text-ink transition-colors hover:bg-surface-2 disabled:cursor-not-allowed disabled:opacity-40";
+const clasesBotonPeligro =
+  "foco-marca inline-flex min-h-[44px] items-center justify-center rounded-full border border-accent/40 bg-surface px-4 text-xs font-bold text-accent-deep transition-colors hover:bg-accent/10";
+const clasesBotonPrincipal =
+  "foco-marca inline-flex min-h-[44px] items-center rounded-full bg-brand px-7 text-sm font-bold text-white transition-colors hover:bg-brand-deep";
+---
+
+<h1 class="text-2xl font-extrabold text-ink">{encabezado}</h1>
+<p class="mt-1 text-sm text-ink/70">
+  {elementos.length} {elementos.length === 1 ? singular : plural}, {activos} visible{
+    activos === 1 ? "" : "s"
+  } en la web. {descripcion}
+</p>
+
+{
+  ok && (
+    <p class="mt-4 rounded-lg bg-wa/10 px-4 py-2.5 text-sm font-semibold text-wa-deep">
+      {MENSAJES_OK[ok] ?? "Listo."}
+    </p>
+  )
+}
+{
+  textoError && (
+    <p class="mt-4 rounded-lg bg-accent/10 px-4 py-2.5 text-sm font-semibold text-accent-deep">
+      {textoError}
+    </p>
+  )
+}
+
+{
+  elementos.length === 0 && (
+    <p class="mt-6 rounded-xl border border-line bg-surface px-6 py-10 text-center text-sm text-ink/70">
+      {vacio}
+    </p>
+  )
+}
+
+{/* Ocultar todo no devuelve el contenido original: deja la zona sin
+    elementos. Conviene decirlo antes de que sorprenda en la web. */}
+{
+  elementos.length > 0 && activos === 0 && (
+    <p class="mt-6 rounded-lg border border-line bg-surface-2 px-4 py-3 text-sm text-ink/75">
+      Ningún elemento está visible, así que esta zona no se muestra en la web.
+      Activa al menos uno para que vuelva a verse.
+    </p>
+  )
+}
+
+<div class="mt-6 space-y-5">
+  {
+    elementos.map((elemento, posicion) => (
+      <article
+        id={`elemento-${elemento.id}`}
+        class="rounded-xl border border-line bg-surface p-6 shadow-sm"
+        aria-labelledby={`titulo-${elemento.id}`}
+      >
+        <div class="flex flex-wrap items-start justify-between gap-3">
+          <h2 id={`titulo-${elemento.id}`} class="text-base font-bold text-ink">
+            {posicion + 1}. {elemento.titulo}
+          </h2>
+          <span
+            class:list={[
+              "inline-block rounded-full px-2.5 py-0.5 text-[0.7rem] font-bold",
+              elemento.activa ? "bg-wa/15 text-wa-deep" : "bg-surface-2 text-ink/70",
+            ]}
+          >
+            {elemento.activa ? "Visible" : "Oculto"}
+          </span>
+        </div>
+
+        <div class="mt-4 flex flex-wrap items-center gap-2">
+          <form method="post" action={`${rutaApi}/${elemento.id}`}>
+            <input type="hidden" name="_accion" value="subir" />
+            <button
+              type="submit"
+              class={clasesBoton}
+              disabled={posicion === 0}
+              aria-label={`Subir «${elemento.titulo}» una posición`}
+            >
+              <svg viewBox="0 0 24 24" class="h-4 w-4 fill-current" aria-hidden="true">
+                <path d="M12 6l6 6h-4v6h-4v-6H6l6-6Z" />
+              </svg>
+              Subir
+            </button>
+          </form>
+          <form method="post" action={`${rutaApi}/${elemento.id}`}>
+            <input type="hidden" name="_accion" value="bajar" />
+            <button
+              type="submit"
+              class={clasesBoton}
+              disabled={posicion === elementos.length - 1}
+              aria-label={`Bajar «${elemento.titulo}» una posición`}
+            >
+              <svg viewBox="0 0 24 24" class="h-4 w-4 fill-current" aria-hidden="true">
+                <path d="M12 18l-6-6h4V6h4v6h4l-6 6Z" />
+              </svg>
+              Bajar
+            </button>
+          </form>
+          <form method="post" action={`${rutaApi}/${elemento.id}`}>
+            <input type="hidden" name="_accion" value="activar" />
+            <button
+              type="submit"
+              class={clasesBoton}
+              aria-label={`${elemento.activa ? "Ocultar" : "Mostrar"} en la web «${elemento.titulo}»`}
+            >
+              {elemento.activa ? "Ocultar" : "Mostrar"}
+            </button>
+          </form>
+          <form
+            method="post"
+            action={`${rutaApi}/${elemento.id}`}
+            onsubmit={`return confirm('¿Eliminar ${demostrativo} ${singular}? No se puede deshacer.')`}
+          >
+            <input type="hidden" name="_accion" value="eliminar" />
+            <button
+              type="submit"
+              class={clasesBotonPeligro}
+              aria-label={`Eliminar «${elemento.titulo}»`}
+            >
+              Eliminar
+            </button>
+          </form>
+        </div>
+
+        <form
+          method="post"
+          action={`${rutaApi}/${elemento.id}`}
+          class="mt-5 border-t border-line pt-5"
+        >
+          <label class="block">
+            <span class="text-sm font-semibold text-ink">
+              Título <span class="text-accent-deep">*</span>
+            </span>
+            <input
+              type="text"
+              name="titulo"
+              required
+              maxlength={limites.titulo}
+              value={elemento.titulo}
+              class={clasesCampo}
+            />
+          </label>
+          <label class="mt-4 block">
+            <span class="text-sm font-semibold text-ink">
+              Texto <span class="text-accent-deep">*</span>
+            </span>
+            {/* Sin saltos de línea alrededor: el contenido del textarea ES su valor. */}
+            <textarea name="texto" rows="3" required maxlength={limites.texto} class={clasesCampo}>{elemento.texto}</textarea>
+          </label>
+          <label class="mt-4 block max-w-[12rem]">
+            <span class="text-sm font-semibold text-ink">Orden</span>
+            <input type="number" name="orden" value={elemento.orden} class={clasesCampo} />
+          </label>
+          <button type="submit" class:list={[clasesBotonPrincipal, "mt-5"]}>
+            Guardar cambios
+          </button>
+        </form>
+      </article>
+    ))
+  }
+</div>
+
+<form
+  method="post"
+  action={rutaApi}
+  class="mt-8 max-w-2xl rounded-xl border border-line bg-surface p-6 shadow-sm md:p-8"
+>
+  <h2 class="text-lg font-bold text-ink">Agregar {singular}</h2>
+
+  <label class="mt-5 block">
+    <span class="text-sm font-semibold text-ink">
+      Título <span class="text-accent-deep">*</span>
+    </span>
+    <input
+      type="text"
+      name="titulo"
+      required
+      maxlength={limites.titulo}
+      aria-describedby="ayuda-nuevo-titulo"
+      class={clasesCampo}
+    />
+  </label>
+  <p id="ayuda-nuevo-titulo" class="mt-1.5 text-xs text-ink/70">
+    {ayudaTitulo} Hasta {limites.titulo} caracteres.
+  </p>
+
+  <label class="mt-4 block">
+    <span class="text-sm font-semibold text-ink">
+      Texto <span class="text-accent-deep">*</span>
+    </span>
+    <textarea
+      name="texto"
+      rows="3"
+      required
+      maxlength={limites.texto}
+      aria-describedby="ayuda-nuevo-texto"
+      class={clasesCampo}></textarea>
+  </label>
+  <p id="ayuda-nuevo-texto" class="mt-1.5 text-xs text-ink/70">
+    {ayudaTexto} Hasta {limites.texto} caracteres.
+  </p>
+
+  <label class="mt-4 block max-w-[12rem]">
+    <span class="text-sm font-semibold text-ink">Orden</span>
+    <input type="number" name="orden" value={elementos.length + 1} class={clasesCampo} />
+  </label>
+
+  <button type="submit" class:list={[clasesBotonPrincipal, "mt-6"]}>
+    Agregar {singular}
+  </button>
+</form>
