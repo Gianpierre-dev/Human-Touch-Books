@@ -21,8 +21,16 @@ propuestaProveedor.png
 1.png
 2.png
 3.png
+4.png
+5.png
+6.png
 carruser.png
 proforma-*.html
+# Piezas de diseno enviadas por el cliente (material de referencia, no producto)
+mision vision.png
+primaria.png
+secundaria.png
+quienessomos.png
 
 # Entorno y subidas (repo publico: secretos fuera del repo)
 .env
