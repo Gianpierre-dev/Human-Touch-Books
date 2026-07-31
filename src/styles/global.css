@@ -216,15 +216,29 @@ body {
 }
 
 /*
-  Placa del texto del hero.
-  Medido: sin nada detras, el blanco del titular cae a 1:1 sobre las portadas
-  cargadas (tienen zonas blancas justo ahi), o sea texto invisible. En vez de
-  resolverlo con una sombra difusa —que ensucia la foto y se ve como una
-  mancha— el texto se apoya en una placa solida de borde limpio: se lee como
-  una pieza de diseno, y la fotografia queda intacta a su alrededor.
+  Velo del hero: degradado negro de izquierda a derecha, que deja la mitad
+  derecha de la fotografia sin nada encima. Es el tratamiento clasico de
+  portada a sangre.
+  Depende de la imagen: funciona cuando la portada es una fotografia con una
+  zona tranquila a la izquierda. Con una imagen clara o con tipografia
+  incrustada, el texto pierde contraste; por eso el panel pide una foto con
+  esas caracteristicas al cargarla.
 */
-.hero-placa {
-  background-color: rgb(16 18 24 / 0.9);
+.hero-velo {
+  /* En pantallas angostas el texto ocupa todo el ancho: el degradado va de
+     arriba abajo para cubrirlo entero. */
+  background: linear-gradient(180deg, rgb(0 0 0 / 0.72) 0%, rgb(0 0 0 / 0.55) 100%);
+}
+
+@media (min-width: 768px) {
+  .hero-velo {
+    background: linear-gradient(
+      to right,
+      rgb(0 0 0 / 0.7) 0%,
+      rgb(0 0 0 / 0.45) 50%,
+      transparent 100%
+    );
+  }
 }
 
 /*
