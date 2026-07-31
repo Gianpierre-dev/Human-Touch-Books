@@ -27,9 +27,13 @@ const BUCKET = process.env.WASABI_BUCKET_NAME ?? "";
 // de alta densidad sin arrastrar los 3 MB que suele pesar el archivo original.
 const ANCHO_MAXIMO = 1200;
 
-// Las imagenes de portada del sitio (hero, secciones) ocupan hasta ~800 px de
-// ancho: 1600 les da el mismo margen de alta densidad que 1200 a las tapas.
+// Las imagenes de secciones fijas ocupan hasta ~800 px de ancho: 1600 les da
+// el mismo margen de alta densidad que 1200 a las tapas.
 export const ANCHO_IMAGEN_SITIO = 1600;
+
+// Las del hero cubren la seccion completa, de borde a borde: 1920 evita que
+// lleguen blandas a un monitor grande. Solo afecta a subidas nuevas.
+export const ANCHO_IMAGEN_HERO = 1920;
 
 const cliente = new S3Client({
   region: process.env.WASABI_REGION,

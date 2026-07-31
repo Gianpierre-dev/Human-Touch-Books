@@ -268,14 +268,69 @@ const preguntas: PreguntaVista[] =
 
   <main id="inicio" tabindex="-1">
     <!-- HERO -->
-    <section class="relative overflow-hidden bg-navy text-white" aria-labelledby="titulo-hero">
+    <section
+      id="hero-carrusel"
+      class="relative isolate overflow-hidden bg-navy text-white"
+      aria-labelledby="titulo-hero"
+    >
+      {/* Portada: administrable desde /admin/portada. La imagen ya no es una
+          tarjeta: cubre el fondo de toda la seccion. Sin imagenes cargadas se
+          mantiene la del mock aprobado (ver scripts/limpiar-mocks.mjs). */}
+      {
+        totalDiapositivas === 0 ? (
+          <img
+            src={HERO_POR_DEFECTO.imagenUrl}
+            alt={HERO_POR_DEFECTO.altTexto}
+            class="absolute inset-0 h-full w-full object-cover"
+            width={HERO_POR_DEFECTO.ancho}
+            height={HERO_POR_DEFECTO.alto}
+            loading="eager"
+            fetchpriority="high"
+          />
+        ) : (
+          // Con una sola imagen esto no es un carrusel y no debe anunciarse
+          // como tal: sin controles, el rol solo confundiría.
+          <div
+            id="hero-fondo"
+            class="absolute inset-0"
+            role={hayCarrusel ? "group" : undefined}
+            aria-roledescription={hayCarrusel ? "carrusel" : undefined}
+            aria-label={hayCarrusel ? "Imágenes del proyecto Tutoría SMART" : undefined}
+          >
+            {imagenesHero.map((imagen, indice) => (
+              <div
+                id={`hero-imagen-${indice + 1}`}
+                data-diapositiva
+                data-visible={indice === 0 ? true : undefined}
+                class="hero-diapositiva"
+                role={hayCarrusel ? "group" : undefined}
+                aria-roledescription={hayCarrusel ? "diapositiva" : undefined}
+                aria-label={hayCarrusel ? `${indice + 1} de ${totalDiapositivas}` : undefined}
+              >
+                <img
+                  src={imagen.imagenUrl}
+                  alt={imagen.altTexto}
+                  class="h-full w-full object-cover"
+                  width={HERO_POR_DEFECTO.ancho}
+                  height={HERO_POR_DEFECTO.alto}
+                  loading={indice === 0 ? "eager" : "lazy"}
+                  fetchpriority={indice === 0 ? "high" : undefined}
+                />
+              </div>
+            ))}
+          </div>
+        )
+      }
+      {/* Velo de contraste entre la foto y el texto: sin el, la legibilidad del
+          blanco dependeria de lo que traiga cada imagen subida al panel. */}
+      <div class="hero-velo pointer-events-none absolute inset-0" aria-hidden="true"></div>
       <div
         class="pointer-events-none absolute inset-0 bg-[radial-gradient(60rem_30rem_at_110%_-10%,#1e6fd955,transparent_60%),radial-gradient(40rem_24rem_at_-10%_110%,#35a3f533,transparent_60%)]"
         aria-hidden="true"
       >
       </div>
       <div
-        class="relative mx-auto grid max-w-6xl items-center gap-10 px-4 py-14 md:grid-cols-[1.05fr_0.95fr] md:px-8 md:py-20"
+        class="relative mx-auto grid max-w-6xl items-center gap-10 px-4 py-14 md:min-h-[34rem] md:grid-cols-[1.05fr_0.95fr] md:px-8 md:py-20"
       >
         <div class="reveal">
           <span
@@ -334,156 +389,59 @@ const preguntas: PreguntaVista[] =
           </p>
         </div>
 
-        {/* Portada: administrable desde /admin/portada. Sin imagenes cargadas se
-            mantiene la imagen del mock aprobado, recortada para quitar los restos
-            de tipografia de la maqueta original (ver scripts/limpiar-mocks.mjs). */}
-        <div class="relative mx-auto w-full max-w-lg">
-          {
-            totalDiapositivas === 0 ? (
-              <div class="relative overflow-hidden rounded-2xl shadow-2xl ring-1 ring-white/15">
-                <img
-                  src={HERO_POR_DEFECTO.imagenUrl}
-                  alt={HERO_POR_DEFECTO.altTexto}
-                  class="block w-full"
-                  width={HERO_POR_DEFECTO.ancho}
-                  height={HERO_POR_DEFECTO.alto}
-                  loading="eager"
-                  fetchpriority="high"
-                />
-                <div
-                  class="pointer-events-none absolute inset-0"
-                  style="background: linear-gradient(100deg, #0a255066 0%, #0a255022 34%, transparent 62%);"
-                  aria-hidden="true"
-                />
-              </div>
-            ) : (
-              // Con una sola imagen esto no es un carrusel y no debe anunciarse
-              // como tal: sin controles, el rol solo confundiría.
-              <div
-                id="hero-carrusel"
-                class="relative"
-                role={hayCarrusel ? "group" : undefined}
-                aria-roledescription={hayCarrusel ? "carrusel" : undefined}
-                aria-label={hayCarrusel ? "Imágenes del proyecto Tutoría SMART" : undefined}
-              >
-                {/* El marco conserva la proporcion de la imagen original: la
-                    portada ocupa el mismo lugar y tamano que antes y no hay
-                    salto de maquetado al cargar cada imagen. */}
-                <div
-                  id="hero-pista"
-                  class="hero-pista flex overflow-x-auto overscroll-x-contain rounded-2xl shadow-2xl ring-1 ring-white/15"
-                >
-                  {imagenesHero.map((imagen, indice) => (
-                    <div
-                      id={`hero-imagen-${indice + 1}`}
-                      data-diapositiva
-                      class="hero-diapositiva relative w-full shrink-0"
-                      role={hayCarrusel ? "group" : undefined}
-                      aria-roledescription={hayCarrusel ? "diapositiva" : undefined}
-                      aria-label={hayCarrusel ? `${indice + 1} de ${totalDiapositivas}` : undefined}
-                    >
-                      <img
-                        src={imagen.imagenUrl}
-                        alt={imagen.altTexto}
-                        class="block aspect-[505/336] w-full object-cover"
-                        width={HERO_POR_DEFECTO.ancho}
-                        height={HERO_POR_DEFECTO.alto}
-                        loading={indice === 0 ? "eager" : "lazy"}
-                        fetchpriority={indice === 0 ? "high" : undefined}
-                      />
-                      <div
-                        class="pointer-events-none absolute inset-0"
-                        style="background: linear-gradient(100deg, #0a255066 0%, #0a255022 34%, transparent 62%);"
-                        aria-hidden="true"
-                      />
-                      {hayCarrusel && (
-                        <div
-                          data-flechas-ancla
-                          class="pointer-events-none absolute inset-0 flex items-center justify-between px-2"
-                        >
-                          <a
-                            href={`#hero-imagen-${indice === 0 ? totalDiapositivas : indice}`}
-                            class="hero-control foco-claro pointer-events-auto"
-                            aria-label={`Ver imagen ${indice === 0 ? totalDiapositivas : indice} de ${totalDiapositivas}`}
-                          >
-                            <svg viewBox="0 0 24 24" class="h-5 w-5 fill-current" aria-hidden="true">
-                              <path d="M15 5 8 12l7 7V5Z" />
-                            </svg>
-                          </a>
-                          <a
-                            href={`#hero-imagen-${indice + 2 > totalDiapositivas ? 1 : indice + 2}`}
-                            class="hero-control foco-claro pointer-events-auto"
-                            aria-label={`Ver imagen ${indice + 2 > totalDiapositivas ? 1 : indice + 2} de ${totalDiapositivas}`}
-                          >
-                            <svg viewBox="0 0 24 24" class="h-5 w-5 fill-current" aria-hidden="true">
-                              <path d="M9 5l7 7-7 7V5Z" />
-                            </svg>
-                          </a>
-                        </div>
-                      )}
-                    </div>
-                  ))}
-                </div>
-
-                {hayCarrusel && (
-                  <>
-                    {/* Par unico de flechas: solo con JavaScript, que es cuando
-                        se sabe que diapositiva esta a la vista. */}
-                    <div
-                      id="hero-controles"
-                      class="pointer-events-none absolute inset-0 flex items-center justify-between px-2"
-                      hidden
-                    >
-                      <button
-                        type="button"
-                        id="hero-anterior"
-                        class="hero-control foco-claro pointer-events-auto"
-                        aria-label="Imagen anterior"
-                      >
-                        <svg viewBox="0 0 24 24" class="h-5 w-5 fill-current" aria-hidden="true">
-                          <path d="M15 5 8 12l7 7V5Z" />
-                        </svg>
-                      </button>
-                      <button
-                        type="button"
-                        id="hero-siguiente"
-                        class="hero-control foco-claro pointer-events-auto"
-                        aria-label="Imagen siguiente"
-                      >
-                        <svg viewBox="0 0 24 24" class="h-5 w-5 fill-current" aria-hidden="true">
-                          <path d="M9 5l7 7-7 7V5Z" />
-                        </svg>
-                      </button>
-                    </div>
-
-                    <div class="mt-2 flex flex-wrap items-center justify-center gap-x-1 gap-y-1">
-                      {imagenesHero.map((_, indice) => (
-                        <a
-                          href={`#hero-imagen-${indice + 1}`}
-                          data-punto
-                          class="foco-claro grid h-11 w-11 place-items-center"
-                          aria-label={`Ver imagen ${indice + 1} de ${totalDiapositivas}`}
-                        >
-                          <span class="hero-punto" />
-                        </a>
-                      ))}
-                      <button
-                        type="button"
-                        id="hero-pausa"
-                        hidden
-                        aria-pressed="false"
-                        class="foco-claro ml-1 inline-flex min-h-[44px] items-center gap-1.5 rounded-full border border-white/40 px-4 text-xs font-bold text-white transition-colors hover:bg-white/10"
-                      >
-                        Pausar
-                      </button>
-                    </div>
-                  </>
-                )}
-              </div>
-            )
-          }
-        </div>
+        {/* La columna derecha queda vacia a proposito: es la ventana por la
+            que se ve la foto de fondo con el velo mas abierto. */}
       </div>
+
+      {hayCarrusel && (
+        // Controles del carrusel: solo aparecen con JavaScript, que es cuando
+        // existe la mecanica de fundido que pueden manejar. Sin el, la primera
+        // imagen queda fija y no hay nada que controlar. Flechas a los bordes
+        // (centradas en vertical) y puntos abajo al centro, como la referencia.
+        <div id="hero-controles" hidden>
+          <button
+            type="button"
+            id="hero-anterior"
+            class="hero-control foco-claro absolute top-1/2 left-3 z-10 -translate-y-1/2 md:left-5"
+            aria-label="Imagen anterior"
+          >
+            <svg viewBox="0 0 24 24" class="h-5 w-5 fill-current" aria-hidden="true">
+              <path d="M15 5 8 12l7 7V5Z" />
+            </svg>
+          </button>
+          <button
+            type="button"
+            id="hero-siguiente"
+            class="hero-control foco-claro absolute top-1/2 right-3 z-10 -translate-y-1/2 md:right-5"
+            aria-label="Imagen siguiente"
+          >
+            <svg viewBox="0 0 24 24" class="h-5 w-5 fill-current" aria-hidden="true">
+              <path d="M9 5l7 7-7 7V5Z" />
+            </svg>
+          </button>
+          <div class="absolute inset-x-0 bottom-5 z-10 flex flex-wrap items-center justify-center gap-x-1.5 gap-y-2 px-4">
+            {imagenesHero.map((_, indice) => (
+              <button
+                type="button"
+                data-punto
+                class="foco-claro grid h-11 w-11 place-items-center"
+                aria-label={`Ver imagen ${indice + 1} de ${totalDiapositivas}`}
+              >
+                <span class="hero-punto" />
+              </button>
+            ))}
+            <button
+              type="button"
+              id="hero-pausa"
+              hidden
+              aria-pressed="false"
+              class="foco-claro ml-1 inline-flex min-h-[44px] items-center gap-1.5 rounded-full border border-white/40 bg-navy/70 px-4 text-xs font-bold text-white transition-colors hover:bg-white/10"
+            >
+              Pausar
+            </button>
+          </div>
+        </div>
+      )}
     </section>
 
     <!-- PROPUESTA DE VALOR -->
@@ -1017,7 +975,7 @@ const preguntas: PreguntaVista[] =
             <h3 class="text-lg font-bold text-ink">Envíanos tu mensaje</h3>
             <div class="mt-5 grid gap-4 sm:grid-cols-2">
               <label class="block">
-                <span class="text-sm font-semibold text-ink">Nombre completo <span class="text-accent">*</span></span>
+                <span class="text-sm font-semibold text-ink">Nombres y Apellidos <span class="text-accent">*</span></span>
                 <input
                   type="text"
                   name="nombre"
@@ -1188,36 +1146,31 @@ const preguntas: PreguntaVista[] =
   />
 
   {/*
-    Carrusel de la portada: mejora progresiva.
-    Sin este script el carrusel ya funciona (flechas-ancla, puntos y arrastre).
-    Con el, las flechas se reducen a un unico par que sabe donde estamos y se
-    habilita el avance automatico, que solo arranca si la persona no pidio
+    Carrusel de la portada: mejora progresiva sobre un fondo de capas.
+    Sin JavaScript queda fija la primera imagen y los controles ni aparecen:
+    no existe la mecanica de fundido que podrian manejar. Con el, flechas,
+    puntos y avance automatico, que solo arranca si la persona no pidio
     reducir el movimiento y se frena con hover, foco dentro o cualquier
     interaccion.
   */}
   <script is:inline>
     (() => {
       const region = document.getElementById("hero-carrusel");
-      const pista = document.getElementById("hero-pista");
+      const fondo = document.getElementById("hero-fondo");
       const controles = document.getElementById("hero-controles");
-      if (!region || !pista || !controles) return;
+      if (!region || !fondo || !controles) return;
 
-      const diapositivas = pista.querySelectorAll("[data-diapositiva]");
+      const diapositivas = Array.from(fondo.querySelectorAll("[data-diapositiva]"));
       const total = diapositivas.length;
       if (total < 2) return;
 
       const anterior = document.getElementById("hero-anterior");
       const siguiente = document.getElementById("hero-siguiente");
       const pausa = document.getElementById("hero-pausa");
-      const puntos = Array.from(region.querySelectorAll("[data-punto]"));
+      const puntos = Array.from(controles.querySelectorAll("[data-punto]"));
       if (!anterior || !siguiente) return;
 
-      // Primero se muestran los controles nuevos y despues se retiran los de
-      // respaldo: si algo fallara antes, siempre queda un juego utilizable.
       controles.hidden = false;
-      region.querySelectorAll("[data-flechas-ancla]").forEach((flechas) => {
-        flechas.hidden = true;
-      });
 
       const animacionPermitida = window.matchMedia("(prefers-reduced-motion: no-preference)").matches;
       const INTERVALO = 6500;
@@ -1233,11 +1186,11 @@ const preguntas: PreguntaVista[] =
         });
       };
 
+      // El fundido lo hace el CSS: aqui solo se mueve la marca de visible.
       const irA = (destino) => {
         indice = (destino + total) % total;
-        pista.scrollTo({
-          left: pista.clientWidth * indice,
-          behavior: animacionPermitida ? "smooth" : "auto",
+        diapositivas.forEach((diapositiva, posicion) => {
+          diapositiva.toggleAttribute("data-visible", posicion === indice);
         });
         marcar();
       };
@@ -1275,33 +1228,11 @@ const preguntas: PreguntaVista[] =
       });
 
       puntos.forEach((punto, posicion) => {
-        punto.addEventListener("click", (evento) => {
-          evento.preventDefault(); // el ancla movería toda la página
+        punto.addEventListener("click", () => {
           detenerPorPersona();
           irA(posicion);
         });
       });
-
-      ["pointerdown", "touchstart", "wheel", "keydown"].forEach((tipo) => {
-        pista.addEventListener(tipo, detenerPorPersona, { passive: true });
-      });
-
-      // El arrastre no dispara los controles: el indice se recalcula al parar.
-      let repaso = 0;
-      pista.addEventListener(
-        "scroll",
-        () => {
-          window.clearTimeout(repaso);
-          repaso = window.setTimeout(() => {
-            const visible = Math.round(pista.scrollLeft / pista.clientWidth);
-            if (visible !== indice && visible >= 0 && visible < total) {
-              indice = visible;
-              marcar();
-            }
-          }, 120);
-        },
-        { passive: true },
-      );
 
       marcar();
 

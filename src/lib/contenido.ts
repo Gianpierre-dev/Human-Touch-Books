@@ -47,7 +47,8 @@ export function esClaveImagenSitio(valor: string): valor is ClaveImagenSitio {
 
 /**
  * Imagen del hero mientras no haya ninguna cargada en el panel. Las medidas son
- * las del archivo del repositorio y fijan la proporcion del marco del carrusel.
+ * las del archivo del repositorio; como fondo a pantalla completa se ve blanda,
+ * asi que conviene reemplazarla desde /admin/portada con una foto grande.
  */
 export const HERO_POR_DEFECTO = {
   imagenUrl: "/mock/hero-estudiantes-limpio.png",

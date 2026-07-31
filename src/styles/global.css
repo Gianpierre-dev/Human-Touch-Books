@@ -192,24 +192,43 @@ body {
 }
 
 /*
-  Carrusel de la portada.
-  Sin JavaScript se maneja con las flechas-ancla de cada diapositiva y con los
-  puntos (enlaces a cada una); con JavaScript se sustituyen por un unico par de
-  flechas y se habilita el avance automatico. El scroll-snap es el que manda:
-  el arrastre con el dedo funciona igual en los dos casos.
+  Carrusel de la portada, como fondo de la seccion.
+  Las diapositivas son capas apiladas: se ve la marcada con `data-visible` y
+  las demas quedan ocultas (visibility ademas las saca del arbol de
+  accesibilidad). Sin JavaScript nadie mueve la marca: queda fija la primera.
 */
-.hero-pista {
-  scroll-snap-type: x mandatory;
-  /* La barra sobra: hay flechas y puntos, y el arrastre sigue disponible. */
-  scrollbar-width: none;
-}
-
-.hero-pista::-webkit-scrollbar {
-  display: none;
-}
-
 .hero-diapositiva {
-  scroll-snap-align: center;
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  visibility: hidden;
+}
+
+.hero-diapositiva[data-visible] {
+  opacity: 1;
+  visibility: visible;
+}
+
+/*
+  Velo entre la foto y el texto: garantiza el contraste AA del blanco sea cual
+  sea la imagen subida al panel. En pantallas anchas el texto vive a la
+  izquierda y el velo se abre hacia la derecha para dejar ver la foto; en
+  angostas el texto ocupa todo el ancho y el velo es casi uniforme.
+*/
+.hero-velo {
+  background: linear-gradient(180deg, rgb(10 37 80 / 0.9) 0%, rgb(10 37 80 / 0.82) 100%);
+}
+
+@media (min-width: 768px) {
+  .hero-velo {
+    background: linear-gradient(
+      100deg,
+      rgb(10 37 80 / 0.95) 0%,
+      rgb(10 37 80 / 0.87) 42%,
+      rgb(10 37 80 / 0.5) 66%,
+      rgb(10 37 80 / 0.22) 100%
+    );
+  }
 }
 
 /*
@@ -248,8 +267,12 @@ body {
 }
 
 @media (prefers-reduced-motion: no-preference) {
-  .hero-pista {
-    scroll-behavior: smooth;
+  /* La visibilidad espera al final del fundido de salida; al entrar cambia
+     de inmediato y solo se ve el fundido de opacidad. */
+  .hero-diapositiva {
+    transition:
+      opacity 0.9s ease,
+      visibility 0.9s;
   }
 
   .hero-punto {

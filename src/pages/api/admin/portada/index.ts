@@ -1,6 +1,6 @@
 import type { APIRoute } from "astro";
 import { bd } from "../../../../lib/bd";
-import { ANCHO_IMAGEN_SITIO, esPortadaValida, guardarImagen } from "../../../../lib/almacen";
+import { ANCHO_IMAGEN_HERO, esPortadaValida, guardarImagen } from "../../../../lib/almacen";
 import { LIMITES } from "../../../../lib/contenido";
 
 export const prerender = false;
@@ -30,7 +30,7 @@ export const POST: APIRoute = async ({ request, redirect }) => {
 
   let guardada: Awaited<ReturnType<typeof guardarImagen>>;
   try {
-    guardada = await guardarImagen(archivo, "hero", { anchoMaximo: ANCHO_IMAGEN_SITIO });
+    guardada = await guardarImagen(archivo, "hero", { anchoMaximo: ANCHO_IMAGEN_HERO });
   } catch {
     // sharp lanza si el archivo no es una imagen real, aunque la extension lo parezca
     return redirect(`${DESTINO}?error=procesar`, 303);
