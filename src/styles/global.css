@@ -216,39 +216,15 @@ body {
 }
 
 /*
-  Velo entre la foto y el texto.
-  Se mide, no se estima: sin nada de velo el blanco del titular cae a 1:1
-  sobre las portadas cargadas (tienen zonas blancas justo detras del texto),
-  o sea texto invisible. Por eso el velo se queda, pero acotado: cubre solo
-  la franja donde vive el texto y desaparece del todo antes de la mitad
-  derecha, que es la parte de la foto que se luce. La sombra del texto
-  (`.hero-texto`) hace el resto, y permite que el velo sea mas suave.
+  Placa del texto del hero.
+  Medido: sin nada detras, el blanco del titular cae a 1:1 sobre las portadas
+  cargadas (tienen zonas blancas justo ahi), o sea texto invisible. En vez de
+  resolverlo con una sombra difusa —que ensucia la foto y se ve como una
+  mancha— el texto se apoya en una placa solida de borde limpio: se lee como
+  una pieza de diseno, y la fotografia queda intacta a su alrededor.
 */
-.hero-velo {
-  background: linear-gradient(180deg, rgb(0 0 0 / 0.72) 0%, rgb(0 0 0 / 0.6) 100%);
-}
-
-@media (min-width: 768px) {
-  .hero-velo {
-    background: linear-gradient(
-      95deg,
-      rgb(0 0 0 / 0.8) 0%,
-      rgb(0 0 0 / 0.62) 34%,
-      rgb(0 0 0 / 0.24) 52%,
-      transparent 62%
-    );
-  }
-}
-
-/*
-  Sombra propia del texto del hero: agarra el contraste pegado a cada letra,
-  sin oscurecer la fotografia alrededor. Permite bajar el velo sin perder
-  legibilidad.
-*/
-.hero-texto {
-  text-shadow:
-    0 1px 2px rgb(0 0 0 / 0.55),
-    0 2px 12px rgb(0 0 0 / 0.45);
+.hero-placa {
+  background-color: rgb(16 18 24 / 0.9);
 }
 
 /*
