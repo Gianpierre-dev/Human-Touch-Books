@@ -1,0 +1,384 @@
+---
+// Pagina publica de una linea de producto. UNA plantilla para las tres lineas:
+// lo que cambia entre Primaria, Secundaria y HTB Lector son los datos, no el
+// marcado. La identidad visual la aporta el color de la linea; el contenido, los
+// campos administrables y sus bloques.
+//
+// Cada seccion se omite cuando no tiene contenido, y los textos que el panel no
+// llenó caen a un defecto derivado de la linea (src/lib/lineas.ts), de modo que
+// una linea sin cargar —HTB Lector hoy— igual se ve entera.
+import Layout from "../../layouts/Layout.astro";
+import Header from "../../components/Header.astro";
+import Footer from "../../components/Footer.astro";
+import { bd } from "../../lib/bd";
+import { resolverContenidoLinea } from "../../lib/lineas";
+import { ESTILOS_ARGUMENTO, ESTILOS_PILAR } from "../../lib/bloques-linea";
+
+export const prerender = false;
+
+const { clave = "" } = Astro.params;
+
+const linea = await bd.linea.findUnique({
+  where: { clave },
+  include: {
+    libros: { orderBy: [{ orden: "asc" }, { titulo: "asc" }] },
+    bloques: { where: { activa: true }, orderBy: [{ orden: "asc" }, { creadoEn: "asc" }] },
+  },
+});
+
+// Una linea desactivada no existe para el publico: 404 real, no una pagina en
+// blanco con estado 200 que Google indexaria igual.
+if (!linea || !linea.activa) {
+  return new Response("No encontramos esa línea del catálogo.", {
+    status: 404,
+    headers: { "Content-Type": "text/plain; charset=utf-8" },
+  });
+}
+
+const contenido = resolverContenidoLinea(linea);
+
+const pilares = linea.bloques
+  .filter((bloque) => bloque.tipo === "pilar")
+  .map((bloque, posicion) => ({
+    ...bloque,
+    estilo: ESTILOS_PILAR[posicion % ESTILOS_PILAR.length]!,
+  }));
+
+const argumentos = linea.bloques
+  .filter((bloque) => bloque.tipo === "argumento")
+  .map((bloque, posicion) => ({
+    ...bloque,
+    estilo: ESTILOS_ARGUMENTO[posicion % ESTILOS_ARGUMENTO.length]!,
+  }));
+
+const libros = linea.libros;
+
+// Datos de contacto: los mismos que administra /admin/ajustes para la landing.
+const filasAjustes = await bd.ajuste.findMany();
+const ajustes = Object.fromEntries(filasAjustes.map((ajuste) => [ajuste.clave, ajuste.valor]));
+const whatsapp = ajustes.whatsapp ?? "51982953436";
+const correoContacto = ajustes.correo_contacto ?? "informes@humantouchbooks.pe";
+const ubicacion = ajustes.ubicacion ?? "La Molina, Lima — Perú";
+
+const TEXTO_WHATSAPP = `Hola, quiero información sobre ${linea.nombre}.`;
+const enlaceWhatsapp = `https://wa.me/${whatsapp}?text=${encodeURIComponent(TEXTO_WHATSAPP)}`;
+
+// La imagen del hero es opcional: sin ella el hero se ve igual, a una columna.
+const hayImagenHero = Boolean(linea.heroImagenUrl);
+// Sin medidas guardadas (fila cargada antes de guardarlas) se usa una proporcion
+// 4:3 para reservar el hueco: el objetivo es que no haya salto de maquetado.
+const anchoHero = linea.heroAncho ?? 1600;
+const altoHero = linea.heroAlto ?? 1200;
+
+// Con `base="/"` los enlaces de la cabecera y el pie apuntan a las secciones de
+// la landing, que si existen: la navegacion se ve completa desde aqui.
+const tituloPagina = `${linea.nombre} — Human Touch Books`;
+---
+
+<Layout title={tituloPagina} description={linea.descripcion} anclaContenido="#contenido">
+  <Header whatsapp={whatsapp} hayColeccion={true} base="/" />
+
+  {/*
+    El color de identidad se inyecta UNA vez, aqui, como custom property: las
+    secciones lo heredan y ninguna clase de Tailwind se genera de forma dinamica
+    (`text-${x}` nunca se compilaria). Ver la nota en src/styles/global.css.
+  */}
+  <main id="contenido" tabindex="-1" style={`--color-linea: ${linea.colorHex}`}>
+    <!-- HERO DE LINEA -->
+    {/*
+      Fondo BLANCO, no teñido, a proposito: el antetitulo va en el color de la
+      linea y la garantia del panel es 4,5:1 contra BLANCO PURO. Sobre un tinte
+      —aunque sea del 7%— el azul de Primaria cae a 4,42:1 y deja de cumplir.
+      Regla de la pagina: el color de linea como TEXTO solo sobre blanco; el
+      tinte se reserva para secciones donde el texto es `ink`.
+    */}
+    <section class="border-b border-line bg-surface" aria-labelledby="titulo-linea">
+      <div
+        class:list={[
+          "mx-auto grid max-w-6xl items-center gap-10 px-4 py-14 md:px-8 md:py-20",
+          hayImagenHero && "lg:grid-cols-[1.05fr_0.95fr]",
+        ]}
+      >
+        <div class="reveal">
+          <span
+            class="text-xs font-bold tracking-[0.2em] text-[var(--color-linea)] uppercase"
+          >
+            {contenido.heroAntetitulo}
+          </span>
+          <h1
+            id="titulo-linea"
+            class="mt-2 font-display text-[clamp(2.1rem,5vw,3.4rem)] leading-[1.05] font-bold tracking-tight text-ink"
+          >
+            {contenido.heroTitulo}
+          </h1>
+          {/* Insignia del nivel: es la etiqueta corta de la linea, el dato que ya
+              distingue Primaria de Secundaria en el panel. */}
+          <p class="mt-4">
+            <span
+              class="inline-flex min-h-[36px] items-center rounded-full bg-[var(--color-linea)] px-5 text-sm font-bold tracking-[0.16em] text-white uppercase"
+            >
+              {linea.etiquetaCorta}
+            </span>
+          </p>
+          <div class="mt-5 max-w-[54ch] space-y-3 leading-relaxed text-ink/75">
+            {contenido.heroParrafos.map((parrafo) => <p>{parrafo}</p>)}
+          </div>
+
+          <div class="mt-8 flex flex-wrap items-center gap-3.5">
+            <a
+              href="/#contacto"
+              class="foco-marca boton-elevar inline-flex min-h-[52px] items-center gap-2.5 rounded-full bg-[var(--color-linea)] px-8 text-[0.95rem] font-bold text-white shadow-lg"
+            >
+              <svg viewBox="0 0 24 24" class="h-4.5 w-4.5 fill-current" aria-hidden="true">
+                <path
+                  d="M20 4H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2Zm0 4-8 5-8-5V6l8 5 8-5v2Z"
+                ></path>
+              </svg>
+              Contáctanos
+            </a>
+            <a
+              href="/"
+              class="foco-marca inline-flex min-h-[52px] items-center gap-2 rounded-full border border-line bg-surface px-7 text-[0.95rem] font-bold text-ink transition-colors hover:bg-surface-2"
+            >
+              <svg viewBox="0 0 24 24" class="h-4 w-4 fill-current" aria-hidden="true">
+                <path d="M14 7l-5 5 5 5V7Z"></path>
+              </svg>
+              Volver al inicio
+            </a>
+          </div>
+        </div>
+
+        {
+          hayImagenHero && (
+            <div class="reveal-scroll">
+              <img
+                src={linea.heroImagenUrl}
+                alt={linea.heroImagenAlt ?? ""}
+                width={anchoHero}
+                height={altoHero}
+                style={`aspect-ratio: ${anchoHero} / ${altoHero};`}
+                class="block w-full rounded-2xl object-cover shadow-xl shadow-navy/15 ring-1 ring-line"
+                loading="eager"
+                fetchpriority="high"
+              />
+            </div>
+          )
+        }
+      </div>
+    </section>
+
+    <!-- PILARES -->
+    {/* Aqui SI va el tinte de la linea: todos los textos de la seccion son
+        `ink` y los circulos traen su propio color de la paleta fija. */}
+    {
+      pilares.length > 0 && (
+        <section class="linea-tinte py-16 md:py-20" aria-labelledby="titulo-pilares">
+          <div class="mx-auto max-w-6xl px-4 md:px-8">
+            <div class="reveal-scroll text-center">
+              <h2
+                id="titulo-pilares"
+                class="font-display text-[clamp(1.6rem,3.2vw,2.3rem)] leading-tight font-bold text-ink"
+              >
+                {contenido.pilaresTitulo}
+              </h2>
+              {contenido.pilaresParrafo && (
+                <p class="mx-auto mt-4 max-w-[62ch] leading-relaxed text-ink/75">
+                  {contenido.pilaresParrafo}
+                </p>
+              )}
+            </div>
+
+            <ul class="mt-12 grid grid-cols-2 gap-x-6 gap-y-10 lg:grid-cols-4">
+              {pilares.map((pilar) => (
+                <li class="reveal-scroll flex flex-col items-center gap-3 text-center">
+                  {/* El circulo y su icono son decorativos: la etiqueta de al
+                      lado dice lo mismo en texto. Por eso van aria-hidden. */}
+                  <span
+                    class="grid h-16 w-16 shrink-0 place-items-center rounded-full"
+                    style={`background-color:${pilar.estilo.color}`}
+                    aria-hidden="true"
+                  >
+                    <svg viewBox="0 0 24 24" class="h-8 w-8 fill-white">
+                      <path d={pilar.estilo.icono} />
+                    </svg>
+                  </span>
+                  <h3 class="max-w-[16ch] text-[0.95rem] leading-snug font-bold text-ink">
+                    {pilar.titulo}
+                  </h3>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </section>
+      )
+    }
+
+    <!-- COLECCION -->
+    <section class="border-t border-line bg-paper py-16 md:py-20" aria-labelledby="titulo-coleccion">
+      <div class="mx-auto max-w-6xl px-4 md:px-8">
+        <h2
+          id="titulo-coleccion"
+          class="reveal-scroll text-center font-display text-[clamp(1.6rem,3.2vw,2.3rem)] leading-tight font-bold text-ink"
+        >
+          {contenido.coleccionTitulo}
+        </h2>
+
+        {
+          libros.length === 0 ? (
+            /* Estado vacio sobrio: una grilla de cero tarjetas se lee como un
+               error de la web. Se dice qué pasa y se ofrece la salida. */
+            <div class="reveal-scroll mx-auto mt-8 max-w-[46ch] rounded-2xl border border-line bg-surface px-6 py-10 text-center">
+              <p class="leading-relaxed text-ink/75">
+                Los títulos de esta línea están en preparación. Escríbenos y te avisamos apenas
+                estén disponibles.
+              </p>
+              <a
+                href="/#contacto"
+                class="foco-marca mt-5 inline-flex min-h-[48px] items-center gap-2 rounded-full bg-[var(--color-linea)] px-7 text-sm font-bold text-white"
+              >
+                Solicitar información
+              </a>
+            </div>
+          ) : (
+            <ul class="mt-12 grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+              {libros.map((libro) => (
+                <li class="reveal-scroll">
+                  <article class="linea-anillo grid h-full items-start gap-5 rounded-2xl border bg-surface p-5 shadow-sm sm:grid-cols-[128px_1fr]">
+                    {/* Proporcion fija: las tapas de la serie comparten formato y
+                        reservar su hueco deja la grilla sin salto al cargar. */}
+                    <img
+                      src={libro.portadaUrl}
+                      alt={`Portada de ${libro.titulo}`}
+                      width="800"
+                      height="991"
+                      class="aspect-[800/991] w-full max-w-[128px] rounded-lg object-cover shadow-md shadow-navy/15 ring-1 ring-black/5"
+                      loading="lazy"
+                    />
+                    <div>
+                      <h3 class="text-[1.05rem] leading-snug font-extrabold text-[var(--color-linea)]">
+                        {libro.titulo}
+                      </h3>
+                      {(libro.grado ?? libro.nivel) && (
+                        <p class="mt-1 text-[0.85rem] font-medium text-ink/70">
+                          {libro.grado ?? libro.nivel}
+                        </p>
+                      )}
+                      {libro.descripcionCorta && (
+                        <p class="mt-2.5 text-[0.9rem] leading-relaxed text-ink/75">
+                          {libro.descripcionCorta}
+                        </p>
+                      )}
+                    </div>
+                  </article>
+                </li>
+              ))}
+            </ul>
+          )
+        }
+      </div>
+    </section>
+
+    <!-- ARGUMENTOS -->
+    {
+      argumentos.length > 0 && (
+        <section
+          class="border-t border-line bg-surface py-16 md:py-20"
+          aria-labelledby="titulo-argumentos"
+        >
+          <div class="mx-auto max-w-6xl px-4 md:px-8">
+            <h2
+              id="titulo-argumentos"
+              class="reveal-scroll text-center font-display text-[clamp(1.5rem,3vw,2.1rem)] leading-tight font-bold text-ink"
+            >
+              {contenido.argumentosTitulo}
+            </h2>
+
+            <ul class="mt-12 grid gap-x-8 gap-y-9 sm:grid-cols-2 lg:grid-cols-4">
+              {argumentos.map((argumento) => (
+                <li class="reveal-scroll flex items-start gap-4">
+                  <span
+                    class="grid h-11 w-11 shrink-0 place-items-center rounded-full"
+                    style={`background-color:${argumento.estilo.color}`}
+                    aria-hidden="true"
+                  >
+                    <svg viewBox="0 0 24 24" class="h-6 w-6 fill-white">
+                      <path d={argumento.estilo.icono} />
+                    </svg>
+                  </span>
+                  <div>
+                    <h3 class="text-[0.95rem] leading-snug font-bold text-ink">
+                      {argumento.titulo}
+                    </h3>
+                    {argumento.texto && (
+                      <p class="mt-1.5 text-[0.875rem] leading-relaxed text-ink/75">
+                        {argumento.texto}
+                      </p>
+                    )}
+                  </div>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </section>
+      )
+    }
+
+    <!-- CIERRE -->
+    <section class="linea-franja text-white" aria-labelledby="titulo-cierre">
+      <div
+        class="mx-auto flex max-w-6xl flex-col items-start gap-8 px-4 py-14 md:flex-row md:items-center md:justify-between md:px-8 md:py-16"
+      >
+        <div class="max-w-[46ch]">
+          <h2
+            id="titulo-cierre"
+            class="font-display text-[clamp(1.5rem,3vw,2.1rem)] leading-tight font-bold"
+          >
+            {contenido.ctaTitulo}
+          </h2>
+          {/* Blanco puro: la garantia de contraste del color de linea (4,5:1)
+              se mide contra blanco pleno. Bajarlo a /85 lo funde con el fondo y
+              en el azul de Primaria cae a 3,96:1. */}
+          <p class="mt-3 leading-relaxed text-white">{contenido.ctaParrafo}</p>
+        </div>
+        <div class="flex w-full flex-wrap items-center gap-3.5 md:w-auto">
+          <a
+            href="/#contacto"
+            class="foco-claro inline-flex min-h-[52px] flex-1 items-center justify-center gap-2.5 rounded-full bg-white px-8 text-[0.95rem] font-extrabold whitespace-nowrap text-ink shadow-[0_12px_28px_-10px_rgba(0,0,0,0.55)] transition duration-300 ease-out hover:-translate-y-0.5 md:flex-none"
+          >
+            <svg
+              viewBox="0 0 24 24"
+              class="h-4.5 w-4.5 fill-[var(--color-linea)]"
+              aria-hidden="true"
+            >
+              <path
+                d="M20 4H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2Zm0 4-8 5-8-5V6l8 5 8-5v2Z"
+              ></path>
+            </svg>
+            Contáctanos
+          </a>
+          <a
+            href={enlaceWhatsapp}
+            target="_blank"
+            rel="noopener"
+            class="foco-claro inline-flex min-h-[52px] flex-1 items-center justify-center gap-2 rounded-full border border-white/50 px-7 text-[0.95rem] font-bold whitespace-nowrap text-white transition-colors hover:border-white hover:bg-white/10 md:flex-none"
+          >
+            <svg viewBox="0 0 24 24" class="h-4.5 w-4.5 fill-current" aria-hidden="true">
+              <path
+                d="M12 2a10 10 0 0 0-8.6 15l-1.3 4.7 4.8-1.3A10 10 0 1 0 12 2Zm5.3 14.2c-.2.6-1.3 1.2-1.8 1.2-.5.1-1 .1-1.7-.1-.4-.2-.9-.3-1.6-.6-2.7-1.2-4.5-4-4.6-4.2-.2-.2-1.1-1.5-1.1-2.8 0-1.3.7-2 .9-2.2.2-.3.5-.3.7-.3h.5c.2 0 .4 0 .6.5l.8 2c.1.2.1.4 0 .5l-.4.6c-.2.2-.3.4-.1.7.2.3.9 1.4 1.9 2.3 1.3 1.1 2.3 1.4 2.6 1.6.3.1.5.1.7-.1l.7-.8c.2-.3.4-.2.7-.1l2 .9c.3.2.5.2.6.4.1.1.1.7-.1 1.3Z"
+              ></path>
+            </svg>
+            Escríbenos por WhatsApp
+          </a>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <Footer
+    whatsapp={whatsapp}
+    correoContacto={correoContacto}
+    ubicacion={ubicacion}
+    hayColeccion={true}
+    base="/"
+  />
+</Layout>

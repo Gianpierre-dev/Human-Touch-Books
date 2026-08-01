@@ -8,9 +8,15 @@ import type { LimitesBloque } from "../lib/bloques";
 interface Elemento {
   id: string;
   titulo: string;
-  texto: string;
+  texto?: string | null;
   orden: number;
   activa: boolean;
+}
+
+/** Icono y color que la web asigna a cada posición. Se muestran como vista previa. */
+interface EstiloPrevio {
+  color: string;
+  icono: string;
 }
 
 interface Props {
@@ -30,6 +36,19 @@ interface Props {
   error: string | null;
   ayudaTitulo: string;
   ayudaTexto: string;
+  /**
+   * Nivel del encabezado de la lista. Es 1 cuando la lista ES la pantalla; se
+   * pasa 2 cuando la pantalla monta varias listas y ya tiene su propio h1.
+   */
+  nivelEncabezado?: 1 | 2;
+  /** Los pilares de una línea no llevan texto: solo la etiqueta. */
+  conTexto?: boolean;
+  /** Campos que el alta necesita mandar además del formulario (línea, tipo…). */
+  camposOcultos?: Record<string, string>;
+  /** Estilos fijos por posición. Vacío = la lista no muestra vista previa. */
+  estilos?: readonly EstiloPrevio[];
+  /** Enlace de vuelta cuando la lista vive dentro de otra pantalla. */
+  volver?: { href: string; texto: string };
 }
 
 const {
@@ -46,7 +65,32 @@ const {
   error,
   ayudaTitulo,
   ayudaTexto,
+  nivelEncabezado = 1,
+  conTexto = true,
+  camposOcultos = {},
+  estilos = [],
+  volver,
 } = Astro.props;
+
+// La pantalla de bloques de una linea monta este componente DOS veces (pilares
+// y argumentos). Los identificadores del formulario tienen que ser unicos en el
+// documento: si se repiten, `aria-describedby` resuelve siempre al primero y el
+// segundo formulario se anuncia con la ayuda del otro.
+const sufijoId = singular
+  .toLowerCase()
+  .normalize("NFD")
+  .replace(/[̀-ͯ]/g, "")
+  .replace(/[^a-z0-9]+/g, "-")
+  .replace(/(^-|-$)/g, "");
+const idAyudaTitulo = `ayuda-nuevo-titulo-${sufijoId}`;
+const idAyudaTexto = `ayuda-nuevo-texto-${sufijoId}`;
+
+// Astro admite una variable en mayúscula como etiqueta: así la lista se puede
+// anidar bajo un h1 ajeno sin duplicar encabezados de nivel 1.
+const Encabezado = nivelEncabezado === 2 ? "h2" : "h1";
+const SubEncabezado = nivelEncabezado === 2 ? "h3" : "h2";
+
+const ocultos = Object.entries(camposOcultos);
 
 const activos = elementos.filter((elemento) => elemento.activa).length;
 
@@ -85,7 +129,13 @@ const clasesBotonPrincipal =
   "foco-marca inline-flex min-h-[44px] items-center rounded-full bg-brand px-7 text-sm font-bold text-white transition-colors hover:bg-brand-deep";
 ---
 
-<h1 class="text-2xl font-extrabold text-ink">{encabezado}</h1>
+<Encabezado
+  class:list={[
+    nivelEncabezado === 2 ? "text-xl font-bold text-ink" : "text-2xl font-extrabold text-ink",
+  ]}
+>
+  {encabezado}
+</Encabezado>
 <p class="mt-1 text-sm text-ink/70">
   {elementos.length} {elementos.length === 1 ? singular : plural}, {activos} visible{
     activos === 1 ? "" : "s"
@@ -135,9 +185,25 @@ const clasesBotonPrincipal =
         aria-labelledby={`titulo-${elemento.id}`}
       >
         <div class="flex flex-wrap items-start justify-between gap-3">
-          <h2 id={`titulo-${elemento.id}`} class="text-base font-bold text-ink">
-            {posicion + 1}. {elemento.titulo}
-          </h2>
+          <div class="flex items-center gap-3">
+            {/* Vista previa del estilo fijo que la web le da a esta posición: el
+                icono y el color no se editan, pero conviene verlos aquí para
+                entender qué cambia al reordenar. Decorativa. */}
+            {estilos.length > 0 && (
+              <span
+                class="grid h-9 w-9 shrink-0 place-items-center rounded-full"
+                style={`background-color:${estilos[posicion % estilos.length]?.color}`}
+                aria-hidden="true"
+              >
+                <svg viewBox="0 0 24 24" class="h-5 w-5 fill-white">
+                  <path d={estilos[posicion % estilos.length]?.icono} />
+                </svg>
+              </span>
+            )}
+            <SubEncabezado id={`titulo-${elemento.id}`} class="text-base font-bold text-ink">
+              {posicion + 1}. {elemento.titulo}
+            </SubEncabezado>
+          </div>
           <span
             class:list={[
               "inline-block rounded-full px-2.5 py-0.5 text-[0.7rem] font-bold",
@@ -221,13 +287,15 @@ const clasesBotonPrincipal =
               class={clasesCampo}
             />
           </label>
-          <label class="mt-4 block">
-            <span class="text-sm font-semibold text-ink">
-              Texto <span class="text-accent-deep">*</span>
-            </span>
-            {/* Sin saltos de línea alrededor: el contenido del textarea ES su valor. */}
-            <textarea name="texto" rows="3" required maxlength={limites.texto} class={clasesCampo}>{elemento.texto}</textarea>
-          </label>
+          {conTexto && (
+            <label class="mt-4 block">
+              <span class="text-sm font-semibold text-ink">
+                Texto <span class="text-accent-deep">*</span>
+              </span>
+              {/* Sin saltos de línea alrededor: el contenido del textarea ES su valor. */}
+              <textarea name="texto" rows="3" required maxlength={limites.texto} class={clasesCampo}>{elemento.texto ?? ""}</textarea>
+            </label>
+          )}
           <label class="mt-4 block max-w-[12rem]">
             <span class="text-sm font-semibold text-ink">Orden</span>
             <input type="number" name="orden" value={elemento.orden} class={clasesCampo} />
@@ -246,7 +314,9 @@ const clasesBotonPrincipal =
   action={rutaApi}
   class="mt-8 max-w-2xl rounded-xl border border-line bg-surface p-6 shadow-sm md:p-8"
 >
-  <h2 class="text-lg font-bold text-ink">Agregar {singular}</h2>
+  <SubEncabezado class="text-lg font-bold text-ink">Agregar {singular}</SubEncabezado>
+
+  {ocultos.map(([nombre, valor]) => <input type="hidden" name={nombre} value={valor} />)}
 
   <label class="mt-5 block">
     <span class="text-sm font-semibold text-ink">
@@ -257,29 +327,36 @@ const clasesBotonPrincipal =
       name="titulo"
       required
       maxlength={limites.titulo}
-      aria-describedby="ayuda-nuevo-titulo"
+      aria-describedby={idAyudaTitulo}
       class={clasesCampo}
     />
   </label>
-  <p id="ayuda-nuevo-titulo" class="mt-1.5 text-xs text-ink/70">
+  <p id={idAyudaTitulo} class="mt-1.5 text-xs text-ink/70">
     {ayudaTitulo} Hasta {limites.titulo} caracteres.
   </p>
 
-  <label class="mt-4 block">
-    <span class="text-sm font-semibold text-ink">
-      Texto <span class="text-accent-deep">*</span>
-    </span>
-    <textarea
-      name="texto"
-      rows="3"
-      required
-      maxlength={limites.texto}
-      aria-describedby="ayuda-nuevo-texto"
-      class={clasesCampo}></textarea>
-  </label>
-  <p id="ayuda-nuevo-texto" class="mt-1.5 text-xs text-ink/70">
-    {ayudaTexto} Hasta {limites.texto} caracteres.
-  </p>
+  {
+    conTexto && (
+      <>
+        <label class="mt-4 block">
+          <span class="text-sm font-semibold text-ink">
+            Texto <span class="text-accent-deep">*</span>
+          </span>
+          <textarea
+            name="texto"
+            rows="3"
+            required
+            maxlength={limites.texto}
+            aria-describedby={idAyudaTexto}
+            class={clasesCampo}
+          ></textarea>
+        </label>
+        <p id={idAyudaTexto} class="mt-1.5 text-xs text-ink/70">
+          {ayudaTexto} Hasta {limites.texto} caracteres.
+        </p>
+      </>
+    )
+  }
 
   <label class="mt-4 block max-w-[12rem]">
     <span class="text-sm font-semibold text-ink">Orden</span>
@@ -290,3 +367,19 @@ const clasesBotonPrincipal =
     Agregar {singular}
   </button>
 </form>
+
+{
+  volver && (
+    <p class="mt-8">
+      <a
+        href={volver.href}
+        class="foco-marca inline-flex min-h-[44px] items-center gap-2 text-sm font-bold text-brand hover:text-brand-deep"
+      >
+        <svg viewBox="0 0 24 24" class="h-4 w-4 fill-current" aria-hidden="true">
+          <path d="M14 7l-5 5 5 5V7Z" />
+        </svg>
+        {volver.texto}
+      </a>
+    </p>
+  )
+}

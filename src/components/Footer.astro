@@ -8,6 +8,11 @@ interface Props {
   hayColeccion?: boolean;
   /** Párrafo bajo el logotipo. Administrable desde /admin/textos. */
   descripcion?: string;
+  /**
+   * Prefijo de los enlaces de ancla. Vacío en la landing; "/" en el resto de
+   * páginas, para que el ancla lleve a la landing y no a la nada.
+   */
+  base?: string;
 }
 
 // El texto del catálogo es la única fuente del valor por defecto: así el pie no
@@ -20,6 +25,7 @@ const {
   ubicacion = "La Molina, Lima — Perú",
   hayColeccion = true,
   descripcion = DESCRIPCION_POR_DEFECTO,
+  base = "",
 } = Astro.props;
 
 const whatsappVisible = `+${whatsapp.slice(0, 2)} ${whatsapp.slice(2, 5)} ${whatsapp.slice(5, 8)} ${whatsapp.slice(8)}`;
@@ -30,10 +36,10 @@ const claseEnlace = "foco-marca inline-flex min-h-[44px] items-center text-ink/7
 
 // El enlace a #coleccion se omite cuando la seccion no se renderiza.
 const explora = [
-  ...(hayColeccion ? [{ href: "#coleccion", label: "Colección Tutoría SMART" }] : []),
-  { href: "#plataforma", label: "Plataforma" },
-  { href: "#nosotros", label: "Nosotros" },
-  { href: "#preguntas", label: "Preguntas frecuentes" },
+  ...(hayColeccion ? [{ href: `${base}#coleccion`, label: "Colección Tutoría SMART" }] : []),
+  { href: `${base}#plataforma`, label: "Plataforma" },
+  { href: `${base}#nosotros`, label: "Nosotros" },
+  { href: `${base}#preguntas`, label: "Preguntas frecuentes" },
 ];
 ---
 
@@ -68,7 +74,7 @@ const explora = [
               <a href={`mailto:${correoContacto}`} class={claseEnlace}><span class="enlace-sub">{correoContacto}</span></a>
             </li>
             <li>
-              <a href="#contacto" class={claseEnlace}><span class="enlace-sub">Solicitar información</span></a>
+              <a href={`${base}#contacto`} class={claseEnlace}><span class="enlace-sub">Solicitar información</span></a>
             </li>
             <li class="flex min-h-[44px] items-center text-ink/75">{ubicacion}</li>
           </ul>

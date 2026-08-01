@@ -296,6 +296,45 @@ body {
 }
 
 /*
+  Pagina de linea (/lineas/{clave}).
+  El color de identidad lo elige el cliente y vive en la base, asi que NO puede
+  ser una clase de Tailwind: `text-${color}` no se compila, Tailwind solo ve el
+  codigo fuente. Llega como la custom property `--color-linea`, que la pagina
+  inyecta una sola vez en su `<main>` y heredan todas las secciones.
+
+  El color se usa directo (`text-[var(--color-linea)]`, `bg-[var(--color-linea)]`)
+  y en estas tres mezclas, que son las que necesitan calculo. El panel garantiza
+  que el color llega a 4,5:1 contra BLANCO PURO (src/lib/contraste.ts).
+
+  De ahi sale la regla de uso: como TEXTO, el color de linea solo va sobre
+  blanco (`bg-surface`), que es exactamente lo que esa garantia cubre. Sobre
+  `.linea-tinte` el margen se pierde —el azul de Primaria cae de 4,85:1 a
+  4,42:1—, asi que las secciones tenidas llevan texto `ink`. Como FONDO con
+  texto blanco encima el numero es el mismo, y la franja de cierre lo mejora
+  todavia mas porque oscurece el color.
+*/
+.linea-tinte {
+  background-color: color-mix(in srgb, var(--color-linea) 7%, #ffffff);
+}
+
+.linea-anillo {
+  border-color: color-mix(in srgb, var(--color-linea) 25%, #ffffff);
+}
+
+/* Franja de cierre: el color de linea a fondo completo, con texto blanco.
+   El color plano va primero como respaldo: si `color-mix()` no se entiende, el
+   navegador descarta la declaracion entera del degradado y la franja se
+   quedaria sin fondo, con texto blanco sobre papel. */
+.linea-franja {
+  background-color: var(--color-linea);
+  background-image: linear-gradient(
+    120deg,
+    var(--color-linea) 0%,
+    color-mix(in srgb, var(--color-linea) 78%, #000000) 100%
+  );
+}
+
+/*
   Sistema de motion.
   Regla clave: el contenido es visible por defecto; el movimiento solo lo realza.
   Los reveals al scroll usan animation-timeline (CSS puro, sin JS) y se activan

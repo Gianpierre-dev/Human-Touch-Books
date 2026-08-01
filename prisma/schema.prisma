@@ -12,6 +12,14 @@ enum LineaLibro {
   literatura
 }
 
+// Tipos de bloque corto de la pagina publica de una linea. Se distinguen por lo
+// que muestran: el pilar es solo una etiqueta bajo un icono; el argumento lleva
+// ademas una frase explicativa.
+enum TipoBloqueLinea {
+  pilar
+  argumento
+}
+
 // Lineas de producto del catalogo: cada una agrupa libros y aporta su identidad
 // (nombre comercial, color y texto de presentacion) a la pagina de la linea.
 //
@@ -30,9 +38,52 @@ model Linea {
   creadoEn      DateTime @default(now()) @map("creado_en")
   actualizadoEn DateTime @updatedAt @map("actualizado_en")
 
-  libros Libro[]
+  // Contenido de la pagina publica /lineas/{clave}. Todos opcionales: sin valor
+  // la pagina cae a un defecto derivado de la propia linea (src/lib/lineas.ts),
+  // igual que hace la landing con TextoSitio. Sembrar los defectos en la base
+  // taparia para siempre cualquier retoque del copy hecho en el codigo.
+  heroAntetitulo   String? @map("hero_antetitulo")
+  heroTitulo       String? @map("hero_titulo")
+  heroParrafo      String? @map("hero_parrafo")
+  heroImagenUrl    String? @map("hero_imagen_url")
+  heroImagenAlt    String? @map("hero_imagen_alt")
+  // Medidas reales de la imagen ya procesada: reservan su espacio exacto en la
+  // pagina (CLS cero). Mismo criterio que ImagenSitio.
+  heroAncho        Int?    @map("hero_ancho")
+  heroAlto         Int?    @map("hero_alto")
+  pilaresTitulo    String? @map("pilares_titulo")
+  pilaresParrafo   String? @map("pilares_parrafo")
+  coleccionTitulo  String? @map("coleccion_titulo")
+  argumentosTitulo String? @map("argumentos_titulo")
+  ctaTitulo        String? @map("cta_titulo")
+  ctaParrafo       String? @map("cta_parrafo")
+
+  libros  Libro[]
+  bloques BloqueLinea[]
 
   @@map("lineas")
+}
+
+// Bloques cortos de la pagina de una linea: los pilares (solo etiqueta) y los
+// argumentos (etiqueta + frase). Viven en una sola tabla porque comparten forma
+// y mecanica de administracion; los separa el campo `tipo`.
+//
+// Al borrar la linea se borran sus bloques (`Cascade`): no son contenido
+// reutilizable como los libros, solo tienen sentido dentro de su pagina.
+model BloqueLinea {
+  id       String          @id @default(cuid())
+  lineaId  String          @map("linea_id")
+  linea    Linea           @relation(fields: [lineaId], references: [id], onDelete: Cascade)
+  tipo     TipoBloqueLinea
+  titulo   String
+  // Solo lo usan los argumentos: el pilar es una etiqueta suelta bajo su icono.
+  texto    String?
+  orden    Int             @default(0)
+  activa   Boolean         @default(true)
+  creadoEn DateTime        @default(now()) @map("creado_en")
+
+  @@index([lineaId, tipo])
+  @@map("bloques_linea")
 }
 
 model Libro {

@@ -1,0 +1,120 @@
+---
+// Pilares y argumentos de UNA línea, en una sola pantalla.
+//
+// Por qué una pantalla por línea y no una lista global: los bloques no existen
+// fuera de su línea (se borran con ella) y quien administra piensa en «la página
+// de Primaria», no en «los pilares del sitio». Poner las dos listas juntas evita
+// además saltar entre pestañas para armar una misma página.
+//
+// Las dos listas reutilizan ListaBloques.astro, el mismo componente de
+// /admin/bloques y /admin/chips: la mecánica (crear, editar, ordenar, ocultar,
+// eliminar) y sus detalles de accesibilidad viven en un solo sitio.
+import PanelLayout from "../../../../layouts/PanelLayout.astro";
+import ListaBloques from "../../../../components/ListaBloques.astro";
+import { bd } from "../../../../lib/bd";
+import {
+  ESTILOS_ARGUMENTO,
+  ESTILOS_PILAR,
+  LIMITES_ARGUMENTO,
+  LIMITES_PILAR,
+} from "../../../../lib/bloques-linea";
+
+export const prerender = false;
+
+const { id = "" } = Astro.params;
+
+const linea = await bd.linea.findUnique({
+  where: { id },
+  include: { bloques: { orderBy: [{ orden: "asc" }, { creadoEn: "asc" }] } },
+});
+
+if (!linea) return Astro.redirect("/admin/lineas?error=noexiste", 303);
+
+const pilares = linea.bloques.filter((bloque) => bloque.tipo === "pilar");
+const argumentos = linea.bloques.filter((bloque) => bloque.tipo === "argumento");
+
+// El aviso de resultado se muestra sólo sobre la lista que lo produjo: si no,
+// «Cambios guardados» aparecería duplicado en las dos.
+const ok = Astro.url.searchParams.get("ok");
+const error = Astro.url.searchParams.get("error");
+const tipoAvisado = Astro.url.searchParams.get("tipo");
+const avisoDe = (tipo: string) => ({
+  ok: tipoAvisado === tipo ? ok : null,
+  error: tipoAvisado === tipo ? error : null,
+});
+
+const RUTA_API = "/api/admin/bloques-linea";
+---
+
+<PanelLayout titulo={`Bloques de ${linea.nombre}`} correo={Astro.locals.sesion?.correo}>
+  <h1 class="text-2xl font-extrabold text-ink">
+    Pilares y argumentos — {linea.nombre}
+  </h1>
+  <p class="mt-1 text-sm text-ink/70">
+    Son las dos filas de bloques cortos de la página pública de esta línea. El icono y el color de
+    cada bloque vienen con el diseño y no se editan: se asignan por posición, así que reordenar
+    también cambia el símbolo. La vista previa de la izquierda muestra cuál le toca a cada uno.
+  </p>
+
+  <p class="mt-4 flex flex-wrap gap-3">
+    <a
+      href={`/lineas/${linea.clave}`}
+      target="_blank"
+      rel="noopener"
+      class="foco-marca inline-flex min-h-[44px] items-center gap-2 rounded-full border border-line bg-surface px-5 text-xs font-bold text-ink transition-colors hover:bg-surface-2"
+    >
+      Ver página pública
+      <span class="sr-only">(se abre en una pestaña nueva)</span>
+    </a>
+    <a
+      href={`/admin/lineas#linea-${linea.id}`}
+      class="foco-marca inline-flex min-h-[44px] items-center gap-2 rounded-full border border-line bg-surface px-5 text-xs font-bold text-ink transition-colors hover:bg-surface-2"
+    >
+      Volver a la línea
+    </a>
+  </p>
+
+  <section id="lista-pilar" class="mt-10 border-t border-line pt-8">
+    <ListaBloques
+      encabezado="Pilares"
+      descripcion="Fila de círculos con icono bajo el titular de la sección. Sólo llevan etiqueta."
+      vacio="Todavía no hay pilares cargados. Sin ninguno, la sección no se dibuja en la página."
+      singular="pilar"
+      plural="pilares"
+      articulo="el"
+      rutaApi={RUTA_API}
+      limites={LIMITES_PILAR}
+      elementos={pilares}
+      ok={avisoDe("pilar").ok}
+      error={avisoDe("pilar").error}
+      ayudaTitulo="Etiqueta corta, de dos o tres palabras. Por ejemplo: Convivencia escolar."
+      ayudaTexto=""
+      nivelEncabezado={2}
+      conTexto={false}
+      camposOcultos={{ linea_id: linea.id, tipo: "pilar" }}
+      estilos={ESTILOS_PILAR}
+    />
+  </section>
+
+  <section id="lista-argumento" class="mt-14 border-t border-line pt-8">
+    <ListaBloques
+      encabezado="Argumentos"
+      descripcion="Fila de razones para elegir la línea, cada una con su frase explicativa."
+      vacio="Todavía no hay argumentos cargados. Sin ninguno, la sección no se dibuja en la página."
+      singular="argumento"
+      plural="argumentos"
+      articulo="el"
+      rutaApi={RUTA_API}
+      limites={LIMITES_ARGUMENTO}
+      elementos={argumentos}
+      ok={avisoDe("argumento").ok}
+      error={avisoDe("argumento").error}
+      ayudaTitulo="Idea principal, en pocas palabras. Por ejemplo: 6 niveles progresivos."
+      ayudaTexto="Una o dos líneas que expliquen la ventaja."
+      nivelEncabezado={2}
+      camposOcultos={{ linea_id: linea.id, tipo: "argumento" }}
+      estilos={ESTILOS_ARGUMENTO}
+      volver={{ href: "/admin/lineas", texto: "Volver a Líneas de producto" }}
+    />
+  </section>
+</PanelLayout>
