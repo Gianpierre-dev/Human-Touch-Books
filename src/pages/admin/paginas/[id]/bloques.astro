@@ -1,0 +1,146 @@
+---
+// Secciones grandes y valores de UNA página institucional, en una sola pantalla.
+//
+// Mismo criterio que /admin/lineas/[id]/bloques: ninguno de los dos existe
+// fuera de su página (se borran con ella) y quien administra piensa en «la
+// página de Quiénes somos», no en «las secciones del sitio».
+//
+// Las dos listas reutilizan ListaBloques.astro, el mismo componente de
+// /admin/bloques, /admin/chips y los bloques de línea: la mecánica (crear,
+// editar, ordenar, ocultar, eliminar) y sus detalles de accesibilidad viven en
+// un solo sitio. Las secciones usan además su campo opcional («frase
+// destacada»), que el componente declara como `campoOpcional`.
+import PanelLayout from "../../../../layouts/PanelLayout.astro";
+import ListaBloques from "../../../../components/ListaBloques.astro";
+import { bd } from "../../../../lib/bd";
+import {
+  ESTILOS_SECCION,
+  ESTILOS_VALOR,
+  LIMITES_SECCION,
+  LIMITES_VALOR,
+} from "../../../../lib/paginas";
+
+export const prerender = false;
+
+const { id = "" } = Astro.params;
+
+const pagina = await bd.paginaInstitucional.findUnique({
+  where: { id },
+  include: {
+    secciones: { orderBy: [{ orden: "asc" }, { creadoEn: "asc" }] },
+    bloques: { orderBy: [{ orden: "asc" }, { creadoEn: "asc" }] },
+  },
+});
+
+if (!pagina) return Astro.redirect("/admin/paginas?error=noexiste", 303);
+
+// `valorOpcional` es el nombre con el que ListaBloques lee el campo extra; el
+// mapeo explícito evita que el componente tenga que conocer el modelo.
+const secciones = pagina.secciones.map((seccion) => ({
+  ...seccion,
+  valorOpcional: seccion.destacado,
+}));
+
+// El aviso de resultado se muestra sólo sobre la lista que lo produjo: si no,
+// «Cambios guardados» aparecería duplicado en las dos.
+const ok = Astro.url.searchParams.get("ok");
+const error = Astro.url.searchParams.get("error");
+const tipoAvisado = Astro.url.searchParams.get("tipo");
+const avisoDe = (tipo: string) => ({
+  ok: tipoAvisado === tipo ? ok : null,
+  error: tipoAvisado === tipo ? error : null,
+});
+---
+
+<PanelLayout titulo={`Contenido de ${pagina.titulo}`} correo={Astro.locals.sesion?.correo}>
+  <h1 class="text-2xl font-extrabold text-ink">
+    Secciones y valores — {pagina.titulo}
+  </h1>
+  <p class="mt-1 text-sm text-ink/70">
+    Son los dos bloques de contenido de la página pública. El icono y el color vienen con el diseño
+    y no se editan: se asignan por posición, así que reordenar también cambia el símbolo. La vista
+    previa de la izquierda muestra cuál le toca a cada uno.
+  </p>
+
+  {
+    !pagina.activa && (
+      <p class="mt-4 rounded-lg border border-line bg-surface-2 px-4 py-3 text-sm text-ink/80">
+        Esta página está <strong class="font-semibold text-ink">despublicada</strong>: no aparece en
+        el menú y su dirección devuelve error 404. Publícala desde{" "}
+        <a href={`/admin/paginas#pagina-${pagina.id}`} class="foco-marca font-semibold text-brand">
+          Páginas institucionales
+        </a>{" "}
+        cuando el contenido esté listo.
+      </p>
+    )
+  }
+
+  <p class="mt-4 flex flex-wrap gap-3">
+    <a
+      href={`/nosotros/${pagina.clave}`}
+      target="_blank"
+      rel="noopener"
+      class="foco-marca inline-flex min-h-[44px] items-center gap-2 rounded-full border border-line bg-surface px-5 text-xs font-bold text-ink transition-colors hover:bg-surface-2"
+    >
+      Ver página pública
+      <span class="sr-only">(se abre en una pestaña nueva)</span>
+    </a>
+    <a
+      href={`/admin/paginas#pagina-${pagina.id}`}
+      class="foco-marca inline-flex min-h-[44px] items-center gap-2 rounded-full border border-line bg-surface px-5 text-xs font-bold text-ink transition-colors hover:bg-surface-2"
+    >
+      Volver a la página
+    </a>
+  </p>
+
+  <section id="lista-seccion" class="mt-10 border-t border-line pt-8">
+    <ListaBloques
+      encabezado="Secciones"
+      descripcion="Bloques grandes con icono, título y texto. Son los de Misión y Visión."
+      vacio="Todavía no hay secciones cargadas. Sin ninguna, esa zona no se dibuja en la página."
+      singular="sección"
+      plural="secciones"
+      articulo="la"
+      rutaApi="/api/admin/secciones-pagina"
+      limites={LIMITES_SECCION}
+      elementos={secciones}
+      ok={avisoDe("seccion").ok}
+      error={avisoDe("seccion").error}
+      ayudaTitulo="Nombre de la sección, en una o dos palabras. Por ejemplo: Misión."
+      ayudaTexto="El cuerpo de la sección. Deja una línea en blanco para separar párrafos."
+      filasTexto={6}
+      nivelEncabezado={2}
+      camposOcultos={{ pagina_id: pagina.id }}
+      estilos={ESTILOS_SECCION}
+      campoOpcional={{
+        nombre: "destacado",
+        etiqueta: "Frase destacada",
+        ayuda: "Se muestra bajo el texto, resaltada y con una barra azul al costado.",
+        limite: LIMITES_SECCION.destacado,
+        filas: 3,
+      }}
+    />
+  </section>
+
+  <section id="lista-valor" class="mt-14 border-t border-line pt-8">
+    <ListaBloques
+      encabezado="Valores"
+      descripcion="Tarjetas con icono, título y texto corto que van bajo las secciones."
+      vacio="Todavía no hay valores cargados. Sin ninguno, esa zona no se dibuja en la página."
+      singular="valor"
+      plural="valores"
+      articulo="el"
+      rutaApi="/api/admin/bloques-pagina"
+      limites={LIMITES_VALOR}
+      elementos={pagina.bloques}
+      ok={avisoDe("valor").ok}
+      error={avisoDe("valor").error}
+      ayudaTitulo="Nombre del valor, en una o dos palabras. Por ejemplo: Excelencia."
+      ayudaTexto="Una o dos líneas que expliquen el valor."
+      nivelEncabezado={2}
+      camposOcultos={{ pagina_id: pagina.id }}
+      estilos={ESTILOS_VALOR}
+      volver={{ href: "/admin/paginas", texto: "Volver a Páginas institucionales" }}
+    />
+  </section>
+</PanelLayout>

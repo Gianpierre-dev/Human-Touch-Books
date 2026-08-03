@@ -13,6 +13,7 @@ import {
   type EspacioImagen,
 } from "../lib/contenido";
 import { descripcionColeccionPorDefecto, resolverTextos } from "../lib/textos";
+import { cargarNavegacion } from "../lib/navegacion";
 import {
   BLOQUES_VALOR_POR_DEFECTO,
   CHIPS_PLATAFORMA_POR_DEFECTO,
@@ -39,6 +40,10 @@ const primerGrado = gradosEscolares.at(0);
 const ultimoGrado = gradosEscolares.at(-1);
 // Subtitulo comun de la serie: viene del catalogo, no se inventa aqui.
 const subtituloSerie = escolares.at(0)?.subtitulo ?? "";
+
+// Menu de dos niveles: paginas institucionales y lineas activas. La consulta
+// vive en src/lib/navegacion.ts y el Header solo la recibe por props.
+const navegacion = await cargarNavegacion();
 
 const filasAjustes = await bd.ajuste.findMany();
 const ajustes = Object.fromEntries(filasAjustes.map((a) => [a.clave, a.valor]));
@@ -254,7 +259,7 @@ const preguntas: PreguntaVista[] =
 ---
 
 <Layout title={textos.meta_titulo} description={textos.meta_descripcion} anclaContenido="#inicio">
-  <Header whatsapp={whatsapp} hayColeccion={escolares.length > 0} />
+  <Header whatsapp={whatsapp} navegacion={navegacion} />
 
   <main id="inicio" tabindex="-1">
     <!-- HERO -->

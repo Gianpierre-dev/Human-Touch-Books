@@ -1,34 +1,76 @@
 ---
+// Cabecera con menu de DOS NIVELES.
+//
+// Estructura pedida por el cliente: Inicio · Nosotros ▾ · Nuestros textos
+// educativos ▾ · Contacto, mas el boton de WhatsApp y el CTA.
+//
+// LOS DESPLEGABLES SON <details>/<summary>, no un menu con JavaScript.
+// Es la misma mecanica del cajon movil que ya existia y trae gratis lo dificil:
+// se abren y cierran con Enter o Espacio desde el teclado, el navegador expone
+// el estado abierto/cerrado a los lectores de pantalla, y SIN JavaScript siguen
+// funcionando. El script que va al final solo agrega tres comodidades de raton
+// —cerrar con Escape, cerrar al hacer clic fuera y que abrir uno cierre el
+// otro—; si no se ejecuta, el menu se sigue pudiendo usar entero.
+//
+// Los datos de los dos desplegables llegan por props (src/lib/navegacion.ts).
+// Un grupo sin elementos activos NO se dibuja: un desplegable vacio es peor que
+// no tenerlo.
+import { NAVEGACION_VACIA, type EnlaceMenu, type Navegacion } from "../lib/navegacion";
+
 interface Props {
   whatsapp?: string;
-  hayColeccion?: boolean;
   /**
    * Prefijo de los enlaces de ancla. En la landing va vacio ("#contacto"); en
    * cualquier otra pagina se pasa "/" para que el ancla apunte a la landing
    * ("/#contacto") en vez de a una seccion que ahi no existe.
    */
   base?: string;
+  /** Paginas institucionales y lineas activas. Sin ellas no hay desplegables. */
+  navegacion?: Navegacion;
 }
 
-const { whatsapp = "51982953436", hayColeccion = true, base = "" } = Astro.props;
+const { whatsapp = "51982953436", base = "", navegacion = NAVEGACION_VACIA } = Astro.props;
 const whatsappVisible = `+${whatsapp.slice(0, 2)} ${whatsapp.slice(2, 5)} ${whatsapp.slice(5, 8)} ${whatsapp.slice(8)}`;
-
-// La seccion #coleccion solo se renderiza cuando hay libros destacados;
-// sin ellos, su enlace se omite para no dejar navegacion muerta.
-const links = [
-  ...(hayColeccion ? [{ href: `${base}#coleccion`, label: "Colección" }] : []),
-  { href: `${base}#plataforma`, label: "Plataforma" },
-  { href: `${base}#nosotros`, label: "Nosotros" },
-  { href: `${base}#preguntas`, label: "Preguntas" },
-];
 
 const enlaceContacto = `${base}#contacto`;
 const enlaceInicio = `${base}#inicio`;
+
+interface GrupoMenu {
+  id: string;
+  etiqueta: string;
+  enlaces: readonly EnlaceMenu[];
+}
+
+// Solo entran los grupos con contenido: sin paginas institucionales activas no
+// se muestra «Nosotros», y sin lineas activas no se muestra el otro.
+const grupos: GrupoMenu[] = [
+  { id: "nosotros", etiqueta: "Nosotros", enlaces: navegacion.paginas },
+  { id: "textos", etiqueta: "Nuestros textos educativos", enlaces: navegacion.lineas },
+].filter((grupo) => grupo.enlaces.length > 0);
+
+// La pagina actual se marca con `aria-current="page"` en su enlace y, ademas,
+// el `<summary>` del grupo que la contiene se resalta y lo dice en texto para
+// lector de pantalla: si no, quien navega con el menu cerrado no tiene forma de
+// saber en que seccion esta.
+const rutaActual = Astro.url.pathname;
+const esActual = (enlace: EnlaceMenu): boolean => enlace.href === rutaActual;
+const grupoActual = grupos.find((grupo) => grupo.enlaces.some(esActual))?.id ?? null;
+
+const claseEnlaceBarra =
+  "foco-marca inline-flex min-h-[44px] items-center text-[0.95rem] font-semibold whitespace-nowrap text-ink/80 xl:text-[1.02rem]";
+const claseResumenBarra =
+  "foco-marca inline-flex min-h-[44px] cursor-pointer list-none items-center gap-1.5 text-[0.95rem] font-semibold whitespace-nowrap text-ink/80 transition-colors hover:text-brand xl:text-[1.02rem] [&::-webkit-details-marker]:hidden";
+const claseItemPanel =
+  "foco-marca flex min-h-[44px] items-center gap-2.5 rounded-lg px-3 text-[0.9rem] font-semibold text-ink/80 transition-colors hover:bg-surface-2 hover:text-brand";
 ---
 
 <header class="sticky top-0 z-40 border-b border-line bg-surface/95 backdrop-blur-md">
   <div class="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-3 md:px-8">
-    <a href={enlaceInicio} class="foco-marca flex items-center gap-3" aria-label="Human Touch Books, inicio">
+    <a
+      href={enlaceInicio}
+      class="foco-marca flex items-center gap-3"
+      aria-label="Human Touch Books, inicio"
+    >
       <img
         src="/brand/logo.png"
         alt="Human Touch Books"
@@ -38,19 +80,65 @@ const enlaceInicio = `${base}#inicio`;
       />
     </a>
 
-    {/* La barra completa entra recien en lg: entre 768 y 1024 el label largo y el
-        numero de WhatsApp se peleaban la misma linea y el header se partia. */}
-    <nav class="hidden items-center gap-6 lg:flex xl:gap-8" aria-label="Navegación principal">
+    {/* La barra completa entra recien en lg: entre 768 y 1024 las etiquetas
+        largas y el numero de WhatsApp se peleaban la misma linea. */}
+    <nav
+      class="menu-escritorio hidden items-center gap-6 lg:flex xl:gap-7"
+      aria-label="Navegación principal"
+    >
+      <a href={enlaceInicio} class={claseEnlaceBarra}>
+        <span class="enlace-sub">Inicio</span>
+      </a>
+
       {
-        links.map((l) => (
-          <a
-            href={l.href}
-            class="foco-marca inline-flex min-h-[44px] items-center text-[0.95rem] font-semibold whitespace-nowrap text-ink/80 xl:text-[1.02rem]"
-          >
-            <span class="enlace-sub">{l.label}</span>
-          </a>
+        grupos.map((grupo) => (
+          <details class="menu-grupo relative" data-grupo={grupo.id}>
+            <summary
+              class:list={[claseResumenBarra, grupoActual === grupo.id && "!text-brand"]}
+            >
+              <span class="enlace-sub">{grupo.etiqueta}</span>
+              {grupoActual === grupo.id && <span class="sr-only">(sección actual)</span>}
+              <svg
+                viewBox="0 0 24 24"
+                class="menu-flecha h-4 w-4 shrink-0 fill-current"
+                aria-hidden="true"
+              >
+                <path d="M7 10l5 5 5-5H7Z" />
+              </svg>
+            </summary>
+
+            <div class="absolute left-0 z-50 mt-3 w-72 rounded-xl border border-line bg-surface p-2 shadow-xl">
+              <ul>
+                {grupo.enlaces.map((enlace) => (
+                  <li>
+                    <a
+                      href={enlace.href}
+                      aria-current={esActual(enlace) ? "page" : undefined}
+                      class:list={[claseItemPanel, esActual(enlace) && "bg-surface-2 !text-brand"]}
+                    >
+                      {/* El punto lleva el color de identidad de la linea: es
+                          dato del panel, no decoracion inventada. Las paginas
+                          institucionales no tienen color propio y van sin el. */}
+                      {enlace.color && (
+                        <span
+                          class="h-2.5 w-2.5 shrink-0 rounded-full"
+                          style={`background-color:${enlace.color}`}
+                          aria-hidden="true"
+                        />
+                      )}
+                      {enlace.etiqueta}
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </details>
         ))
       }
+
+      <a href={enlaceContacto} class={claseEnlaceBarra}>
+        <span class="enlace-sub">Contacto</span>
+      </a>
     </nav>
 
     <div class="flex items-center gap-2">
@@ -60,7 +148,9 @@ const enlaceInicio = `${base}#inicio`;
         aria-label={`Escríbenos por WhatsApp al ${whatsappVisible}`}
       >
         <svg viewBox="0 0 24 24" class="h-4 w-4 shrink-0 fill-current" aria-hidden="true">
-          <path d="M12 2a10 10 0 0 0-8.6 15l-1.3 4.7 4.8-1.3A10 10 0 1 0 12 2Zm5.3 14.2c-.2.6-1.3 1.2-1.8 1.2-.5.1-1 .1-1.7-.1-.4-.2-.9-.3-1.6-.6-2.7-1.2-4.5-4-4.6-4.2-.2-.2-1.1-1.5-1.1-2.8 0-1.3.7-2 .9-2.2.2-.3.5-.3.7-.3h.5c.2 0 .4 0 .6.5l.8 2c.1.2.1.4 0 .5l-.4.6c-.2.2-.3.4-.1.7.2.3.9 1.4 1.9 2.3 1.3 1.1 2.3 1.4 2.6 1.6.3.1.5.1.7-.1l.7-.8c.2-.3.4-.2.7-.1l2 .9c.3.2.5.2.6.4.1.1.1.7-.1 1.3Z" />
+          <path
+            d="M12 2a10 10 0 0 0-8.6 15l-1.3 4.7 4.8-1.3A10 10 0 1 0 12 2Zm5.3 14.2c-.2.6-1.3 1.2-1.8 1.2-.5.1-1 .1-1.7-.1-.4-.2-.9-.3-1.6-.6-2.7-1.2-4.5-4-4.6-4.2-.2-.2-1.1-1.5-1.1-2.8 0-1.3.7-2 .9-2.2.2-.3.5-.3.7-.3h.5c.2 0 .4 0 .6.5l.8 2c.1.2.1.4 0 .5l-.4.6c-.2.2-.3.4-.1.7.2.3.9 1.4 1.9 2.3 1.3 1.1 2.3 1.4 2.6 1.6.3.1.5.1.7-.1l.7-.8c.2-.3.4-.2.7-.1l2 .9c.3.2.5.2.6.4.1.1.1.7-.1 1.3Z"
+          ></path>
         </svg>
         {/* En lg+ el numero cede su sitio a la barra de navegacion y al CTA
             primario; sigue disponible para lectores de pantalla por el aria-label,
@@ -76,7 +166,9 @@ const enlaceInicio = `${base}#inicio`;
         Solicitar acceso
       </a>
 
-      {/* Menu movil: <details> funciona con teclado y sin JavaScript. */}
+      {/* Menu movil: los mismos grupos, anidados. Un <details> por grupo dentro
+          del <details> del cajon; sin anidar quedaba una lista plana de diez
+          enlaces sin jerarquia. */}
       <details id="menu-movil" class="relative lg:hidden">
         <summary
           class="foco-marca inline-flex min-h-[44px] min-w-[44px] cursor-pointer list-none items-center justify-center gap-1.5 rounded-full border border-line px-3 text-sm font-semibold text-ink transition-colors hover:bg-surface-2 [&::-webkit-details-marker]:hidden"
@@ -88,19 +180,71 @@ const enlaceInicio = `${base}#inicio`;
         </summary>
 
         <nav
-          class="absolute right-0 z-50 mt-3 w-64 rounded-xl border border-line bg-surface p-2 shadow-xl"
+          class="absolute right-0 z-50 mt-3 max-h-[80vh] w-72 overflow-y-auto rounded-xl border border-line bg-surface p-2 shadow-xl"
           aria-label="Navegación principal"
         >
+          <a
+            href={enlaceInicio}
+            class="foco-marca flex min-h-[44px] items-center rounded-lg px-3 text-[0.95rem] font-semibold text-ink/80 transition-colors hover:bg-surface-2 hover:text-brand"
+          >
+            Inicio
+          </a>
+
           {
-            links.map((l) => (
-              <a
-                href={l.href}
-                class="foco-marca flex min-h-[44px] items-center rounded-lg px-3 text-[0.95rem] font-semibold text-ink/80 transition-colors hover:bg-surface-2 hover:text-brand"
-              >
-                {l.label}
-              </a>
+            grupos.map((grupo) => (
+              <details class="menu-grupo mt-0.5" data-grupo={`movil-${grupo.id}`} open={grupoActual === grupo.id}>
+                <summary
+                  class:list={[
+                    "foco-marca flex min-h-[44px] cursor-pointer list-none items-center gap-1.5 rounded-lg px-3 text-[0.95rem] font-bold text-ink transition-colors hover:bg-surface-2 [&::-webkit-details-marker]:hidden",
+                    grupoActual === grupo.id && "!text-brand",
+                  ]}
+                >
+                  <span class="flex-1">{grupo.etiqueta}</span>
+                  {grupoActual === grupo.id && <span class="sr-only">(sección actual)</span>}
+                  <svg
+                    viewBox="0 0 24 24"
+                    class="menu-flecha h-4 w-4 shrink-0 fill-current"
+                    aria-hidden="true"
+                  >
+                    <path d="M7 10l5 5 5-5H7Z" />
+                  </svg>
+                </summary>
+                {/* Sangria + linea vertical: el segundo nivel se lee como tal
+                    aunque el cajon tenga tres grupos abiertos. */}
+                <ul class="mt-0.5 ml-3 border-l border-line pl-2">
+                  {grupo.enlaces.map((enlace) => (
+                    <li>
+                      <a
+                        href={enlace.href}
+                        aria-current={esActual(enlace) ? "page" : undefined}
+                        class:list={[
+                          claseItemPanel,
+                          esActual(enlace) && "bg-surface-2 !text-brand",
+                        ]}
+                      >
+                        {enlace.color && (
+                          <span
+                            class="h-2.5 w-2.5 shrink-0 rounded-full"
+                            style={`background-color:${enlace.color}`}
+                            aria-hidden="true"
+                          />
+                        )}
+                        {enlace.etiqueta}
+                      </a>
+                    </li>
+                  ))}
+                </ul>
+              </details>
             ))
           }
+
+          <a
+            href={enlaceContacto}
+            class="foco-marca mt-0.5 flex min-h-[44px] items-center rounded-lg px-3 text-[0.95rem] font-semibold text-ink/80 transition-colors hover:bg-surface-2 hover:text-brand"
+          >
+            Contacto
+          </a>
+
           <a
             href={enlaceContacto}
             class="foco-marca boton-elevar [--sombra-hover:rgb(18_74_153_/_0.5)] mt-2 flex min-h-[44px] items-center justify-center rounded-full bg-brand px-3 text-sm font-bold text-white hover:bg-brand-deep"
@@ -112,14 +256,57 @@ const enlaceInicio = `${base}#inicio`;
     </div>
   </div>
 
+  {/*
+    Comodidades de raton y teclado SOBRE un menu que ya funciona sin esto:
+    cerrar con Escape, cerrar al hacer clic fuera, y que abrir un desplegable de
+    la barra cierre el otro. Nada de esto crea comportamiento nuevo: si el
+    script no corre, los <details> se siguen abriendo y cerrando con Enter.
+  */}
   <script is:inline>
     (() => {
-      const menu = document.getElementById("menu-movil");
-      if (!menu) return;
-      menu.addEventListener("click", (evento) => {
-        if (evento.target instanceof Element && evento.target.closest("a")) {
-          menu.removeAttribute("open");
-        }
+      const cabecera = document.currentScript?.closest("header");
+      if (!cabecera) return;
+
+      const movil = cabecera.querySelector("#menu-movil");
+      // Solo los de la barra de escritorio se excluyen entre si: dentro del
+      // cajon movil abrir dos grupos a la vez es util, no molesto.
+      const deEscritorio = [...cabecera.querySelectorAll(".menu-escritorio .menu-grupo")];
+      const todos = [...cabecera.querySelectorAll("details")];
+
+      const cerrar = (lista) => lista.forEach((menu) => menu.removeAttribute("open"));
+
+      for (const menu of deEscritorio) {
+        menu.addEventListener("toggle", () => {
+          if (!menu.open) return;
+          cerrar(deEscritorio.filter((otro) => otro !== menu));
+        });
+      }
+
+      // Al elegir un enlace se cierra todo: en movil el cajon tapaba la pagina
+      // recien cargada cuando el destino era un ancla de la misma pagina.
+      cabecera.addEventListener("click", (evento) => {
+        if (evento.target instanceof Element && evento.target.closest("a")) cerrar(todos);
+      });
+
+      document.addEventListener("keydown", (evento) => {
+        if (evento.key !== "Escape") return;
+        const abierto = todos.find((menu) => menu.open);
+        if (!abierto) return;
+        cerrar(todos);
+        // El foco vuelve al disparador: si se queda dentro de un panel que se
+        // acaba de cerrar, el teclado pierde el hilo.
+        abierto.querySelector("summary")?.focus();
+      });
+
+      document.addEventListener("click", (evento) => {
+        if (evento.target instanceof Node && cabecera.contains(evento.target)) return;
+        cerrar(todos);
+      });
+
+      // Al pasar a escritorio el cajon movil queda oculto pero abierto; se
+      // cierra para que no reaparezca al volver a achicar la ventana.
+      window.addEventListener("resize", () => {
+        if (window.innerWidth >= 1024 && movil) movil.removeAttribute("open");
       });
     })();
   </script>

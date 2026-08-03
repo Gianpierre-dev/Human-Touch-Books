@@ -296,6 +296,41 @@ body {
 }
 
 /*
+  Menu de dos niveles de la cabecera.
+  La flecha del <summary> gira al abrir el desplegable, igual que el signo de
+  las preguntas frecuentes: es la unica pista visual del estado y no depende de
+  JavaScript.
+*/
+.menu-grupo > summary::-webkit-details-marker {
+  display: none;
+}
+
+.menu-grupo[open] > summary .menu-flecha {
+  transform: rotate(180deg);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .menu-flecha {
+    transition: transform 0.2s ease-out;
+  }
+}
+
+/*
+  Franja de cierre de las paginas institucionales: el azul de marca a fondo
+  completo con texto blanco. Es la hermana de `.linea-franja`, pero con el color
+  fijo de la marca en vez del color de la linea: una pagina institucional no
+  pertenece a ninguna linea. El color plano va primero como respaldo.
+*/
+.franja-marca {
+  background-color: var(--color-brand);
+  background-image: linear-gradient(
+    120deg,
+    var(--color-brand) 0%,
+    var(--color-brand-deep) 100%
+  );
+}
+
+/*
   Pagina de linea (/lineas/{clave}).
   El color de identidad lo elige el cliente y vive en la base, asi que NO puede
   ser una clase de Tailwind: `text-${color}` no se compila, Tailwind solo ve el

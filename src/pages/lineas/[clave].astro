@@ -13,6 +13,7 @@ import Footer from "../../components/Footer.astro";
 import { bd } from "../../lib/bd";
 import { resolverContenidoLinea } from "../../lib/lineas";
 import { ESTILOS_ARGUMENTO, ESTILOS_PILAR } from "../../lib/bloques-linea";
+import { cargarNavegacion } from "../../lib/navegacion";
 
 export const prerender = false;
 
@@ -70,13 +71,17 @@ const hayImagenHero = Boolean(linea.heroImagenUrl);
 const anchoHero = linea.heroAncho ?? 1600;
 const altoHero = linea.heroAlto ?? 1200;
 
-// Con `base="/"` los enlaces de la cabecera y el pie apuntan a las secciones de
-// la landing, que si existen: la navegacion se ve completa desde aqui.
+// Menu de dos niveles: paginas institucionales y lineas activas. La consulta
+// vive en src/lib/navegacion.ts y el Header solo la recibe por props.
+const navegacion = await cargarNavegacion();
+
+// Con `base="/"` los enlaces de ancla de la cabecera y el pie apuntan a las
+// secciones de la landing, que si existen: la navegacion se ve completa aqui.
 const tituloPagina = `${linea.nombre} — Human Touch Books`;
 ---
 
 <Layout title={tituloPagina} description={linea.descripcion} anclaContenido="#contenido">
-  <Header whatsapp={whatsapp} hayColeccion={true} base="/" />
+  <Header whatsapp={whatsapp} base="/" navegacion={navegacion} />
 
   {/*
     El color de identidad se inyecta UNA vez, aqui, como custom property: las

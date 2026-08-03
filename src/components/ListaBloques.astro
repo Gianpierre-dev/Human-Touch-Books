@@ -11,6 +11,22 @@ interface Elemento {
   texto?: string | null;
   orden: number;
   activa: boolean;
+  /** Valor del campo extra opcional, si la lista declara `campoOpcional`. */
+  valorOpcional?: string | null;
+}
+
+/**
+ * Campo de texto extra que algunas listas necesitan y otras no (la frase
+ * destacada de una sección institucional, por ejemplo). Se declara aquí en vez
+ * de duplicar el componente: el resto de la mecánica es idéntica.
+ */
+interface CampoOpcional {
+  /** Nombre del campo del formulario. También forma el código de error. */
+  nombre: string;
+  etiqueta: string;
+  ayuda: string;
+  limite: number;
+  filas?: number;
 }
 
 /** Icono y color que la web asigna a cada posición. Se muestran como vista previa. */
@@ -49,6 +65,10 @@ interface Props {
   estilos?: readonly EstiloPrevio[];
   /** Enlace de vuelta cuando la lista vive dentro de otra pantalla. */
   volver?: { href: string; texto: string };
+  /** Campo de texto extra, opcional en el formulario y en el modelo. */
+  campoOpcional?: CampoOpcional;
+  /** Filas del textarea de «Texto». Los textos largos necesitan más de 3. */
+  filasTexto?: number;
 }
 
 const {
@@ -70,6 +90,8 @@ const {
   camposOcultos = {},
   estilos = [],
   volver,
+  campoOpcional,
+  filasTexto = 3,
 } = Astro.props;
 
 // La pantalla de bloques de una linea monta este componente DOS veces (pilares
@@ -84,6 +106,7 @@ const sufijoId = singular
   .replace(/(^-|-$)/g, "");
 const idAyudaTitulo = `ayuda-nuevo-titulo-${sufijoId}`;
 const idAyudaTexto = `ayuda-nuevo-texto-${sufijoId}`;
+const idAyudaOpcional = `ayuda-nuevo-opcional-${sufijoId}`;
 
 // Astro admite una variable en mayúscula como etiqueta: así la lista se puede
 // anidar bajo un h1 ajeno sin duplicar encabezados de nivel 1.
@@ -115,6 +138,11 @@ const MENSAJES_ERROR: Record<string, string> = {
   orden: "El orden debe ser un número.",
   noexiste: `No encontramos ${articulo} ${singular}.`,
   accion: "No reconocimos la acción solicitada.",
+  // El código de error del campo extra lo forma su propio nombre: así el
+  // validador del servidor y este mensaje no se pueden desincronizar.
+  ...(campoOpcional && {
+    [`${campoOpcional.nombre}largo`]: `${campoOpcional.etiqueta} admite hasta ${campoOpcional.limite} caracteres.`,
+  }),
 };
 
 const textoError = error ? (MENSAJES_ERROR[error] ?? error) : null;
@@ -293,7 +321,16 @@ const clasesBotonPrincipal =
                 Texto <span class="text-accent-deep">*</span>
               </span>
               {/* Sin saltos de línea alrededor: el contenido del textarea ES su valor. */}
-              <textarea name="texto" rows="3" required maxlength={limites.texto} class={clasesCampo}>{elemento.texto ?? ""}</textarea>
+              <textarea name="texto" rows={filasTexto} required maxlength={limites.texto} class={clasesCampo}>{elemento.texto ?? ""}</textarea>
+            </label>
+          )}
+          {campoOpcional && (
+            <label class="mt-4 block">
+              <span class="text-sm font-semibold text-ink">{campoOpcional.etiqueta}</span>
+              <textarea name={campoOpcional.nombre} rows={campoOpcional.filas ?? 2} maxlength={campoOpcional.limite} class={clasesCampo}>{elemento.valorOpcional ?? ""}</textarea>
+              <span class="mt-1.5 block text-xs text-ink/70">
+                {campoOpcional.ayuda} Puede quedar vacío. Hasta {campoOpcional.limite} caracteres.
+              </span>
             </label>
           )}
           <label class="mt-4 block max-w-[12rem]">
@@ -344,7 +381,7 @@ const clasesBotonPrincipal =
           </span>
           <textarea
             name="texto"
-            rows="3"
+            rows={filasTexto}
             required
             maxlength={limites.texto}
             aria-describedby={idAyudaTexto}
@@ -353,6 +390,26 @@ const clasesBotonPrincipal =
         </label>
         <p id={idAyudaTexto} class="mt-1.5 text-xs text-ink/70">
           {ayudaTexto} Hasta {limites.texto} caracteres.
+        </p>
+      </>
+    )
+  }
+
+  {
+    campoOpcional && (
+      <>
+        <label class="mt-4 block">
+          <span class="text-sm font-semibold text-ink">{campoOpcional.etiqueta}</span>
+          <textarea
+            name={campoOpcional.nombre}
+            rows={campoOpcional.filas ?? 2}
+            maxlength={campoOpcional.limite}
+            aria-describedby={idAyudaOpcional}
+            class={clasesCampo}
+          />
+        </label>
+        <p id={idAyudaOpcional} class="mt-1.5 text-xs text-ink/70">
+          {campoOpcional.ayuda} Puede quedar vacío. Hasta {campoOpcional.limite} caracteres.
         </p>
       </>
     )

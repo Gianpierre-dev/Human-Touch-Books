@@ -113,6 +113,102 @@ model Libro {
   @@map("libros")
 }
 
+// Paginas institucionales (/nosotros/{clave}): «Quienes somos», «Mision y
+// vision», «Compromiso»... Son paginas de contenido, no de catalogo, y por eso
+// no cuelgan de Linea.
+//
+// `activa` arranca en FALSE a proposito: una pagina recien creada esta a medio
+// escribir. Mientras siga inactiva no aparece en el menu y su URL responde 404,
+// asi que nadie publica un borrador sin querer.
+//
+// Todos los campos de contenido son opcionales salvo `titulo`: una pagina con
+// solo titulo y parrafos tiene que verse digna, y cada seccion de la plantilla
+// se omite cuando no tiene contenido (mismo criterio que /lineas/{clave}).
+//
+// A diferencia de Linea, aqui NO hay defectos derivados: el contenido
+// institucional no se puede inventar a partir del nombre de la pagina.
+model PaginaInstitucional {
+  id     String @id @default(cuid())
+  // Slug estable: es el identificador que usa la URL publica.
+  clave  String @unique
+  // Nombre con el que la pagina aparece en el menu «Nosotros».
+  titulo String
+
+  // --- Hero ---
+  antetitulo      String?
+  tituloPagina    String? @map("titulo_pagina")
+  // Segunda mitad del titular, la que va en el color de marca. Se concatena al
+  // final de `tituloPagina`: la pieza parte la frase, no la repite.
+  tituloDestacado String? @map("titulo_destacado")
+  // Texto largo del hero. Una linea en blanco separa parrafos, igual que el
+  // parrafo del hero de una linea (src/lib/lineas.ts).
+  parrafos        String?
+  imagenUrl       String? @map("imagen_url")
+  imagenAlt       String? @map("imagen_alt")
+  // Medidas reales de la imagen ya procesada: reservan su hueco exacto (CLS
+  // cero). Mismo criterio que ImagenSitio y que el hero de Linea.
+  ancho           Int?
+  alto            Int?
+
+  // --- Encabezado de la fila de valores ---
+  bloquesAntetitulo String? @map("bloques_antetitulo")
+  bloquesTitulo     String? @map("bloques_titulo")
+
+  // --- Frase de cierre ---
+  cierreTexto     String? @map("cierre_texto")
+  // Parte de esa frase que va en el color de marca. Se concatena al final.
+  cierreDestacado String? @map("cierre_destacado")
+
+  orden         Int      @default(0)
+  activa        Boolean  @default(false)
+  creadoEn      DateTime @default(now()) @map("creado_en")
+  actualizadoEn DateTime @updatedAt @map("actualizado_en")
+
+  secciones SeccionPagina[]
+  bloques   BloquePagina[]
+
+  @@map("paginas_institucionales")
+}
+
+// Bloques grandes de una pagina institucional: MISION, VISION... Cada uno lleva
+// icono en circulo, titulo, texto y una frase destacada opcional con barra
+// lateral.
+//
+// Al borrar la pagina se borran sus secciones (`Cascade`): no son contenido
+// reutilizable, solo tienen sentido dentro de su pagina.
+model SeccionPagina {
+  id       String              @id @default(cuid())
+  paginaId String              @map("pagina_id")
+  pagina   PaginaInstitucional @relation(fields: [paginaId], references: [id], onDelete: Cascade)
+  titulo   String
+  // Una linea en blanco separa parrafos.
+  texto    String
+  // Frase resaltada con barra lateral, bajo el texto. Opcional.
+  destacado String?
+  orden    Int                 @default(0)
+  activa   Boolean             @default(true)
+  creadoEn DateTime            @default(now()) @map("creado_en")
+
+  @@index([paginaId])
+  @@map("secciones_pagina")
+}
+
+// Tarjetas de valores de una pagina institucional (Etica, Compromiso...): icono
+// en circulo claro, titulo y texto corto. Mismo `Cascade` que las secciones.
+model BloquePagina {
+  id       String              @id @default(cuid())
+  paginaId String              @map("pagina_id")
+  pagina   PaginaInstitucional @relation(fields: [paginaId], references: [id], onDelete: Cascade)
+  titulo   String
+  texto    String
+  orden    Int                 @default(0)
+  activa   Boolean             @default(true)
+  creadoEn DateTime            @default(now()) @map("creado_en")
+
+  @@index([paginaId])
+  @@map("bloques_pagina")
+}
+
 model Usuario {
   id                 String   @id @default(cuid())
   correo             String   @unique
