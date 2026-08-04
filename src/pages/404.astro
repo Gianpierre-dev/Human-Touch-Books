@@ -1,0 +1,92 @@
+---
+// Pagina de «no encontrado», con la marca puesta.
+//
+// LA SIRVEN DOS CAMINOS Y LOS DOS TIENEN QUE DEVOLVER 404
+//   1. El adaptador de Node la renderiza solo cuando ninguna ruta casa con la
+//      URL pedida.
+//   2. Las rutas dinamicas de /lineas y /nosotros hacen `Astro.rewrite("/404")`
+//      cuando la clave no existe o esta desactivada.
+//
+// En el segundo camino Astro vuelve a renderizar ESTA pagina y adopta SU
+// respuesta, que por defecto seria 200: un "no existe" con estado de exito, que
+// Google indexaria igual. Por eso el estado se fija aqui, en la propia pagina.
+// Asi los dos caminos coinciden y no hay forma de olvidarse de ponerlo.
+import Layout from "../layouts/Layout.astro";
+import Header from "../components/Header.astro";
+import Footer from "../components/Footer.astro";
+import { bd } from "../lib/bd";
+import { cargarNavegacion } from "../lib/navegacion";
+
+export const prerender = false;
+
+Astro.response.status = 404;
+
+const navegacion = await cargarNavegacion();
+
+// Datos de contacto: los mismos que administra /admin/ajustes para la landing.
+const filasAjustes = await bd.ajuste.findMany();
+const ajustes = Object.fromEntries(filasAjustes.map((ajuste) => [ajuste.clave, ajuste.valor]));
+const whatsapp = ajustes.whatsapp ?? "51982953436";
+const correoContacto = ajustes.correo_contacto ?? "informes@humantouchbooks.pe";
+const ubicacion = ajustes.ubicacion ?? "La Molina, Lima — Perú";
+---
+
+{/* `noindex`: la pagina existe para la visitante, no para el buscador. */}
+<Layout
+  title="No encontramos esa página — Human Touch Books"
+  description="La página que buscas no existe o cambió de dirección."
+  noindex
+  anclaContenido="#contenido"
+>
+  <Header whatsapp={whatsapp} base="/" navegacion={navegacion} />
+
+  <main id="contenido" tabindex="-1" class="bg-surface">
+    <section
+      class="mx-auto flex min-h-[52vh] max-w-3xl flex-col items-start justify-center px-4 py-20 md:px-8 md:py-24"
+      aria-labelledby="titulo-404"
+    >
+      <span class="text-xs font-bold tracking-[0.2em] text-brand uppercase">Error 404</span>
+      <h1
+        id="titulo-404"
+        class="mt-2 font-display text-[clamp(2rem,4.6vw,3.1rem)] leading-[1.08] font-bold tracking-tight text-ink"
+      >
+        No encontramos esa página
+      </h1>
+      <p class="mt-5 max-w-[58ch] leading-relaxed text-ink/75">
+        Puede que la dirección esté mal escrita o que la página ya no esté publicada. Desde el
+        inicio llegas a nuestras líneas de textos educativos y al resto del sitio.
+      </p>
+
+      <div class="mt-8 flex flex-wrap items-center gap-3.5">
+        <a
+          href="/"
+          class="foco-marca boton-elevar [--sombra-hover:rgb(18_74_153_/_0.5)] inline-flex min-h-[52px] items-center gap-2.5 rounded-full bg-brand px-8 text-[0.95rem] font-bold text-white shadow-lg hover:bg-brand-deep"
+        >
+          <svg viewBox="0 0 24 24" class="h-4 w-4 fill-current" aria-hidden="true">
+            <path d="M14 7l-5 5 5 5V7Z"></path>
+          </svg>
+          Volver al inicio
+        </a>
+        <a
+          href="/#contacto"
+          class="foco-marca inline-flex min-h-[52px] items-center gap-2 rounded-full border border-line bg-surface px-7 text-[0.95rem] font-bold text-ink transition-colors hover:bg-surface-2"
+        >
+          <svg viewBox="0 0 24 24" class="h-4.5 w-4.5 fill-current" aria-hidden="true">
+            <path
+              d="M20 4H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2Zm0 4-8 5-8-5V6l8 5 8-5v2Z"
+            ></path>
+          </svg>
+          Escríbenos
+        </a>
+      </div>
+    </section>
+  </main>
+
+  <Footer
+    whatsapp={whatsapp}
+    correoContacto={correoContacto}
+    ubicacion={ubicacion}
+    navegacion={navegacion}
+    base="/"
+  />
+</Layout>

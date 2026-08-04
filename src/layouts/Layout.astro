@@ -7,6 +7,24 @@ interface Props {
   noindex?: boolean;
   /** Ancla del contenido principal. Si se pasa, se pinta el enlace de salto. */
   anclaContenido?: string;
+  /**
+   * Imagen de la tarjeta social de ESTA pagina. Sin ella se usa la portada
+   * social general del sitio.
+   */
+  imagenSocial?: ImagenSocial;
+}
+
+/**
+ * Imagen de tarjeta social. Las medidas van JUNTO a la ruta y no como props
+ * sueltas: anunciar un tamaño que no es el de la imagen hace que la red
+ * recorte mal la tarjeta, y separarlas permitiria desparejarlas sin querer.
+ */
+export interface ImagenSocial {
+  /** Ruta del propio sitio ("/lineas/primaria-hero.jpg", "/uploads/…"). */
+  url: string;
+  /** Medidas REALES. Solo se declaran si se conocen las dos. */
+  ancho?: number;
+  alto?: number;
 }
 
 const {
@@ -14,6 +32,7 @@ const {
   description = "Editorial peruana especializada en tutoría, convivencia escolar y literatura con sentido humano. Serie Tutoría SMART para primaria y libros que acompañan.",
   noindex = false,
   anclaContenido,
+  imagenSocial,
 } = Astro.props;
 
 // Detras del proxy de Railway el adapter descarta Host y X-Forwarded-Host
@@ -22,7 +41,19 @@ const {
 const base = Astro.site ?? new URL(Astro.url.origin);
 const urlCanonica = new URL(Astro.url.pathname, base).href;
 // Imagen social dedicada 1200x630 (la genera scripts/generar-og.mjs).
-const imagenSocial = new URL("/og/portada-social.jpg", base).href;
+const IMAGEN_SOCIAL_POR_DEFECTO: ImagenSocial = {
+  url: "/og/portada-social.jpg",
+  ancho: 1200,
+  alto: 630,
+};
+const social = imagenSocial ?? IMAGEN_SOCIAL_POR_DEFECTO;
+const urlImagenSocial = new URL(social.url, base).href;
+// Las medidas se publican siempre que se conozcan las DOS: le ahorran a la red
+// una descarga para averiguar la proporcion y evitan que la tarjeta salte. Las
+// paginas de linea e institucionales las traen de la base (se guardan al
+// procesar la imagen); si esa fila es vieja y no las tiene, se omiten en vez de
+// inventarlas.
+const hayMedidasSociales = social.ancho !== undefined && social.alto !== undefined;
 ---
 
 <!doctype html>
@@ -41,20 +72,43 @@ const imagenSocial = new URL("/og/portada-social.jpg", base).href;
     {noindex && <meta name="robots" content="noindex" />}
     <title>{title}</title>
 
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    {/*
+      Tipografia autoalojada (los @font-face viven en src/styles/global.css).
+      Se precargan las DOS caras que pinta el primer viewport: la sans del
+      cuerpo y la serif de los titulares. Precargar de mas compite por ancho de
+      banda con la imagen del hero, que es el LCP.
+      `crossorigin` es obligatorio aunque el archivo sea del mismo origen: las
+      fuentes se piden en modo CORS y sin el atributo el navegador descarga el
+      archivo DOS veces.
+    */}
     <link
-      href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Hanken+Grotesk:wght@400;500;600;700&display=swap"
-      rel="stylesheet"
+      rel="preload"
+      as="font"
+      type="font/woff2"
+      href="/fonts/hanken-grotesk-variable-latin.woff2"
+      crossorigin
+    />
+    <link
+      rel="preload"
+      as="font"
+      type="font/woff2"
+      href="/fonts/fraunces-variable-latin.woff2"
+      crossorigin
     />
 
     <meta property="og:title" content={title} />
     <meta property="og:description" content={description} />
     <meta property="og:type" content="website" />
     <meta property="og:url" content={urlCanonica} />
-    <meta property="og:image" content={imagenSocial} />
-    <meta property="og:image:width" content="1200" />
-    <meta property="og:image:height" content="630" />
+    <meta property="og:image" content={urlImagenSocial} />
+    {
+      hayMedidasSociales && (
+        <>
+          <meta property="og:image:width" content={String(social.ancho)} />
+          <meta property="og:image:height" content={String(social.alto)} />
+        </>
+      )
+    }
     <meta property="og:locale" content="es_PE" />
     <meta property="og:site_name" content="Human Touch Books" />
     <meta name="twitter:card" content="summary_large_image" />

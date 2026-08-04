@@ -1,11 +1,20 @@
 ---
+// Pie del sitio publico.
+//
+// LA COLUMNA «EXPLORA» SALE DE LA MISMA NAVEGACION QUE EL MENU
+// Antes eran anclas escritas a mano y se desfasaban solas: cada pagina
+// institucional o linea nueva aparecia en la cabecera y no en el pie. Ahora las
+// dos partes leen `src/lib/navegacion.ts`, asi que publicar una pagina en el
+// panel la deja enlazada en los dos sitios sin tocar codigo.
+import { NAVEGACION_VACIA, type EnlaceMenu, type Navegacion } from "../lib/navegacion";
 import { defectoFijo } from "../lib/textos";
 
 interface Props {
   whatsapp?: string;
   correoContacto?: string;
   ubicacion?: string;
-  hayColeccion?: boolean;
+  /** Páginas institucionales y líneas activas, las mismas de la cabecera. */
+  navegacion?: Navegacion;
   /** Párrafo bajo el logotipo. Administrable desde /admin/textos. */
   descripcion?: string;
   /**
@@ -23,7 +32,7 @@ const {
   whatsapp = "51982953436",
   correoContacto = "informes@humantouchbooks.pe",
   ubicacion = "La Molina, Lima — Perú",
-  hayColeccion = true,
+  navegacion = NAVEGACION_VACIA,
   descripcion = DESCRIPCION_POR_DEFECTO,
   base = "",
 } = Astro.props;
@@ -34,12 +43,13 @@ const year = new Date().getFullYear();
 // Area tactil de 44 px de alto en cada enlace del pie (WCAG 2.5.8).
 const claseEnlace = "foco-marca inline-flex min-h-[44px] items-center text-ink/75";
 
-// El enlace a #coleccion se omite cuando la seccion no se renderiza.
-const explora = [
-  ...(hayColeccion ? [{ href: `${base}#coleccion`, label: "Colección Tutoría SMART" }] : []),
-  { href: `${base}#plataforma`, label: "Plataforma" },
-  { href: `${base}#nosotros`, label: "Nosotros" },
-  { href: `${base}#preguntas`, label: "Preguntas frecuentes" },
+// Primero las páginas institucionales y las líneas (destinos propios), y al
+// final el ancla de la landing: un enlace a una sección de otra página se lee
+// mejor cerrando la lista que mezclado entre las páginas.
+const explora: EnlaceMenu[] = [
+  ...navegacion.paginas,
+  ...navegacion.lineas,
+  { href: `${base}#preguntas`, etiqueta: "Preguntas frecuentes" },
 ];
 ---
 
@@ -55,10 +65,10 @@ const explora = [
         <div>
           <h2 class="font-display text-base text-ink">Explora</h2>
           <ul class="mt-2">
-            {explora.map((e) => (
+            {explora.map((enlace) => (
               <li>
-                <a href={e.href} class={claseEnlace}>
-                  <span class="enlace-sub">{e.label}</span>
+                <a href={enlace.href} class={claseEnlace}>
+                  <span class="enlace-sub">{enlace.etiqueta}</span>
                 </a>
               </li>
             ))}
@@ -82,8 +92,15 @@ const explora = [
       </div>
     </div>
 
-    <div class="mt-12 border-t border-line pt-6 text-xs text-ink/70">
-      © {year} Human Touch Books · Editorial. Todos los derechos reservados.
+    {/* La política va junto al copyright, no en «Explora»: es una página legal,
+        no un destino que la visitante esté buscando. */}
+    <div
+      class="mt-12 flex flex-col gap-2 border-t border-line pt-6 text-xs text-ink/70 sm:flex-row sm:items-center sm:justify-between sm:gap-6"
+    >
+      <p>© {year} Human Touch Books · Editorial. Todos los derechos reservados.</p>
+      <a href="/privacidad" class="foco-marca inline-flex min-h-[44px] items-center text-ink/70">
+        <span class="enlace-sub">Política de privacidad</span>
+      </a>
     </div>
   </div>
 </footer>

@@ -1,0 +1,8 @@
+# El sitio publico es indexable entero. Solo quedan fuera el panel y su API:
+# ambos exigen sesion, asi que rastrearlos solo gasta presupuesto de rastreo.
+User-agent: *
+Allow: /
+Disallow: /admin
+Disallow: /api
+
+Sitemap: https://humantouchbooks.pe/sitemap.xml

@@ -14,6 +14,7 @@ import { bd } from "../../lib/bd";
 import { resolverContenidoLinea } from "../../lib/lineas";
 import { ESTILOS_ARGUMENTO, ESTILOS_PILAR } from "../../lib/bloques-linea";
 import { cargarNavegacion } from "../../lib/navegacion";
+import { serializarJsonLd } from "../../lib/json-ld";
 
 export const prerender = false;
 
@@ -28,12 +29,12 @@ const linea = await bd.linea.findUnique({
 });
 
 // Una linea desactivada no existe para el publico: 404 real, no una pagina en
-// blanco con estado 200 que Google indexaria igual.
+// blanco con estado 200 que Google indexaria igual. El `rewrite` renderiza la
+// pagina de marca (src/pages/404.astro) SIN cambiar la URL, y el estado 404 lo
+// fija esa pagina: asi la visitante ve la cabecera y el pie en vez de una linea
+// de texto suelta.
 if (!linea || !linea.activa) {
-  return new Response("No encontramos esa línea del catálogo.", {
-    status: 404,
-    headers: { "Content-Type": "text/plain; charset=utf-8" },
-  });
+  return Astro.rewrite("/404");
 }
 
 const contenido = resolverContenidoLinea(linea);
@@ -78,10 +79,49 @@ const navegacion = await cargarNavegacion();
 // Con `base="/"` los enlaces de ancla de la cabecera y el pie apuntan a las
 // secciones de la landing, que si existen: la navegacion se ve completa aqui.
 const tituloPagina = `${linea.nombre} — Human Touch Books`;
+
+// Tarjeta social propia: la imagen del hero de la linea. Sirve tanto la del
+// repositorio como una subida desde el panel (/uploads/…), porque las dos son
+// URL publicas de este mismo dominio. Sin imagen se queda la portada general.
+//
+// Van las medidas REALES de la base, no el 1600x1200 que usa el hueco del hero:
+// ese es un respaldo para reservar espacio, y publicarlo como tamaño de la
+// tarjeta seria mentirle a la red.
+const imagenSocial = linea.heroImagenUrl
+  ? {
+      url: linea.heroImagenUrl,
+      ancho: linea.heroAncho ?? undefined,
+      alto: linea.heroAlto ?? undefined,
+    }
+  : undefined;
+
+// ItemList de los titulos de la linea: solo nombre y posicion, que es lo unico
+// que la pagina publica de cada libro. Sin libros no se emite el bloque: una
+// lista vacia no aporta nada y ensucia el marcado.
+const listaLibros =
+  libros.length > 0
+    ? serializarJsonLd({
+        "@context": "https://schema.org",
+        "@type": "ItemList",
+        name: contenido.coleccionTitulo,
+        itemListElement: libros.map((libro, posicion) => ({
+          "@type": "ListItem",
+          position: posicion + 1,
+          name: libro.titulo,
+        })),
+      })
+    : null;
 ---
 
-<Layout title={tituloPagina} description={linea.descripcion} anclaContenido="#contenido">
+<Layout
+  title={tituloPagina}
+  description={linea.descripcion}
+  anclaContenido="#contenido"
+  imagenSocial={imagenSocial}
+>
   <Header whatsapp={whatsapp} base="/" navegacion={navegacion} />
+
+  {listaLibros && <script type="application/ld+json" is:inline set:html={listaLibros} />}
 
   {/*
     El color de identidad se inyecta UNA vez, aqui, como custom property: las
@@ -383,7 +423,7 @@ const tituloPagina = `${linea.nombre} — Human Touch Books`;
     whatsapp={whatsapp}
     correoContacto={correoContacto}
     ubicacion={ubicacion}
-    hayColeccion={true}
+    navegacion={navegacion}
     base="/"
   />
 </Layout>

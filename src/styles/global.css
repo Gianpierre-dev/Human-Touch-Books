@@ -1,6 +1,53 @@
 @import "tailwindcss";
 
 /*
+  TIPOGRAFIA AUTOALOJADA
+  =======================
+  Las dos familias se sirven desde /fonts, no desde Google Fonts.
+
+  POR QUE NO GOOGLE FONTS
+  El <link> a fonts.googleapis.com hacia que CADA visita transmitiera la IP y el
+  User-Agent de la visitante a Google LLC. La politica de privacidad del sitio
+  promete que los datos no se comparten con terceros, y esa promesa tiene que
+  ser cierta. De paso desaparece una hoja de estilos BLOQUEANTE de un dominio
+  ajeno (dos DNS + dos TLS antes de poder pintar texto).
+
+  QUE SE DESCARGO
+  El archivo VARIABLE de cada familia, subconjunto `latin`, tal como lo entrega
+  Google a un navegador moderno. Un solo archivo por familia cubre de 400 a 700:
+  antes eran ocho peticiones (cuatro pesos x dos familias).
+
+  El rango `latin` cubre el espanol completo —tildes, ñ, ¿, ¡, ü— y ademas la
+  puntuacion tipografica que usa la web (— · ° " "). Un caracter fuera del
+  rango cae a la fuente de respaldo solo para ese glifo.
+
+  PARA ACTUALIZARLAS
+  Pedir el CSS a fonts.googleapis.com con un User-Agent moderno, quedarse con el
+  bloque marcado `latin` y bajar el .woff2 que referencia.
+*/
+@font-face {
+  font-family: "Fraunces";
+  font-style: normal;
+  /* Rango, no un peso fijo: el archivo es variable y el navegador interpola
+     cualquier valor intermedio sin descargar nada mas. */
+  font-weight: 400 700;
+  font-display: swap;
+  src: url("/fonts/fraunces-variable-latin.woff2") format("woff2");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304,
+    U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+@font-face {
+  font-family: "Hanken Grotesk";
+  font-style: normal;
+  font-weight: 400 700;
+  font-display: swap;
+  src: url("/fonts/hanken-grotesk-variable-latin.woff2") format("woff2");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304,
+    U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+/*
   Human Touch Books — sistema de diseno
   Estrategia de color "committed": el azul de marca carga la identidad.
   Calidez desde la tipografia y el papel, NO desde un beige generico.

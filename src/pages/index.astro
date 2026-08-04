@@ -14,6 +14,7 @@ import {
 } from "../lib/contenido";
 import { descripcionColeccionPorDefecto, resolverTextos } from "../lib/textos";
 import { cargarNavegacion } from "../lib/navegacion";
+import { serializarJsonLd } from "../lib/json-ld";
 import {
   BLOQUES_VALOR_POR_DEFECTO,
   CHIPS_PLATAFORMA_POR_DEFECTO,
@@ -256,10 +257,36 @@ const preguntas: PreguntaVista[] =
           : {}),
       }))
     : preguntasPorDefecto;
+
+// Ficha de la editorial para los buscadores. Va SOLO en la landing: es la
+// pagina que representa a la organizacion entera.
+//
+// Todos los datos salen de /admin/ajustes o del `site` del config; ninguno se
+// inventa aqui. Detras del proxy `Astro.url.origin` resuelve a localhost, asi
+// que la base es la misma que usa Layout para la URL canonica.
+const base = Astro.site ?? new URL(Astro.url.origin);
+const fichaOrganizacion = serializarJsonLd({
+  "@context": "https://schema.org",
+  "@type": "Organization",
+  name: "Human Touch Books",
+  url: base.href,
+  logo: new URL("/brand/logo.png", base).href,
+  email: correoContacto,
+  telephone: `+${whatsapp}`,
+  address: {
+    "@type": "PostalAddress",
+    // El ajuste es un texto libre («La Molina, Lima — Perú»): se publica tal
+    // cual como localidad. Partirlo en distrito, region y pais seria adivinar.
+    addressLocality: ubicacion,
+    addressCountry: "PE",
+  },
+});
 ---
 
 <Layout title={textos.meta_titulo} description={textos.meta_descripcion} anclaContenido="#inicio">
   <Header whatsapp={whatsapp} navegacion={navegacion} />
+
+  <script type="application/ld+json" is:inline set:html={fichaOrganizacion} />
 
   <main id="inicio" tabindex="-1">
     <!-- HERO -->
@@ -1075,11 +1102,23 @@ const preguntas: PreguntaVista[] =
               </a>
             </div>
 
-            <p class="mt-3 flex items-center justify-center gap-1.5 text-center text-xs text-ink/70">
-              <svg viewBox="0 0 24 24" class="h-3.5 w-3.5 fill-brand" aria-hidden="true">
+            {/* El aviso pasa a dos renglones al sumarle el enlace legal, asi que
+                el escudo se ancla arriba y deja de encogerse: centrado
+                verticalmente quedaba flotando junto al primer renglon. */}
+            <p class="mt-3 flex items-start justify-center gap-1.5 text-center text-xs text-ink/70">
+              <svg
+                viewBox="0 0 24 24"
+                class="mt-0.5 h-3.5 w-3.5 shrink-0 fill-brand"
+                aria-hidden="true"
+              >
                 <path d="M12 2 4 5v6c0 5 3.4 9.7 8 11 4.6-1.3 8-6 8-11V5l-8-3Z" />
               </svg>
-              Tu información está segura. No compartimos tus datos.
+              <span>
+                Tu información está segura. No compartimos tus datos. Al enviar aceptas nuestra{" "}
+                {/* El cierre va pegado al enlace: un salto de línea antes de
+                    `</a>` mete un espacio real y el punto queda separado. */}
+                <a href="/privacidad" class="foco-marca font-semibold text-brand"><span class="enlace-sub">Política de privacidad</span></a>.
+              </span>
             </p>
           </form>
         </div>
@@ -1132,7 +1171,7 @@ const preguntas: PreguntaVista[] =
     whatsapp={whatsapp}
     correoContacto={correoContacto}
     ubicacion={ubicacion}
-    hayColeccion={escolares.length > 0}
+    navegacion={navegacion}
     descripcion={textos.pie_descripcion}
   />
 
