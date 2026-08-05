@@ -28,6 +28,8 @@ interface Props {
 // se desincroniza del placeholder que ve el panel.
 const DESCRIPCION_POR_DEFECTO = defectoFijo("pie_descripcion");
 
+// Los títulos de las dos columnas y el enlace a preguntas frecuentes viajan en
+// la misma prop `navegacion`: son administrables y llegan ya resueltos.
 const {
   whatsapp = "51982953436",
   correoContacto = "informes@humantouchbooks.pe",
@@ -36,6 +38,8 @@ const {
   descripcion = DESCRIPCION_POR_DEFECTO,
   base = "",
 } = Astro.props;
+
+const { etiquetas } = navegacion;
 
 const whatsappVisible = `+${whatsapp.slice(0, 2)} ${whatsapp.slice(2, 5)} ${whatsapp.slice(5, 8)} ${whatsapp.slice(8)}`;
 const year = new Date().getFullYear();
@@ -49,7 +53,7 @@ const claseEnlace = "foco-marca inline-flex min-h-[44px] items-center text-ink/7
 const explora: EnlaceMenu[] = [
   ...navegacion.paginas,
   ...navegacion.lineas,
-  { href: `${base}#preguntas`, etiqueta: "Preguntas frecuentes" },
+  { href: `${base}#preguntas`, etiqueta: etiquetas.pie_preguntas },
 ];
 ---
 
@@ -63,7 +67,7 @@ const explora: EnlaceMenu[] = [
 
       <div class="grid grid-cols-1 gap-8 text-sm sm:grid-cols-2 sm:gap-10">
         <div>
-          <h2 class="font-display text-base text-ink">Explora</h2>
+          <h2 class="font-display text-base text-ink">{etiquetas.pie_explora}</h2>
           <ul class="mt-2">
             {explora.map((enlace) => (
               <li>
@@ -75,7 +79,7 @@ const explora: EnlaceMenu[] = [
           </ul>
         </div>
         <div>
-          <h2 class="font-display text-base text-ink">Contacto</h2>
+          <h2 class="font-display text-base text-ink">{etiquetas.pie_contacto}</h2>
           <ul class="mt-2">
             <li>
               <a href={`https://wa.me/${whatsapp}`} class={claseEnlace}><span class="enlace-sub">{whatsappVisible}</span></a>

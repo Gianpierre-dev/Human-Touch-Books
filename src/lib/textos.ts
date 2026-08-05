@@ -12,8 +12,20 @@
 // Son microcopy funcional: cambiarlos rompe usabilidad y accesibilidad, y no es
 // contenido comercial que el cliente vaya a querer editar.
 
-/** Secciones del formulario del panel. El orden es el de la propia landing. */
+/**
+ * Secciones del formulario del panel. El orden es el de la propia landing, con
+ * dos excepciones que no son secciones suyas: «Menú y pie» va primero porque la
+ * cabecera esta sobre todo lo demas y se repite en todas las paginas, y los
+ * grupos que no pertenecen a la landing («Páginas de línea», «Metadatos») van al
+ * final.
+ */
 export const GRUPOS_TEXTO = [
+  {
+    id: "navegacion",
+    titulo: "Menú y pie",
+    ayuda:
+      "Etiquetas fijas del menú de la cabecera y de las columnas del pie. Se ven en todas las páginas. Las páginas y las líneas que cuelgan de cada desplegable se administran en sus propias pantallas.",
+  },
   {
     id: "portada",
     titulo: "Portada",
@@ -65,6 +77,12 @@ export const GRUPOS_TEXTO = [
     ayuda: "Texto de presentación que acompaña al logotipo.",
   },
   {
+    id: "lineas",
+    titulo: "Páginas de línea",
+    ayuda:
+      "Textos de las páginas /lineas/… que son iguales para las tres. El contenido propio de cada línea se edita en su ficha.",
+  },
+  {
     id: "metadatos",
     titulo: "Metadatos",
     ayuda: "No se ven en la página: los usan Google y las vistas previas al compartir el enlace.",
@@ -108,6 +126,67 @@ export interface CampoTexto {
 // con la etiqueta correspondiente. El resultado renderizado es identico y el
 // cliente edita texto plano.
 export const CAMPOS_TEXTO = [
+  // Menú y pie
+  //
+  // Los resuelve `cargarNavegacion()` (src/lib/navegacion.ts), no cada pagina:
+  // ver la nota de ese archivo.
+  {
+    clave: "nav_inicio",
+    grupo: "navegacion",
+    etiqueta: "Menú — Inicio",
+    ayuda: "Primer enlace del menú, tanto en la barra como en el cajón del móvil.",
+    limite: 20,
+    defecto: "Inicio",
+  },
+  {
+    clave: "nav_nosotros",
+    grupo: "navegacion",
+    etiqueta: "Menú — desplegable de páginas",
+    ayuda: "Agrupa las páginas institucionales. Sin páginas activas no se muestra.",
+    limite: 30,
+    defecto: "Nosotros",
+  },
+  {
+    clave: "nav_textos",
+    grupo: "navegacion",
+    etiqueta: "Menú — desplegable de líneas",
+    ayuda: "Agrupa las líneas del catálogo. Sin líneas activas no se muestra.",
+    limite: 40,
+    defecto: "Nuestros textos educativos",
+  },
+  {
+    clave: "nav_contacto",
+    grupo: "navegacion",
+    etiqueta: "Menú — Contacto",
+    ayuda: "Último enlace del menú. Lleva al formulario de la portada.",
+    limite: 20,
+    defecto: "Contacto",
+  },
+  {
+    clave: "pie_explora",
+    grupo: "navegacion",
+    etiqueta: "Pie — título de la columna de enlaces",
+    ayuda: "Encabeza la lista de páginas y líneas del pie.",
+    limite: 30,
+    defecto: "Explora",
+  },
+  {
+    clave: "pie_contacto",
+    grupo: "navegacion",
+    etiqueta: "Pie — título de la columna de datos",
+    ayuda: "Encabeza el WhatsApp, el correo y la ubicación del pie.",
+    limite: 30,
+    defecto: "Contacto",
+  },
+  {
+    clave: "pie_preguntas",
+    grupo: "navegacion",
+    etiqueta: "Pie — enlace a preguntas frecuentes",
+    ayuda: "Cierra la columna «Explora». Lleva a la sección de la portada.",
+    limite: 40,
+    defecto: "Preguntas frecuentes",
+  },
+
   // Portada
   {
     clave: "portada_insignia",
@@ -426,6 +505,46 @@ export const CAMPOS_TEXTO = [
     defecto: "Déjanos tu mensaje y te responderemos lo antes posible.",
   },
   {
+    clave: "contacto_etiqueta_panel",
+    grupo: "contacto",
+    etiqueta: "Datos — título del recuadro",
+    ayuda: "Encabeza el recuadro con el correo, el WhatsApp, el horario y la ubicación.",
+    limite: 40,
+    defecto: "Información de contacto",
+  },
+  {
+    clave: "contacto_etiqueta_correo",
+    grupo: "contacto",
+    etiqueta: "Datos — etiqueta del correo",
+    ayuda: "Va sobre la dirección de correo. La dirección se edita en Ajustes del sitio.",
+    limite: 30,
+    defecto: "Correo electrónico",
+  },
+  {
+    clave: "contacto_etiqueta_whatsapp",
+    grupo: "contacto",
+    etiqueta: "Datos — etiqueta del WhatsApp",
+    ayuda: "Va sobre el número. El número se edita en Ajustes del sitio.",
+    limite: 30,
+    defecto: "Celular · WhatsApp",
+  },
+  {
+    clave: "contacto_etiqueta_horario",
+    grupo: "contacto",
+    etiqueta: "Datos — etiqueta del horario",
+    ayuda: "Va sobre los horarios de atención, que se editan en Ajustes del sitio.",
+    limite: 30,
+    defecto: "Horario de atención",
+  },
+  {
+    clave: "contacto_etiqueta_ubicacion",
+    grupo: "contacto",
+    etiqueta: "Datos — etiqueta de la ubicación",
+    ayuda: "Va sobre la dirección, que se edita en Ajustes del sitio.",
+    limite: 30,
+    defecto: "Ubicación",
+  },
+  {
     clave: "contacto_titulo_formulario",
     grupo: "contacto",
     etiqueta: "Título del formulario",
@@ -471,6 +590,19 @@ export const CAMPOS_TEXTO = [
     multilinea: true,
     defecto:
       "Editorial peruana que pone lo humano en el centro de cada página. Textos escolares y literatura que acompañan a crecer.",
+  },
+
+  // Páginas de línea
+  {
+    clave: "linea_vacio",
+    grupo: "lineas",
+    etiqueta: "Aviso cuando la línea no tiene títulos",
+    ayuda:
+      "Reemplaza a la grilla de portadas mientras la línea no tiene libros cargados. El botón que lo acompaña no se edita.",
+    limite: 200,
+    multilinea: true,
+    defecto:
+      "Los títulos de esta línea están en preparación. Escríbenos y te avisamos apenas estén disponibles.",
   },
 
   // Metadatos

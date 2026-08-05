@@ -27,8 +27,8 @@ export const POST: APIRoute = async ({ request, redirect }) => {
   for (const campo of enviados) {
     const valor = String(formulario.get(campo.clave) ?? "").trim();
     if (valor.length > campo.limite) {
-      // Vuelve al mismo grupo: con once secciones, aterrizar arriba obliga a
-      // buscar a mano el campo que fallo.
+      // Vuelve al mismo grupo: con mas de diez secciones, aterrizar arriba
+      // obliga a buscar a mano el campo que fallo.
       return redirect(
         `${DESTINO}?error=largo&campo=${encodeURIComponent(campo.clave)}${ancla}`,
         303,

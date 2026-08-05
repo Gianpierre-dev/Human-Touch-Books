@@ -12,9 +12,9 @@
 // —cerrar con Escape, cerrar al hacer clic fuera y que abrir uno cierre el
 // otro—; si no se ejecuta, el menu se sigue pudiendo usar entero.
 //
-// Los datos de los dos desplegables llegan por props (src/lib/navegacion.ts).
-// Un grupo sin elementos activos NO se dibuja: un desplegable vacio es peor que
-// no tenerlo.
+// Los datos de los dos desplegables llegan por props (src/lib/navegacion.ts),
+// y con ellos las ETIQUETAS del menu, que son administrables. Un grupo sin
+// elementos activos NO se dibuja: un desplegable vacio es peor que no tenerlo.
 import { NAVEGACION_VACIA, type EnlaceMenu, type Navegacion } from "../lib/navegacion";
 
 interface Props {
@@ -30,6 +30,7 @@ interface Props {
 }
 
 const { whatsapp = "51982953436", base = "", navegacion = NAVEGACION_VACIA } = Astro.props;
+const { etiquetas } = navegacion;
 const whatsappVisible = `+${whatsapp.slice(0, 2)} ${whatsapp.slice(2, 5)} ${whatsapp.slice(5, 8)} ${whatsapp.slice(8)}`;
 
 const enlaceContacto = `${base}#contacto`;
@@ -44,8 +45,8 @@ interface GrupoMenu {
 // Solo entran los grupos con contenido: sin paginas institucionales activas no
 // se muestra «Nosotros», y sin lineas activas no se muestra el otro.
 const grupos: GrupoMenu[] = [
-  { id: "nosotros", etiqueta: "Nosotros", enlaces: navegacion.paginas },
-  { id: "textos", etiqueta: "Nuestros textos educativos", enlaces: navegacion.lineas },
+  { id: "nosotros", etiqueta: etiquetas.nav_nosotros, enlaces: navegacion.paginas },
+  { id: "textos", etiqueta: etiquetas.nav_textos, enlaces: navegacion.lineas },
 ].filter((grupo) => grupo.enlaces.length > 0);
 
 // La pagina actual se marca con `aria-current="page"` en su enlace y, ademas,
@@ -87,7 +88,7 @@ const claseItemPanel =
       aria-label="Navegación principal"
     >
       <a href={enlaceInicio} class={claseEnlaceBarra}>
-        <span class="enlace-sub">Inicio</span>
+        <span class="enlace-sub">{etiquetas.nav_inicio}</span>
       </a>
 
       {
@@ -137,7 +138,7 @@ const claseItemPanel =
       }
 
       <a href={enlaceContacto} class={claseEnlaceBarra}>
-        <span class="enlace-sub">Contacto</span>
+        <span class="enlace-sub">{etiquetas.nav_contacto}</span>
       </a>
     </nav>
 
@@ -187,7 +188,7 @@ const claseItemPanel =
             href={enlaceInicio}
             class="foco-marca flex min-h-[44px] items-center rounded-lg px-3 text-[0.95rem] font-semibold text-ink/80 transition-colors hover:bg-surface-2 hover:text-brand"
           >
-            Inicio
+            {etiquetas.nav_inicio}
           </a>
 
           {
@@ -242,7 +243,7 @@ const claseItemPanel =
             href={enlaceContacto}
             class="foco-marca mt-0.5 flex min-h-[44px] items-center rounded-lg px-3 text-[0.95rem] font-semibold text-ink/80 transition-colors hover:bg-surface-2 hover:text-brand"
           >
-            Contacto
+            {etiquetas.nav_contacto}
           </a>
 
           <a

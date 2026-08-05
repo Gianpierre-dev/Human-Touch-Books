@@ -901,7 +901,7 @@ const fichaOrganizacion = serializarJsonLd({
           <p class="mt-4 max-w-[42ch] leading-relaxed text-ink/75">{textos.contacto_parrafo}</p>
 
           <div class="mt-8 rounded-2xl bg-surface p-6 shadow-sm ring-1 ring-line">
-            <h3 class="text-sm font-bold text-ink">Información de contacto</h3>
+            <h3 class="text-sm font-bold text-ink">{textos.contacto_etiqueta_panel}</h3>
             <ul class="mt-5 space-y-5 text-sm">
               <li class="flex items-center gap-3.5">
                 <span class="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-[#e8f1fd]">
@@ -910,7 +910,7 @@ const fichaOrganizacion = serializarJsonLd({
                   </svg>
                 </span>
                 <div>
-                  <p class="font-semibold text-ink">Correo electrónico</p>
+                  <p class="font-semibold text-ink">{textos.contacto_etiqueta_correo}</p>
                   <a
                     href={`mailto:${correoContacto}`}
                     class="foco-marca inline-flex min-h-[44px] items-center text-ink/75"
@@ -926,7 +926,7 @@ const fichaOrganizacion = serializarJsonLd({
                   </svg>
                 </span>
                 <div>
-                  <p class="font-semibold text-ink">Celular · WhatsApp</p>
+                  <p class="font-semibold text-ink">{textos.contacto_etiqueta_whatsapp}</p>
                   <a
                     href={`https://wa.me/${whatsapp}`}
                     class="foco-marca inline-flex min-h-[44px] items-center text-ink/75"
@@ -942,7 +942,7 @@ const fichaOrganizacion = serializarJsonLd({
                   </svg>
                 </span>
                 <div>
-                  <p class="font-semibold text-ink">Horario de atención</p>
+                  <p class="font-semibold text-ink">{textos.contacto_etiqueta_horario}</p>
                   <p class="text-ink/75">
                     {horarios.map((h, i) => (
                       <>
@@ -960,7 +960,7 @@ const fichaOrganizacion = serializarJsonLd({
                   </svg>
                 </span>
                 <div>
-                  <p class="font-semibold text-ink">Ubicación</p>
+                  <p class="font-semibold text-ink">{textos.contacto_etiqueta_ubicacion}</p>
                   <p class="text-ink/75">{ubicacion}</p>
                 </div>
               </li>

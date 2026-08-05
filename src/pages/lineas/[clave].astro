@@ -14,6 +14,7 @@ import { bd } from "../../lib/bd";
 import { resolverContenidoLinea } from "../../lib/lineas";
 import { ESTILOS_ARGUMENTO, ESTILOS_PILAR } from "../../lib/bloques-linea";
 import { cargarNavegacion } from "../../lib/navegacion";
+import { defectoFijo } from "../../lib/textos";
 import { serializarJsonLd } from "../../lib/json-ld";
 
 export const prerender = false;
@@ -54,6 +55,20 @@ const argumentos = linea.bloques
   }));
 
 const libros = linea.libros;
+
+// Aviso de la linea sin titulos: el unico texto de /admin/textos que se ve en
+// esta pagina. Se pide SOLO su fila y SOLO cuando hay que mostrarlo; traer el
+// catalogo entero, como hace la landing, seria cuarenta filas para una frase.
+// Sin fila propia manda el defecto del catalogo, igual que en el resto del sitio.
+const textoSinLibros =
+  libros.length > 0
+    ? ""
+    : ((
+        await bd.textoSitio.findUnique({
+          where: { clave: "linea_vacio" },
+          select: { valor: true },
+        })
+      )?.valor ?? defectoFijo("linea_vacio"));
 
 // Datos de contacto: los mismos que administra /admin/ajustes para la landing.
 const filasAjustes = await bd.ajuste.findMany();
@@ -273,10 +288,7 @@ const listaLibros =
             /* Estado vacio sobrio: una grilla de cero tarjetas se lee como un
                error de la web. Se dice qué pasa y se ofrece la salida. */
             <div class="reveal-scroll mx-auto mt-8 max-w-[46ch] rounded-2xl border border-line bg-surface px-6 py-10 text-center">
-              <p class="leading-relaxed text-ink/75">
-                Los títulos de esta línea están en preparación. Escríbenos y te avisamos apenas
-                estén disponibles.
-              </p>
+              <p class="leading-relaxed text-ink/75">{textoSinLibros}</p>
               <a
                 href="/#contacto"
                 class="foco-marca mt-5 inline-flex min-h-[48px] items-center gap-2 rounded-full bg-[var(--color-linea)] px-7 text-sm font-bold text-white"
