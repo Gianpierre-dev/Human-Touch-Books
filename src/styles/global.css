@@ -280,11 +280,16 @@ body {
 }
 
 @media (min-width: 768px) {
+  /* La parada intermedia sostiene >= 0.6 de opacidad hasta el 52%, donde
+     termina la columna de texto: con la parada anterior en 0.45, el parrafo
+     sobre una zona blanca de la fotografia bajaba de 4.5:1 (medido 1:1 en el
+     peor punto a 768px). La derecha sigue quedando limpia. */
   .hero-velo {
     background: linear-gradient(
       to right,
-      rgb(0 0 0 / 0.7) 0%,
-      rgb(0 0 0 / 0.45) 50%,
+      rgb(0 0 0 / 0.78) 0%,
+      rgb(0 0 0 / 0.62) 52%,
+      rgb(0 0 0 / 0.25) 78%,
       transparent 100%
     );
   }

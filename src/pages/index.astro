@@ -45,6 +45,12 @@ const libros = await bd.libro.findMany({
 const escolares = libros.filter((l) => l.lineaRel?.tipo === "escolar");
 const literatura = libros.filter((l) => l.lineaRel?.tipo === "literatura");
 
+// El CTA secundario del hero apunta a la primera seccion de catalogo que
+// exista (las dos son condicionales). Sin catalogo el boton no se pinta:
+// un ancla muerta es un boton que no hace nada.
+const anclaCatalogo =
+  escolares.length > 0 ? "#coleccion" : literatura.length > 0 ? "#plan-lector" : null;
+
 const gradosEscolares = escolares.map((l) => l.grado).filter((g): g is string => Boolean(g));
 const primerGrado = gradosEscolares.at(0);
 const ultimoGrado = gradosEscolares.at(-1);
@@ -402,7 +408,11 @@ const fichaOrganizacion = serializarJsonLd({
           <p class="mt-3 text-lg font-semibold text-white">
             {subtituloHero}
           </p>
-          <p class="mt-4 max-w-[52ch] leading-relaxed text-white/80">{textos.portada_parrafo}</p>
+          {
+            /* Blanco pleno: con /80 el parrafo componia contra las zonas claras
+              de la fotografia y bajaba de AA aunque el velo estuviera bien. */
+          }
+          <p class="mt-4 max-w-[52ch] leading-relaxed text-white">{textos.portada_parrafo}</p>
 
           {
             /* El CTA de conversion va primero y con el mayor peso visual disponible
@@ -412,7 +422,7 @@ const fichaOrganizacion = serializarJsonLd({
           <div class="mt-8 flex flex-wrap items-center gap-3.5">
             <a
               href="#contacto"
-              class="foco-claro inline-flex min-h-[52px] items-center gap-2.5 rounded-full bg-white px-8 text-[0.95rem] font-extrabold text-navy shadow-[0_12px_28px_-10px_rgba(0,0,0,0.65)] ring-1 ring-white/70 transition duration-300 ease-out hover:-translate-y-0.5 hover:bg-brand-bright hover:text-navy hover:shadow-[0_18px_34px_-12px_rgba(53,163,245,0.75)]"
+              class="foco-claro inline-flex min-h-[52px] items-center gap-2.5 rounded-full bg-white px-8 text-[0.95rem] font-extrabold text-navy shadow-[0_12px_28px_-10px_rgba(0,0,0,0.65)] ring-1 ring-white/70 transition duration-300 ease-out hover:bg-brand-bright hover:text-navy motion-safe:hover:-translate-y-0.5 motion-safe:hover:shadow-[0_18px_34px_-12px_rgba(53,163,245,0.75)]"
             >
               <svg viewBox="0 0 24 24" class="h-4.5 w-4.5 fill-brand" aria-hidden="true">
                 <path
@@ -421,20 +431,22 @@ const fichaOrganizacion = serializarJsonLd({
               </svg>
               {textos.portada_cta_primario}
             </a>
-            <a
-              href="#coleccion"
-              class="foco-claro inline-flex min-h-[52px] items-center gap-2 rounded-full border border-white/45 px-7 text-[0.95rem] font-bold text-white transition-colors hover:border-white hover:bg-white/10"
-            >
-              <svg viewBox="0 0 24 24" class="h-4 w-4 fill-current" aria-hidden="true">
-                <path
-                  d="M18 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2Zm-6 2 4 0v7l-2-1.5L12 11V4Z"
-                ></path>
-              </svg>
-              {textos.portada_cta_secundario}
-            </a>
+            {
+              anclaCatalogo && (
+                <a
+                  href={anclaCatalogo}
+                  class="foco-claro inline-flex min-h-[52px] items-center gap-2 rounded-full border border-white/45 px-7 text-[0.95rem] font-bold text-white transition-colors hover:border-white hover:bg-white/10"
+                >
+                  <svg viewBox="0 0 24 24" class="h-4 w-4 fill-current" aria-hidden="true">
+                    <path d="M18 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2Zm-6 2 4 0v7l-2-1.5L12 11V4Z" />
+                  </svg>
+                  {textos.portada_cta_secundario}
+                </a>
+              )
+            }
           </div>
 
-          <p class="mt-6 flex items-start gap-2.5 text-[0.85rem] leading-relaxed text-white/75">
+          <p class="mt-6 flex items-start gap-2.5 text-[0.85rem] leading-relaxed text-white/90">
             <svg
               viewBox="0 0 24 24"
               class="mt-0.5 h-4 w-4 shrink-0 fill-brand-suave"
@@ -468,11 +480,15 @@ const fichaOrganizacion = serializarJsonLd({
           // existe la mecanica de fundido que pueden manejar. Sin el, la primera
           // imagen queda fija y no hay nada que controlar. Flechas a los bordes
           // (centradas en vertical) y puntos abajo al centro, como la referencia.
+          // Las flechas recien desde xl: con el contenedor de 72rem centrado,
+          // solo a partir de 1280px queda margen lateral real; por debajo la
+          // flecha izquierda caia ENCIMA del parrafo del hero (medido a 768).
+          // Entre tanto los puntos de abajo cubren la misma funcion.
           <div id="hero-controles" hidden>
             <button
               type="button"
               id="hero-anterior"
-              class="hero-control foco-claro absolute top-1/2 left-3 z-10 hidden -translate-y-1/2 sm:grid md:left-5"
+              class="hero-control foco-claro absolute top-1/2 left-5 z-10 hidden -translate-y-1/2 xl:grid"
               aria-label="Imagen anterior"
             >
               <svg viewBox="0 0 24 24" class="h-5 w-5 fill-current" aria-hidden="true">
@@ -482,7 +498,7 @@ const fichaOrganizacion = serializarJsonLd({
             <button
               type="button"
               id="hero-siguiente"
-              class="hero-control foco-claro absolute top-1/2 right-3 z-10 hidden -translate-y-1/2 sm:grid md:right-5"
+              class="hero-control foco-claro absolute top-1/2 right-5 z-10 hidden -translate-y-1/2 xl:grid"
               aria-label="Imagen siguiente"
             >
               <svg viewBox="0 0 24 24" class="h-5 w-5 fill-current" aria-hidden="true">
@@ -599,7 +615,7 @@ const fichaOrganizacion = serializarJsonLd({
                       loading="lazy"
                       width="800"
                       height="991"
-                      class="aspect-[800/991] w-full rounded-lg object-cover shadow-lg ring-1 shadow-navy/15 ring-black/5 transition duration-300 ease-out group-hover:-translate-y-1.5 group-hover:shadow-xl group-hover:shadow-navy/25 group-hover:ring-brand/40"
+                      class="aspect-[800/991] w-full rounded-lg object-cover shadow-lg ring-1 shadow-navy/15 ring-black/5 transition duration-300 ease-out group-hover:ring-brand/40 motion-safe:group-hover:-translate-y-1.5 motion-safe:group-hover:shadow-xl motion-safe:group-hover:shadow-navy/25"
                     />
                     <h3 class="mt-3.5 text-[0.9375rem] leading-snug font-bold text-ink transition-colors group-hover:text-brand">
                       {libro.titulo}
@@ -615,7 +631,7 @@ const fichaOrganizacion = serializarJsonLd({
             <div class="reveal-scroll mt-12 flex justify-center">
               <a
                 href="#contacto"
-                class="foco-marca inline-flex min-h-[52px] items-center gap-2.5 rounded-full bg-brand px-8 text-[0.95rem] font-bold text-white shadow-lg shadow-brand/25 transition duration-300 ease-out hover:-translate-y-0.5 hover:bg-brand-deep"
+                class="foco-marca inline-flex min-h-[52px] items-center gap-2.5 rounded-full bg-brand px-8 text-[0.95rem] font-bold text-white shadow-lg shadow-brand/25 transition duration-300 ease-out hover:bg-brand-deep motion-safe:hover:-translate-y-0.5"
               >
                 <svg viewBox="0 0 24 24" class="h-4.5 w-4.5 fill-current" aria-hidden="true">
                   <path d="M20 4H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2Zm0 4-8 5-8-5V6l8 5 8-5v2Z" />
@@ -785,7 +801,7 @@ const fichaOrganizacion = serializarJsonLd({
           <div class="mt-8 flex flex-wrap items-center gap-4">
             <a
               href="#contacto"
-              class="foco-marca inline-flex min-h-[52px] items-center gap-2.5 rounded-full bg-gradient-to-r from-brand to-violet px-8 text-[0.95rem] font-bold text-white shadow-lg shadow-brand/25 transition duration-300 ease-out hover:-translate-y-0.5 hover:shadow-xl"
+              class="foco-marca inline-flex min-h-[52px] items-center gap-2.5 rounded-full bg-gradient-to-r from-brand to-violet px-8 text-[0.95rem] font-bold text-white shadow-lg shadow-brand/25 transition duration-300 ease-out motion-safe:hover:-translate-y-0.5 motion-safe:hover:shadow-xl"
             >
               <span class="grid h-6 w-6 place-items-center rounded-full bg-white/20">
                 <svg viewBox="0 0 24 24" class="h-3.5 w-3.5 fill-white" aria-hidden="true">
@@ -1275,7 +1291,7 @@ const fichaOrganizacion = serializarJsonLd({
         <div class="flex w-full flex-wrap items-center gap-3.5 md:w-auto">
           <a
             href="#contacto"
-            class="foco-claro inline-flex min-h-[52px] flex-1 items-center justify-center gap-2.5 rounded-full bg-white px-8 text-[0.95rem] font-extrabold whitespace-nowrap text-navy shadow-[0_12px_28px_-10px_rgba(0,0,0,0.65)] ring-1 ring-white/70 transition duration-300 ease-out hover:-translate-y-0.5 hover:bg-brand-bright md:flex-none"
+            class="foco-claro inline-flex min-h-[52px] flex-1 items-center justify-center gap-2.5 rounded-full bg-white px-8 text-[0.95rem] font-extrabold whitespace-nowrap text-navy shadow-[0_12px_28px_-10px_rgba(0,0,0,0.65)] ring-1 ring-white/70 transition duration-300 ease-out hover:bg-brand-bright motion-safe:hover:-translate-y-0.5 md:flex-none"
           >
             <svg viewBox="0 0 24 24" class="h-4.5 w-4.5 fill-brand" aria-hidden="true">
               <path

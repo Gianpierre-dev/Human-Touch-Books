@@ -116,7 +116,11 @@ const explora: EnlaceMenu[] = [
         }
       </div>
 
-      <div class="grid grid-cols-1 gap-8 text-sm sm:grid-cols-2 sm:gap-10">
+      {
+        /* min-w-0: como hijo de flex, sin el la columna crece hasta su
+          contenido y el correo empujaba scroll horizontal en tablet. */
+      }
+      <div class="grid min-w-0 grid-cols-1 gap-8 text-sm sm:grid-cols-2 sm:gap-10">
         <div>
           <h2 class="font-display text-base text-ink">{etiquetas.pie_explora}</h2>
           <ul class="mt-2">
@@ -140,7 +144,12 @@ const explora: EnlaceMenu[] = [
               >
             </li>
             <li>
-              <a href={`mailto:${correoContacto}`} class={claseEnlace}
+              {
+                /* overflow-wrap: el correo no tiene espacios; sin un punto de
+                corte permitido desbordaba la columna en tablet (medido: 57px
+                de scroll horizontal en las 8 paginas a 768px). */
+              }
+              <a href={`mailto:${correoContacto}`} class={`${claseEnlace} [overflow-wrap:anywhere]`}
                 ><span class="enlace-sub">{correoContacto}</span></a
               >
             </li>
