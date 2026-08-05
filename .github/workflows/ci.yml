@@ -1,0 +1,148 @@
+name: CI
+
+# Cada push y cada pull request a main quedan verificados por maquina: tipos,
+# formato, build y pruebas de humo contra el servidor real levantado aqui mismo.
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+# Una tanda por rama: si llegan dos push seguidos, el primero se cancela.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verificar:
+    name: Verificar
+    runs-on: ubuntu-latest
+
+    # Base de datos EFIMERA, creada y destruida con el job. El CI nunca toca la
+    # base real: se migra desde cero y se siembra aqui.
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: htb_ci
+          POSTGRES_PASSWORD: htb_ci
+          POSTGRES_DB: htb_ci
+        ports:
+          - 5432:5432
+        # Sin healthcheck el job arranca antes que Postgres acepte conexiones.
+        options: >-
+          --health-cmd "pg_isready -U htb_ci"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      DATABASE_URL: postgresql://htb_ci:htb_ci@localhost:5432/htb_ci
+
+      # CREDENCIALES DE FANTASIA, A PROPOSITO.
+      # Ninguna es real ni tiene por que serlo: la base es efimera y el usuario
+      # admin que siembra el seed solo existe dentro de este job. No poner aqui
+      # secretos de produccion; si alguna vez hiciera falta uno, va por
+      # `secrets`, nunca en texto plano.
+      JWT_SECRET: secreto-de-integracion-continua-sin-valor-real
+      ADMIN_CORREO: ci@ejemplo.invalid
+      ADMIN_CLAVE: clave-de-integracion-continua
+
+      # TAMBIEN DE FANTASIA. Wasabi guarda las portadas subidas desde el panel,
+      # y NINGUNA pagina publica llama a S3 al renderizar: las imagenes se
+      # sirven por /uploads/[...ruta].ts, que solo se pide desde el navegador.
+      # Estas variables existen para que el cliente de S3 se construya sin
+      # quejarse al arrancar el proceso, no para hablar con Wasabi.
+      WASABI_ACCESS_KEY: acceso-de-mentira
+      WASABI_SECRET_KEY: secreto-de-mentira
+      WASABI_BUCKET_NAME: bucket-de-mentira
+      WASABI_REGION: us-east-1
+      WASABI_ENDPOINT: https://s3.us-east-1.wasabisys.com.invalid
+
+      URL_BASE: http://localhost:4321
+
+    steps:
+      - name: Descargar el repositorio
+        uses: actions/checkout@v4
+
+      - name: Preparar pnpm
+        # Sin version: la toma de `packageManager` en package.json, que es la
+        # misma con la que se genero pnpm-lock.yaml.
+        uses: pnpm/action-setup@v4
+
+      - name: Preparar Node con cache de pnpm
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+
+      - name: Instalar dependencias
+        # `--frozen-lockfile` falla si package.json y el lock no coinciden: el
+        # CI instala exactamente lo que esta versionado, nunca resuelve de nuevo.
+        run: pnpm install --frozen-lockfile
+
+      - name: Generar el cliente de Prisma
+        # Redundante con el `postinstall`, pero explicito: sin el cliente
+        # generado el typecheck ve `any` en cada consulta y no comprueba nada.
+        run: pnpm exec prisma generate
+
+      - name: Comprobar tipos
+        run: pnpm check
+
+      - name: Comprobar formato
+        run: pnpm lint
+
+      - name: Aplicar migraciones
+        # ANTES del seed: el seed escribe filas y sin tablas no hay donde.
+        run: pnpm exec prisma migrate deploy
+
+      - name: Sembrar datos base
+        # Usuario admin, lineas de producto, catalogo, ajustes y preguntas.
+        run: node prisma/seed.mjs
+
+      - name: Sembrar paginas institucionales
+        # Va aparte del seed a proposito (ver la cabecera del script): es una
+        # carga puntual de contenido. El CI la necesita porque las pruebas de
+        # humo piden /nosotros/quienes-somos y /nosotros/mision-vision.
+        run: node scripts/sembrar-paginas.mjs
+
+      - name: Construir el sitio
+        # No necesita base de datos: el sitio es SSR entero y ninguna pagina
+        # consulta en tiempo de build. Si algun dia este paso empezara a pedir
+        # la base, seria la senal de que una pagina se prerenderiza sin querer.
+        run: pnpm build
+
+      - name: Arrancar el servidor
+        # La salida va a un archivo, no al pipe del paso: el paso termina, nadie
+        # sigue leyendo el pipe y un servidor que escriba lo suficiente se
+        # quedaria bloqueado a mitad de las pruebas.
+        run: |
+          nohup node dist/server/entry.mjs > servidor.log 2>&1 &
+          echo "PID_SERVIDOR=$!" >> "$GITHUB_ENV"
+
+      - name: Esperar a que el servidor responda
+        # /api/salud no dice solo que el proceso vive: comprueba la base.
+        run: |
+          for intento in $(seq 1 30); do
+            if curl -sf "$URL_BASE/api/salud" > /dev/null; then
+              echo "Servidor listo tras ${intento}s."
+              exit 0
+            fi
+            sleep 1
+          done
+          echo "El servidor no respondio en 30s."
+          exit 1
+
+      - name: Pruebas de humo
+        run: pnpm test
+
+      - name: Mostrar el log del servidor si algo fallo
+        # Un caso rojo casi siempre trae su explicacion aqui (excepcion de
+        # Prisma, plantilla que revienta) y sin esto no se ve nunca.
+        if: failure()
+        run: cat servidor.log || true
+
+      - name: Apagar el servidor
+        # `always()`: si las pruebas fallan, el proceso igual tiene que morir.
+        if: always()
+        run: kill "$PID_SERVIDOR" || true

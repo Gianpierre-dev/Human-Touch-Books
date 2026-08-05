@@ -1,0 +1,21 @@
+# Nada de esto lo escribimos a mano: formatearlo solo genera ruido en el diff.
+node_modules/
+dist/
+.astro/
+
+# Activos servidos tal cual (fuentes, imagenes, robots.txt, portadas).
+public/
+
+# Imagenes subidas desde el panel en desarrollo.
+uploads/
+
+# Lo genera pnpm.
+pnpm-lock.yaml
+
+# SQL de migraciones: lo escribe Prisma y va firmado por el historial. Un
+# reformateo cambiaria archivos ya aplicados en produccion.
+prisma/migrations/
+*.sql
+
+# La documentacion se escribe a mano y el reflow de Markdown pelea con eso.
+*.md

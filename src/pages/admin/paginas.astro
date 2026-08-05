@@ -154,12 +154,14 @@ const CAMPOS_CONTENIDO: readonly CampoContenido[] = [
     }. Son las páginas de <code>/nosotros/…</code> que aparecen en el menú «Nosotros» de la web.
   </p>
 
-  {/* La regla más importante de esta pantalla: se dice una vez, arriba, y se
-      repite en la insignia de estado de cada página. */}
+  {
+    /* La regla más importante de esta pantalla: se dice una vez, arriba, y se
+      repite en la insignia de estado de cada página. */
+  }
   <p class="mt-4 rounded-lg border border-line bg-surface-2 px-4 py-3 text-sm text-ink/80">
-    <strong class="font-semibold text-ink">Una página despublicada no se ve.</strong> No aparece en
-    el menú y su dirección devuelve error 404. Las páginas nuevas nacen así a propósito: publícalas
-    recién cuando el contenido esté terminado.
+    <strong class="font-semibold text-ink">Una página despublicada no se ve.</strong> No aparece en el
+    menú y su dirección devuelve error 404. Las páginas nuevas nacen así a propósito: publícalas recién
+    cuando el contenido esté terminado.
   </p>
 
   {
@@ -267,12 +269,14 @@ const CAMPOS_CONTENIDO: readonly CampoContenido[] = [
                 {pagina.activa ? "Despublicar" : "Publicar"}
               </button>
             </form>
+            {/* El título no se interpola dentro del literal de JavaScript:
+                escaparlo a mano es frágil y el botón ya lo dice en su
+                aria-label. El resto del panel usa avisos fijos igual.
+                El comentario va FUERA de la etiqueta: entre atributos, Astro lo
+                lee como un atributo abreviado y rompe el análisis del archivo. */}
             <form
               method="post"
               action={`/api/admin/paginas/${pagina.id}`}
-              {/* El título no se interpola dentro del literal de JavaScript:
-                  escaparlo a mano es frágil y el botón ya lo dice en su
-                  aria-label. El resto del panel usa avisos fijos igual. */}
               onsubmit={`return confirm('¿Eliminar esta página? Se borran también sus ${pagina._count.secciones} sección(es) y ${pagina._count.bloques} valor(es). No se puede deshacer.')`}
             >
               <input type="hidden" name="_accion" value="eliminar" />
@@ -393,7 +397,15 @@ const CAMPOS_CONTENIDO: readonly CampoContenido[] = [
                     <span class="text-sm font-semibold text-ink">{campo.etiqueta}</span>
                     {campo.filas ? (
                       // Sin saltos de línea alrededor: el contenido del textarea ES su valor.
-                      <textarea name={campo.campo} rows={campo.filas} maxlength={LIMITES_CONTENIDO_PAGINA[campo.clave]} aria-describedby={idAyuda} class={clasesCampo}>{valor}</textarea>
+                      <textarea
+                        name={campo.campo}
+                        rows={campo.filas}
+                        maxlength={LIMITES_CONTENIDO_PAGINA[campo.clave]}
+                        aria-describedby={idAyuda}
+                        class={clasesCampo}
+                      >
+                        {valor}
+                      </textarea>
                     ) : (
                       <input
                         type="text"
