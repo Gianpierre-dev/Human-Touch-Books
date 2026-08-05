@@ -18,7 +18,7 @@ const propios = new Map(filas.map((fila) => [fila.clave, fila.valor]));
 // La descripción de la colección se calcula con el catálogo de libros, igual
 // que en la web: así el placeholder muestra el texto real que se está viendo.
 const escolares = await bd.libro.findMany({
-  where: { destacado: true, linea: "escolar" },
+  where: { destacado: true, lineaRel: { tipo: "escolar" } },
   orderBy: { orden: "asc" },
 });
 const grados = escolares.map((libro) => libro.grado).filter((grado): grado is string => Boolean(grado));

@@ -1,4 +1,3 @@
-import type { LineaLibro } from "@prisma/client";
 import { esPortadaValida, guardarPortada } from "./almacen";
 import { bd } from "./bd";
 
@@ -8,8 +7,11 @@ export const LIMITE_DESCRIPCION_CORTA = 160;
 export interface DatosLibro {
   titulo: string;
   subtitulo: string | null;
-  linea: LineaLibro;
-  lineaId: string | null;
+  // La linea es la UNICA fuente de verdad de la clasificacion del libro: de
+  // ella salen la pagina publica en la que aparece y la seccion de la portada
+  // (su `tipo` decide entre Coleccion escolar y Plan Lector). Por eso es
+  // obligatoria: un libro sin linea no se podria mostrar en ningun sitio.
+  lineaId: string;
   descripcionCorta: string | null;
   grado: string | null;
   nivel: string | null;
@@ -29,13 +31,12 @@ function textoONulo(datos: FormData, clave: string): string | null {
 export function leerDatosLibro(datos: FormData): { datos?: DatosLibro; error?: string } {
   const titulo = String(datos.get("titulo") ?? "").trim();
   const sinopsis = String(datos.get("sinopsis") ?? "").trim();
-  const linea = String(datos.get("linea") ?? "");
+  const lineaId = String(datos.get("linea_id") ?? "").trim();
 
   if (!titulo) return { error: "El título es obligatorio." };
   if (!sinopsis) return { error: "La sinopsis es obligatoria." };
-  if (linea !== "escolar" && linea !== "literatura") {
-    return { error: "Selecciona una línea válida." };
-  }
+  // El `required` del navegador se puede saltar enviando el formulario a mano.
+  if (!lineaId) return { error: "Selecciona la línea a la que pertenece el libro." };
 
   const anioTexto = textoONulo(datos, "anio");
   const anio = anioTexto === null ? null : Number.parseInt(anioTexto, 10);
@@ -55,8 +56,7 @@ export function leerDatosLibro(datos: FormData): { datos?: DatosLibro; error?: s
     datos: {
       titulo,
       subtitulo: textoONulo(datos, "subtitulo"),
-      linea,
-      lineaId: textoONulo(datos, "linea_id"),
+      lineaId,
       descripcionCorta,
       grado: textoONulo(datos, "grado"),
       nivel: textoONulo(datos, "nivel"),
@@ -76,8 +76,7 @@ export function leerDatosLibro(datos: FormData): { datos?: DatosLibro; error?: s
  * clave foranea reventaria con un error 500 en vez de un mensaje entendible.
  * Devuelve el texto del error o `null` si todo esta bien.
  */
-export async function verificarLinea(lineaId: string | null): Promise<string | null> {
-  if (lineaId === null) return null;
+export async function verificarLinea(lineaId: string): Promise<string | null> {
   const existentes = await bd.linea.count({ where: { id: lineaId } });
   return existentes === 0 ? "La línea seleccionada ya no existe." : null;
 }

@@ -4,17 +4,22 @@ import { bd } from "../../lib/bd";
 
 export const prerender = false;
 
-const libros = await bd.libro.findMany({ orderBy: [{ linea: "asc" }, { orden: "asc" }] });
+// Se agrupa por linea y dentro de cada una por orden, igual que el catalogo
+// publico. Un libro sin linea (solo puede quedar asi si se borro la suya) cae al
+// final: en Postgres los nulos ordenan ultimos en ascendente.
+const libros = await bd.libro.findMany({
+  orderBy: [{ lineaRel: { orden: "asc" } }, { orden: "asc" }],
+  include: { lineaRel: { select: { etiquetaCorta: true } } },
+});
 const ok = Astro.url.searchParams.get("ok");
 const mensajes: Record<string, string> = {
   creado: "Libro creado correctamente.",
   guardado: "Cambios guardados.",
   eliminado: "Libro eliminado.",
 };
-const etiquetaLinea: Record<string, string> = {
-  escolar: "Texto escolar",
-  literatura: "Literatura",
-};
+
+// Un libro sin linea no se muestra en la web: hay que decirlo, no esconderlo.
+const sinLinea = libros.filter((libro) => !libro.lineaRel).length;
 ---
 
 <PanelLayout titulo="Libros" correo={Astro.locals.sesion?.correo}>
@@ -38,6 +43,15 @@ const etiquetaLinea: Record<string, string> = {
     ok && (
       <p class="mt-4 rounded-lg bg-wa/10 px-4 py-2.5 text-sm font-semibold text-[#15803d]">
         {mensajes[ok] ?? "Listo."}
+      </p>
+    )
+  }
+
+  {
+    sinLinea > 0 && (
+      <p class="mt-4 rounded-lg border border-accent/30 bg-accent/10 px-4 py-2.5 text-sm font-semibold text-accent-deep">
+        {sinLinea === 1 ? "Hay 1 libro sin línea asignada. No se muestra" : `Hay ${sinLinea} libros sin línea asignada. No se muestran`}{" "}
+        en la web hasta que le asignes una desde su ficha.
       </p>
     )
   }
@@ -67,7 +81,17 @@ const etiquetaLinea: Record<string, string> = {
                 />
               </td>
               <td class="px-4 py-3 font-semibold text-ink">{libro.titulo}</td>
-              <td class="px-4 py-3 text-ink/70">{etiquetaLinea[libro.linea]}</td>
+              {/* El huerfano se marca, no se disimula con un guion: un libro
+                  sin linea desaparecio de la web y eso hay que verlo. */}
+              <td class="px-4 py-3">
+                {libro.lineaRel ? (
+                  <span class="text-ink/70">{libro.lineaRel.etiquetaCorta}</span>
+                ) : (
+                  <span class="rounded-full bg-accent/10 px-2.5 py-0.5 text-[0.7rem] font-bold text-accent-deep">
+                    Sin línea
+                  </span>
+                )}
+              </td>
               <td class="px-4 py-3 text-ink/70">{libro.grado ?? libro.nivel ?? "—"}</td>
               <td class="px-4 py-3 text-ink/70">{libro.orden}</td>
               <td class="px-4 py-3 text-right">

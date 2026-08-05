@@ -4,7 +4,17 @@
 // La clave es un slug estable: es el identificador que usaran las URLs publicas
 // de cada linea, asi que se valida su forma aqui y su unicidad contra la base.
 
+import type { TipoLinea } from "@prisma/client";
 import { sirveConBlanco } from "./contraste";
+
+/**
+ * Nombre visible del tipo de linea. Orienta a quien administra: al elegir la
+ * linea de un libro se ve en que seccion de la portada va a aparecer.
+ */
+export const ETIQUETA_TIPO_LINEA: Record<TipoLinea, string> = {
+  escolar: "Texto escolar",
+  literatura: "Literatura",
+};
 
 export interface DatosLinea {
   clave: string;
@@ -13,6 +23,7 @@ export interface DatosLinea {
   descripcion: string;
   colorHex: string;
   orden: number;
+  tipo: TipoLinea;
 }
 
 /** Codigos de error que la vista traduce a texto. */
@@ -94,8 +105,22 @@ export function leerDatosLinea(datos: FormData): { datos?: DatosLinea; error?: E
   // esta validacion y revienta recien al escribir.
   if (!Number.isSafeInteger(orden) || orden < 0 || orden > 9999) return { error: "orden" };
 
+  // El tipo decide en que seccion de la portada aparecen los libros de la
+  // linea. Se valida contra la lista cerrada: cualquier otro valor cae al
+  // defecto en lugar de romper la escritura.
+  const tipoTexto = String(datos.get("tipo") ?? "").trim();
+  const tipo: TipoLinea = tipoTexto === "literatura" ? "literatura" : "escolar";
+
   return {
-    datos: { clave, nombre, etiquetaCorta, descripcion, colorHex: colorHex.toLowerCase(), orden },
+    datos: {
+      clave,
+      nombre,
+      etiquetaCorta,
+      descripcion,
+      colorHex: colorHex.toLowerCase(),
+      orden,
+      tipo,
+    },
   };
 }
 

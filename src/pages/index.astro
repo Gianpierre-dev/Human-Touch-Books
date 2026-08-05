@@ -25,16 +25,24 @@ import {
 
 export const prerender = false;
 
-// Catalogo y ajustes administrados desde el panel (/admin)
+// Catalogo y ajustes administrados desde el panel (/admin). La clasificacion la
+// aporta la linea a la que pertenece cada libro: se trae solo su `tipo`, que es
+// lo unico que decide en que seccion va el titulo.
 const libros = await bd.libro.findMany({
   where: { destacado: true },
-  orderBy: [{ linea: "asc" }, { orden: "asc" }],
+  orderBy: [{ orden: "asc" }, { creadoEn: "asc" }],
+  include: { lineaRel: { select: { tipo: true } } },
 });
 
-// Cada linea del catalogo se muestra en su propio bloque: mezclarlas en una sola
-// tira obligaba a la visitante a adivinar que es texto escolar y que es lectura.
-const escolares = libros.filter((l) => l.linea === "escolar");
-const literatura = libros.filter((l) => l.linea === "literatura");
+// Cada tipo de linea se muestra en su propio bloque: mezclarlos en una sola tira
+// obligaba a la visitante a adivinar que es texto escolar y que es lectura.
+//
+// Un libro sin linea asignada NO aparece en la portada: la seccion que le
+// corresponde la decide su linea y sin ella no hay nada que adivinar. Solo puede
+// quedar asi un libro cuya linea se borro despues (la relacion es SetNull); al
+// crearlo o editarlo desde el panel la linea es obligatoria.
+const escolares = libros.filter((l) => l.lineaRel?.tipo === "escolar");
+const literatura = libros.filter((l) => l.lineaRel?.tipo === "literatura");
 
 const gradosEscolares = escolares.map((l) => l.grado).filter((g): g is string => Boolean(g));
 const primerGrado = gradosEscolares.at(0);

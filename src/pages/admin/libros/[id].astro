@@ -11,7 +11,7 @@ if (!libro) return Astro.redirect("/admin?error=noexiste", 302);
 
 const lineas = await bd.linea.findMany({
   orderBy: [{ orden: "asc" }, { creadoEn: "asc" }],
-  select: { id: true, nombre: true },
+  select: { id: true, nombre: true, tipo: true },
 });
 
 const error = Astro.url.searchParams.get("error");

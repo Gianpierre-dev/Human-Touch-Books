@@ -1,14 +1,55 @@
-// Siembra inicial: usuario admin, catalogo actual y ajustes de contacto.
-// Idempotente: puede ejecutarse varias veces sin duplicar datos.
+// Siembra inicial: usuario admin, lineas de producto, catalogo actual y ajustes
+// de contacto. Idempotente: puede ejecutarse varias veces sin duplicar datos ni
+// pisar lo editado desde el panel.
+//
+// Las LINEAS van primero porque el catalogo cuelga de ellas: cada libro se
+// referencia por la clave de su linea y sin ellas no se puede sembrar nada.
 import { PrismaClient } from "@prisma/client";
 import bcrypt from "bcryptjs";
 
 const prisma = new PrismaClient();
 
+// El `tipo` clasifica a la LINEA, y de ahi lo heredan sus libros: decide si sus
+// titulos salen en la Coleccion escolar o en el Plan Lector de la portada.
+const LINEAS = [
+  {
+    clave: "primaria",
+    nombre: "Tutoría SMART Primaria",
+    etiquetaCorta: "Primaria",
+    descripcion:
+      "Desarrolla habilidades socioemocionales, convivencia escolar y formación integral desde 1.° hasta 6.° grado.",
+    tipo: "escolar",
+    colorHex: "#1e6fd9",
+    orden: 1,
+  },
+  {
+    clave: "secundaria",
+    nombre: "Tutoría SMART Secundaria",
+    etiquetaCorta: "Secundaria",
+    descripcion:
+      "Propuesta orientada a fortalecer la formación integral de los estudiantes, contribuyendo a su desarrollo personal, social y académico.",
+    tipo: "escolar",
+    colorHex: "#6d28d9",
+    orden: 2,
+  },
+  {
+    clave: "lector",
+    nombre: "Colección HTB Lector",
+    etiquetaCorta: "HTB Lector",
+    descripcion:
+      "Lecturas que acompañan el desarrollo de la empatía, los valores y el hábito lector.",
+    tipo: "literatura",
+    colorHex: "#1e6fd9",
+    orden: 3,
+  },
+];
+
+// `claveLinea` no es una columna: se resuelve al id real de la linea antes de
+// insertar (ver `main`).
 const LIBROS = [1, 2, 3, 4, 5, 6].map((n) => ({
   titulo: `Tutoría SMART ${n}`,
   subtitulo: "Tutoría, Orientación Educativa y Convivencia Escolar",
-  linea: "escolar",
+  claveLinea: "primaria",
   grado: `${n}.° de Primaria`,
   nivel: "Primaria",
   sinopsis: `Programa de tutoría y convivencia escolar para ${n}.° de Primaria. Fortalece las habilidades socioemocionales, el liderazgo y el proyecto de vida de cada estudiante.`,
@@ -20,7 +61,7 @@ const LIBROS = [1, 2, 3, 4, 5, 6].map((n) => ({
 LIBROS.push({
   titulo: "Llévenme a mi casa",
   subtitulo: "Por favor… llévenme a mi casa",
-  linea: "literatura",
+  claveLinea: "lector",
   grado: null,
   nivel: "Plan Lector",
   autor: "Miguel Ángel Aguilar",
@@ -104,9 +145,29 @@ async function main() {
     console.log(`usuario admin listo: ${correo}`);
   }
 
+  // Guarda por conteo, como los libros: el seed corre en CADA arranque del
+  // contenedor, y un upsert por clave resucitaria una linea que el panel borro
+  // (o crearia un duplicado si le cambiaron la clave). Solo siembra en vacio.
+  const lineasExistentes = await prisma.linea.count();
+  if (lineasExistentes === 0) {
+    await prisma.linea.createMany({ data: LINEAS });
+    console.log(`lineas sembradas: ${LINEAS.length}`);
+  } else {
+    console.log(`lineas ya existentes: ${lineasExistentes} (sin cambios)`);
+  }
+
+  const idPorClave = new Map(
+    (await prisma.linea.findMany({ select: { id: true, clave: true } })).map((l) => [l.clave, l.id]),
+  );
+
   const existentes = await prisma.libro.count();
   if (existentes === 0) {
-    await prisma.libro.createMany({ data: LIBROS });
+    await prisma.libro.createMany({
+      data: LIBROS.map(({ claveLinea, ...libro }) => ({
+        ...libro,
+        lineaId: idPorClave.get(claveLinea),
+      })),
+    });
     console.log(`libros sembrados: ${LIBROS.length}`);
   } else {
     console.log(`libros ya existentes: ${existentes} (sin cambios)`);

@@ -7,7 +7,10 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-enum LineaLibro {
+// Naturaleza de una linea de producto. Describe a la LINEA, no al libro: un
+// titulo es escolar o de literatura porque pertenece a una linea que lo es.
+// La landing arma sus dos secciones (Coleccion y Plan Lector) con este campo.
+enum TipoLinea {
   escolar
   literatura
 }
@@ -23,15 +26,18 @@ enum TipoBloqueLinea {
 // Lineas de producto del catalogo: cada una agrupa libros y aporta su identidad
 // (nombre comercial, color y texto de presentacion) a la pagina de la linea.
 //
-// Convive a proposito con el enum `LineaLibro` de Libro: la landing todavia
-// filtra por ese campo. La migracion de datos y el retiro del enum quedan para
-// una etapa posterior; mientras tanto la relacion es opcional y aditiva.
+// Es la UNICA fuente de verdad de la clasificacion del catalogo: la landing arma
+// sus secciones con el `tipo` de la linea de cada libro. Antes esa informacion
+// vivia duplicada en un enum del propio Libro y una linea nueva no llegaba a la
+// portada; ese enum se retiro (migracion 20260805130000).
 model Linea {
   id            String   @id @default(cuid())
   clave         String   @unique
   nombre        String
   etiquetaCorta String   @map("etiqueta_corta")
   descripcion   String
+  // Escolar por defecto: es lo que es el catalogo salvo excepcion declarada.
+  tipo          TipoLinea @default(escolar)
   colorHex      String   @map("color_hex")
   orden         Int      @default(0)
   activa        Boolean  @default(true)
@@ -90,7 +96,6 @@ model Libro {
   id               String     @id @default(cuid())
   titulo           String
   subtitulo        String?
-  linea            LineaLibro
   grado            String?
   nivel            String?
   autor            String?
@@ -105,7 +110,12 @@ model Libro {
   creadoEn         DateTime   @default(now()) @map("creado_en")
   editadoEn        DateTime   @updatedAt @map("editado_en")
 
-  // Al borrar una linea los libros no se pierden: quedan sin linea asignada.
+  // La linea de la que cuelga el libro: de ella salen su pagina publica y la
+  // seccion de la portada (segun `Linea.tipo`). El panel la exige siempre
+  // (src/lib/libros.ts), pero en la base se queda NULLABLE a proposito: al
+  // borrar una linea sus libros no se pierden, quedan sin asignar en vez de
+  // arrastrar la fila entera. Un libro huerfano no rompe la base, solo deja de
+  // mostrarse hasta que se le asigne otra linea desde el panel.
   lineaId  String? @map("linea_id")
   lineaRel Linea?  @relation(fields: [lineaId], references: [id], onDelete: SetNull)
 

@@ -3,6 +3,7 @@ import PanelLayout from "../../layouts/PanelLayout.astro";
 import { bd } from "../../lib/bd";
 import {
   defectosContenidoLinea,
+  ETIQUETA_TIPO_LINEA,
   LIMITES_CONTENIDO_LINEA,
   LIMITES_LINEA,
   type ContenidoLinea,
@@ -26,7 +27,8 @@ const error = Astro.url.searchParams.get("error");
 const MENSAJES_OK: Record<string, string> = {
   creada: "Línea agregada.",
   guardada: "Cambios guardados.",
-  eliminada: "Línea eliminada. Sus libros quedaron sin línea asignada.",
+  eliminada:
+    "Línea eliminada. Sus libros quedaron sin línea asignada y no se muestran en la web hasta que les asignes otra.",
   visible: "La línea quedó activa.",
   oculta: "La línea quedó desactivada.",
   reordenada: "Orden actualizado.",
@@ -258,6 +260,10 @@ const defectosPorLinea = new Map(lineas.map((linea) => [linea.id, defectosConten
               <dd><code>{linea.colorHex}</code></dd>
             </div>
             <div class="flex gap-1.5">
+              <dt class="font-semibold text-ink">Tipo:</dt>
+              <dd>{ETIQUETA_TIPO_LINEA[linea.tipo]}</dd>
+            </div>
+            <div class="flex gap-1.5">
               <dt class="font-semibold text-ink">Libros:</dt>
               <dd>{linea._count.libros}</dd>
             </div>
@@ -312,7 +318,7 @@ const defectosPorLinea = new Map(lineas.map((linea) => [linea.id, defectosConten
               {/* El nombre no se interpola dentro del literal de JavaScript:
                   escaparlo a mano es fragil y el boton ya lo dice en su
                   aria-label. El resto del panel usa avisos fijos igual. */}
-              onsubmit={`return confirm('¿Eliminar esta línea? Sus ${linea._count.libros} libro(s) no se borran: quedan sin línea asignada. No se puede deshacer.')`}
+              onsubmit={`return confirm('¿Eliminar esta línea? Sus ${linea._count.libros} libro(s) no se borran, pero quedan sin línea y DEJAN DE MOSTRARSE en la web hasta que les asignes otra. No se puede deshacer.')`}
             >
               <input type="hidden" name="_accion" value="eliminar" />
               <button
@@ -416,6 +422,23 @@ const defectosPorLinea = new Map(lineas.map((linea) => [linea.id, defectosConten
                   <input type="number" name="orden" value={linea.orden} class={clasesCampo} />
                 </label>
               </div>
+              <label class="block">
+                <span class="text-sm font-semibold text-ink">Tipo</span>
+                <select
+                  name="tipo"
+                  class={clasesCampo}
+                  aria-describedby={`ayuda-tipo-${linea.id}`}
+                >
+                  {Object.entries(ETIQUETA_TIPO_LINEA).map(([valor, etiqueta]) => (
+                    <option value={valor} selected={linea.tipo === valor}>
+                      {etiqueta}
+                    </option>
+                  ))}
+                </select>
+                <span id={`ayuda-tipo-${linea.id}`} class="mt-1.5 block text-xs text-ink/70">
+                  Decide en qué sección de la portada aparecen sus libros.
+                </span>
+              </label>
               <label class="block sm:col-span-2">
                 <span class="text-sm font-semibold text-ink">
                   Descripción <span class="text-accent-deep">*</span>
@@ -655,6 +678,17 @@ const defectosPorLinea = new Map(lineas.map((linea) => [linea.id, defectosConten
           <input type="number" name="orden" value={lineas.length + 1} class={clasesCampo} />
         </label>
       </div>
+      <label class="block">
+        <span class="text-sm font-semibold text-ink">Tipo</span>
+        <select name="tipo" class={clasesCampo} aria-describedby="ayuda-tipo-nueva">
+          {Object.entries(ETIQUETA_TIPO_LINEA).map(([valor, etiqueta]) => (
+            <option value={valor}>{etiqueta}</option>
+          ))}
+        </select>
+        <span id="ayuda-tipo-nueva" class="mt-1.5 block text-xs text-ink/70">
+          Decide en qué sección de la portada aparecen sus libros.
+        </span>
+      </label>
       <label class="block sm:col-span-2">
         <span class="text-sm font-semibold text-ink">
           Descripción <span class="text-accent-deep">*</span>

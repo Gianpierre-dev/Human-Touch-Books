@@ -1,11 +1,13 @@
 ---
-import type { Libro } from "@prisma/client";
+import type { Libro, TipoLinea } from "@prisma/client";
 import { LIMITE_DESCRIPCION_CORTA } from "../lib/libros";
+import { ETIQUETA_TIPO_LINEA } from "../lib/lineas";
 
 /** Lo minimo que el `<select>` de linea necesita saber de cada linea. */
 export interface OpcionLinea {
   id: string;
   nombre: string;
+  tipo: TipoLinea;
 }
 
 interface Props {
@@ -45,31 +47,26 @@ const clasesCampo =
       <input type="text" name="subtitulo" value={libro?.subtitulo ?? ""} class={clasesCampo} />
     </label>
 
+    {/* La linea manda: decide la pagina publica en la que sale el libro y la
+        seccion de la portada. Por eso es obligatoria y el tipo va entre
+        paréntesis, para saber de antemano dónde va a aparecer el título. */}
     <label class="block">
       <span class="text-sm font-semibold text-ink">Línea *</span>
-      <select name="linea" required class={clasesCampo}>
-        <option value="escolar" selected={libro?.linea === "escolar"}>Texto escolar</option>
-        <option value="literatura" selected={libro?.linea === "literatura"}>Literatura</option>
+      <select name="linea_id" required class={clasesCampo}>
+        <option value="" disabled selected={!libro?.lineaId}>Selecciona una línea</option>
+        {
+          lineas.map((linea) => (
+            <option value={linea.id} selected={libro?.lineaId === linea.id}>
+              {linea.nombre} ({ETIQUETA_TIPO_LINEA[linea.tipo]})
+            </option>
+          ))
+        }
       </select>
     </label>
 
     <label class="block">
       <span class="text-sm font-semibold text-ink">Orden</span>
       <input type="number" name="orden" value={libro?.orden ?? 0} class={clasesCampo} />
-    </label>
-
-    <label class="block sm:col-span-2">
-      <span class="text-sm font-semibold text-ink">Línea de producto</span>
-      <select name="linea_id" class={clasesCampo}>
-        <option value="" selected={!libro?.lineaId}>Sin línea asignada</option>
-        {
-          lineas.map((linea) => (
-            <option value={linea.id} selected={libro?.lineaId === linea.id}>
-              {linea.nombre}
-            </option>
-          ))
-        }
-      </select>
     </label>
 
     <label class="block sm:col-span-2">
