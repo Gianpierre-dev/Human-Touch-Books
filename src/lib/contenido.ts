@@ -22,7 +22,7 @@ export const ESPACIO_NOSOTROS: EspacioImagen = {
   clave: "nosotros_retrato",
   etiqueta: "Retrato — sección Nosotros",
   ayuda: "Orientación vertical (retrato). Se muestra en una columna de 240 px de ancho.",
-  imagenUrl: "/mock/bisquerra.png",
+  imagenUrl: "/mock/bisquerra.webp",
   altTexto: "Retrato de Rafael Bisquerra Alzina",
   ancho: 368,
   alto: 586,
@@ -32,7 +32,7 @@ export const ESPACIO_PLATAFORMA: EspacioImagen = {
   clave: "plataforma_imagen",
   etiqueta: "Imagen — sección Plataforma",
   ayuda: "Orientación cuadrada u horizontal. Se muestra en una tarjeta de hasta 340 px de ancho.",
-  imagenUrl: "/mock/laptop-smarti-limpio.png",
+  imagenUrl: "/mock/laptop-smarti-limpio.webp",
   altTexto:
     "La plataforma Tutoría SMART abierta en una laptop, con la pantalla de ingreso de Human Touch Books",
   ancho: 470,
@@ -51,7 +51,7 @@ export function esClaveImagenSitio(valor: string): valor is ClaveImagenSitio {
  * asi que conviene reemplazarla desde /admin/portada con una foto grande.
  */
 export const HERO_POR_DEFECTO = {
-  imagenUrl: "/mock/hero-estudiantes-limpio.png",
+  imagenUrl: "/mock/hero-estudiantes-limpio.webp",
   altTexto:
     "Estudiantes del proyecto Tutoría SMART junto a la tarjeta de Capacitaciones y Talleres y la distribuidora MBM",
   ancho: 505,

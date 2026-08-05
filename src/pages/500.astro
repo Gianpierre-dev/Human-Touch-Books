@@ -1,0 +1,72 @@
+---
+// Pagina de error del servidor, con la marca puesta.
+//
+// El adaptador de Node la renderiza cuando otra pagina revienta al servirse.
+// La causa mas probable de un 500 es la base de datos caida, asi que ESTA
+// pagina no puede tocarla: nada de Header/Footer (necesitan la navegacion de
+// la BD) ni de ajustes administrables. Todo lo que se muestra es estatico.
+import Layout from "../layouts/Layout.astro";
+
+export const prerender = false;
+
+// Igual que en 404.astro: /500 tambien existe como ruta directa y sin fijar el
+// estado aqui respondería 200, un "error" con estado de exito.
+Astro.response.status = 500;
+---
+
+{/* `noindex`: la pagina existe para la visitante, no para el buscador. */}
+<Layout
+  title="Algo salió mal — Human Touch Books"
+  description="Tuvimos un problema temporal al mostrar la página."
+  noindex
+  anclaContenido="#contenido"
+>
+  <header class="border-b border-line bg-surface">
+    <div class="mx-auto max-w-6xl px-4 py-4 md:px-8">
+      <a
+        href="/"
+        class="foco-marca inline-flex items-center"
+        aria-label="Human Touch Books, inicio"
+      >
+        <img
+          src="/brand/logo.png"
+          alt="Human Touch Books"
+          class="h-12 w-auto sm:h-14"
+          width="128"
+          height="79"
+        />
+      </a>
+    </div>
+  </header>
+
+  <main id="contenido" tabindex="-1" class="bg-surface">
+    <section
+      class="mx-auto flex min-h-[52vh] max-w-3xl flex-col items-start justify-center px-4 py-20 md:px-8 md:py-24"
+      aria-labelledby="titulo-500"
+    >
+      <span class="text-xs font-bold tracking-[0.2em] text-brand uppercase">Error 500</span>
+      <h1
+        id="titulo-500"
+        class="mt-2 font-display text-[clamp(2rem,4.6vw,3.1rem)] leading-[1.08] font-bold tracking-tight text-ink"
+      >
+        Algo salió mal de nuestro lado
+      </h1>
+      <p class="mt-5 max-w-[58ch] leading-relaxed text-ink/75">
+        Tuvimos un problema temporal al mostrar esta página. No es culpa tuya: vuelve a intentarlo
+        en unos minutos. Si el problema continúa, el equipo ya está al tanto.
+      </p>
+
+      <div class="mt-8">
+        <a
+          href="/"
+          class="foco-marca boton-elevar inline-flex min-h-[52px] items-center gap-2.5 rounded-full bg-brand px-8 text-[0.95rem] font-bold text-white shadow-lg [--sombra-hover:rgb(18_74_153_/_0.5)] hover:bg-brand-deep"
+        >
+          <svg viewBox="0 0 24 24" class="h-4 w-4 fill-current" aria-hidden="true">
+            <path d="M14 7l-5 5 5 5V7Z"></path>
+          </svg>
+          Volver al inicio
+        </a>
+      </div>
+    </section>
+  </main>
+</Layout>

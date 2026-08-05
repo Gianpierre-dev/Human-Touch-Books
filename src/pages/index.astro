@@ -316,7 +316,8 @@ const fichaOrganizacion = serializarJsonLd({
       {
         /* Portada: administrable desde /admin/portada. La imagen ya no es una
           tarjeta: cubre el fondo de toda la seccion. Sin imagenes cargadas se
-          mantiene la del mock aprobado (ver scripts/limpiar-mocks.mjs). */
+          mantiene la del mock aprobado, ya recortado sin la tipografia quemada
+          de la maqueta (el recorte vivio en scripts/limpiar-mocks.mjs). */
       }
       {
         totalDiapositivas === 0 ? (
@@ -803,7 +804,7 @@ const fichaOrganizacion = serializarJsonLd({
 
         {
           /* Imagen recortada: el original repetia en pixeles el titular, el parrafo
-            y dos de los chips de arriba (ver scripts/limpiar-mocks.mjs). */
+            y dos de los chips de arriba (el recorte vivio en scripts/limpiar-mocks.mjs). */
         }
         <div class="reveal-scroll mx-auto w-full max-w-[340px] lg:max-w-none">
           {

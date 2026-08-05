@@ -127,6 +127,11 @@ async function ejecutar() {
     const { respuesta } = await pagina("/nosotros/compromiso");
     afirmarEstado(respuesta, 404, "/nosotros/compromiso");
   });
+  await caso("/500 responde 500 con la marca", async () => {
+    const { respuesta, cuerpo } = await pagina("/500");
+    afirmarEstado(respuesta, 500, "/500");
+    afirmarContiene(cuerpo, "Human Touch Books", "/500");
+  });
 
   console.log("\nPanel protegido");
   await caso("/admin sin sesion redirige al login", async () => {
