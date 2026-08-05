@@ -14,6 +14,7 @@ import { bd } from "../../lib/bd";
 import { resolverContenidoLinea } from "../../lib/lineas";
 import { ESTILOS_ARGUMENTO, ESTILOS_PILAR } from "../../lib/bloques-linea";
 import { cargarNavegacion } from "../../lib/navegacion";
+import { resolverRedes } from "../../lib/redes";
 import { defectoFijo } from "../../lib/textos";
 import { serializarJsonLd } from "../../lib/json-ld";
 
@@ -24,7 +25,10 @@ const { clave = "" } = Astro.params;
 const linea = await bd.linea.findUnique({
   where: { clave },
   include: {
-    libros: { orderBy: [{ orden: "asc" }, { titulo: "asc" }] },
+    // Desempate por creadoEn, IGUAL que el panel y su API de reorden: si el
+    // publico desempatara por titulo, los botones Subir/Bajar del panel
+    // moverian un orden distinto del que la visitante ve.
+    libros: { orderBy: [{ orden: "asc" }, { creadoEn: "asc" }] },
     bloques: { where: { activa: true }, orderBy: [{ orden: "asc" }, { creadoEn: "asc" }] },
   },
 });
@@ -76,6 +80,7 @@ const ajustes = Object.fromEntries(filasAjustes.map((ajuste) => [ajuste.clave, a
 const whatsapp = ajustes.whatsapp ?? "51982953436";
 const correoContacto = ajustes.correo_contacto ?? "informes@humantouchbooks.pe";
 const ubicacion = ajustes.ubicacion ?? "La Molina, Lima — Perú";
+const redes = resolverRedes(ajustes);
 
 const TEXTO_WHATSAPP = `Hola, quiero información sobre ${linea.nombre}.`;
 const enlaceWhatsapp = `https://wa.me/${whatsapp}?text=${encodeURIComponent(TEXTO_WHATSAPP)}`;
@@ -446,6 +451,7 @@ const listaLibros =
     whatsapp={whatsapp}
     correoContacto={correoContacto}
     ubicacion={ubicacion}
+    redes={redes}
     navegacion={navegacion}
     base="/"
   />

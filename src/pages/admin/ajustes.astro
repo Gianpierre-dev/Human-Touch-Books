@@ -2,6 +2,7 @@
 import PanelLayout from "../../layouts/PanelLayout.astro";
 import { bd } from "../../lib/bd";
 import { LIMITES, SUBTITULO_HERO_POR_DEFECTO, textoNosotrosPorDefecto } from "../../lib/contenido";
+import { LARGO_MAXIMO_RED, REDES } from "../../lib/redes";
 
 export const prerender = false;
 
@@ -12,6 +13,15 @@ const error = Astro.url.searchParams.get("error");
 
 const MENSAJES_ERROR: Record<string, string> = {
   largo: `Revisa los textos: el subtítulo admite hasta ${LIMITES.subtituloHero} caracteres y el párrafo de Nosotros hasta ${LIMITES.textoNosotros}.`,
+  redlargo: `Las direcciones de redes sociales admiten hasta ${LARGO_MAXIMO_RED} caracteres.`,
+  // Un mensaje por red: decir «la dirección no es válida» sin nombrarla obliga
+  // a revisar los cuatro campos a mano.
+  ...Object.fromEntries(
+    REDES.map((red) => [
+      `red${red.campo}`,
+      `Revisa la dirección de ${red.nombre}: pega la dirección completa del perfil, por ejemplo ${red.ejemplo}.`,
+    ]),
+  ),
 };
 
 const ubicacion = ajustes.ubicacion ?? "La Molina, Lima — Perú";
@@ -67,6 +77,28 @@ const clasesCampo =
       <span class="text-sm font-semibold text-ink">Ubicación</span>
       <input type="text" name="ubicacion" value={ajustes.ubicacion ?? ""} class={clasesCampo} />
     </label>
+
+    <h2 class="mt-8 border-t border-line pt-6 text-lg font-bold text-ink">Redes sociales</h2>
+    <p class="mt-1.5 text-sm text-ink/70">
+      Pega la dirección completa del perfil, la que ves en la barra del navegador. Si dejas un campo
+      vacío, ese ícono no se muestra en la web.
+    </p>
+
+    {
+      REDES.map((red) => (
+        <label class="mt-4 block">
+          <span class="text-sm font-semibold text-ink">{red.nombre}</span>
+          <input
+            type="url"
+            name={red.clave}
+            maxlength={LARGO_MAXIMO_RED}
+            value={ajustes[red.clave] ?? ""}
+            placeholder={red.ejemplo}
+            class={clasesCampo}
+          />
+        </label>
+      ))
+    }
 
     <h2 class="mt-8 border-t border-line pt-6 text-lg font-bold text-ink">Textos de la página</h2>
 

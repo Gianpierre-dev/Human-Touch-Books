@@ -73,7 +73,7 @@ const clasesEnlace = "foco-marca font-semibold text-brand-deep underline underli
       </li>
       <li>
         <strong class="text-ink">El orden se controla con los botones Subir y Bajar</strong> en las listas
-        (imágenes de portada, preguntas, bloques, líneas).
+        (imágenes de portada, preguntas, bloques, líneas y libros).
       </li>
     </ul>
   </section>
@@ -100,9 +100,11 @@ const clasesEnlace = "foco-marca font-semibold text-brand-deep underline underli
         <a href="/admin/preguntas" class={clasesEnlace}>Preguntas</a>.
       </li>
       <li>
-        Los datos de contacto (correo, WhatsApp, horario, ubicación) están en
+        Los datos de contacto (correo, WhatsApp, horario, ubicación) y las
+        <strong class="text-ink">redes sociales</strong> están en
         <a href="/admin/ajustes" class={clasesEnlace}>Ajustes</a> y se actualizan en toda la web a la
-        vez.
+        vez. De cada red se pega la dirección completa del perfil; si dejas el campo vacío, ese ícono
+        no aparece en el pie de la página.
       </li>
       <li>
         Los textos propios de cada página de línea (Primaria, Secundaria, HTB Lector) se editan en
@@ -143,6 +145,11 @@ const clasesEnlace = "foco-marca font-semibold text-brand-deep underline underli
         En <a href="/admin/lineas" class={clasesEnlace}>Líneas</a> editas la identidad de cada línea:
         nombre, color, textos de su página y sus imágenes. El panel rechaza colores demasiado claros:
         el texto blanco tiene que poder leerse encima.
+      </li>
+      <li>
+        <strong class="text-ink">El orden de un libro se cambia con Subir y Bajar</strong> en la lista
+        de Libros, y siempre dentro de su propia línea: mover un título de Primaria nunca afecta a los
+        de Secundaria. Un libro sin línea no muestra estos botones.
       </li>
       <li>
         Si eliminas una línea, sus libros no se borran, pero
@@ -211,6 +218,22 @@ const clasesEnlace = "foco-marca font-semibold text-brand-deep underline underli
       mano. Usa al menos 10 caracteres. Al cambiarla, cualquier otra sesión abierta se cierra sola.
       Si la olvidas por completo, escribe al equipo que mantiene el sitio para restablecerla.
     </p>
+    <p class={clasesParrafo}>
+      En esa misma pantalla se <strong class="text-ink"
+        >agregan y eliminan las cuentas del equipo</strong
+      >. Cada persona debe entrar con la suya: así se sabe quién cambió qué, y dar de baja a alguien
+      es eliminar una cuenta y no cambiarle la contraseña a todos.
+    </p>
+    <ul class={clasesLista}>
+      <li>
+        Al crear una cuenta le pones una contraseña inicial y se la entregas en mano. Esa persona
+        debe cambiarla desde <strong class="text-ink">Mi cuenta</strong> la primera vez que entre.
+      </li>
+      <li>
+        Al eliminar una cuenta, la sesión que esa persona tuviera abierta se cierra de inmediato.
+      </li>
+      <li>Tu propia cuenta no se puede eliminar desde el panel: te dejaría fuera al instante.</li>
+    </ul>
   </section>
 
   <section id="limites" class={clasesSeccion} aria-labelledby="titulo-limites">

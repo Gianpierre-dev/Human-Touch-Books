@@ -8,11 +8,17 @@
 // panel la deja enlazada en los dos sitios sin tocar codigo.
 import { NAVEGACION_VACIA, type EnlaceMenu, type Navegacion } from "../lib/navegacion";
 import { defectoFijo } from "../lib/textos";
+import { listarRedes, type RedesSociales } from "../lib/redes";
 
 interface Props {
   whatsapp?: string;
   correoContacto?: string;
   ubicacion?: string;
+  /**
+   * Direcciones de los perfiles cargados en /admin/ajustes. Solo se pinta el
+   * icono de las redes con direccion: no hay valor por defecto que inventar.
+   */
+  redes?: RedesSociales;
   /** Páginas institucionales y líneas activas, las mismas de la cabecera. */
   navegacion?: Navegacion;
   /** Párrafo bajo el logotipo. Administrable desde /admin/textos. */
@@ -34,12 +40,29 @@ const {
   whatsapp = "51982953436",
   correoContacto = "informes@humantouchbooks.pe",
   ubicacion = "La Molina, Lima — Perú",
+  redes = {},
   navegacion = NAVEGACION_VACIA,
   descripcion = DESCRIPCION_POR_DEFECTO,
   base = "",
 } = Astro.props;
 
 const { etiquetas } = navegacion;
+
+// Glifos de marca dibujados a mano (fill-current, un solo path), como el resto
+// de los iconos del proyecto: no se agrega una libreria de iconos por cuatro
+// dibujos. La clave es la misma del catalogo de redes.
+const GLIFOS_RED: Record<string, string> = {
+  facebook:
+    "M14.5 22v-9h3l.5-3.5h-3.5V7.2c0-1 .3-1.7 1.8-1.7h1.9V2.4c-.3 0-1.5-.15-2.8-.15-2.8 0-4.7 1.7-4.7 4.8V9.5H7.5V13h3.2v9h3.8Z",
+  instagram:
+    "M7.5 2h9A5.5 5.5 0 0 1 22 7.5v9a5.5 5.5 0 0 1-5.5 5.5h-9A5.5 5.5 0 0 1 2 16.5v-9A5.5 5.5 0 0 1 7.5 2Zm0 2A3.5 3.5 0 0 0 4 7.5v9A3.5 3.5 0 0 0 7.5 20h9a3.5 3.5 0 0 0 3.5-3.5v-9A3.5 3.5 0 0 0 16.5 4h-9Zm4.5 3a5 5 0 1 1 0 10 5 5 0 1 1 0-10Zm0 2a3 3 0 1 0 0 6 3 3 0 1 0 0-6Zm5.5-3.3a1.3 1.3 0 1 1 0 2.6 1.3 1.3 0 1 1 0-2.6Z",
+  tiktok:
+    "M13 3h3c.3 2.6 1.8 4.1 4 4.3v3.3c-1.5 0-2.9-.5-4-1.2v5.1h-3V3Zm-3 5.5a6 6 0 1 1 0 12 6 6 0 1 1 0-12Zm0 3.2a2.8 2.8 0 1 0 0 5.6 2.8 2.8 0 1 0 0-5.6Z",
+  youtube:
+    "M5 4h14a4 4 0 0 1 4 4v8a4 4 0 0 1-4 4H5a4 4 0 0 1-4-4V8a4 4 0 0 1 4-4Zm5 4.5v7l6-3.5-6-3.5Z",
+};
+
+const redesCargadas = listarRedes(redes);
 
 const whatsappVisible = `+${whatsapp.slice(0, 2)} ${whatsapp.slice(2, 5)} ${whatsapp.slice(5, 8)} ${whatsapp.slice(8)}`;
 const year = new Date().getFullYear();
@@ -69,6 +92,28 @@ const explora: EnlaceMenu[] = [
           height="70"
         />
         <p class="mt-4 text-sm leading-relaxed text-ink/75">{descripcion}</p>
+
+        {
+          redesCargadas.length > 0 && (
+            <ul class="mt-4 -ml-2.5 flex flex-wrap items-center">
+              {redesCargadas.map(({ red, url }) => (
+                <li>
+                  <a
+                    href={url}
+                    target="_blank"
+                    rel="noopener"
+                    aria-label={`Human Touch Books en ${red.nombre}`}
+                    class="foco-marca grid h-11 w-11 place-items-center text-ink/70 transition-colors hover:text-brand"
+                  >
+                    <svg viewBox="0 0 24 24" class="h-5 w-5 fill-current" aria-hidden="true">
+                      <path d={GLIFOS_RED[red.campo]} />
+                    </svg>
+                  </a>
+                </li>
+              ))}
+            </ul>
+          )
+        }
       </div>
 
       <div class="grid grid-cols-1 gap-8 text-sm sm:grid-cols-2 sm:gap-10">

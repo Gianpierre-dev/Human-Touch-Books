@@ -14,6 +14,7 @@ import {
 } from "../lib/contenido";
 import { descripcionColeccionPorDefecto, resolverTextos } from "../lib/textos";
 import { cargarNavegacion } from "../lib/navegacion";
+import { listarRedes, resolverRedes } from "../lib/redes";
 import { serializarJsonLd } from "../lib/json-ld";
 import {
   BLOQUES_VALOR_POR_DEFECTO,
@@ -60,6 +61,7 @@ const whatsapp = ajustes.whatsapp ?? "51982953436";
 const correoContacto = ajustes.correo_contacto ?? "informes@humantouchbooks.pe";
 const horarios = (ajustes.horario ?? "Lunes a viernes: 8:00 a. m. – 5:00 p. m.").split("|");
 const ubicacion = ajustes.ubicacion ?? "La Molina, Lima — Perú";
+const redes = resolverRedes(ajustes);
 const whatsappVisible = `+${whatsapp.slice(0, 2)} ${whatsapp.slice(2, 5)} ${whatsapp.slice(5, 8)} ${whatsapp.slice(8)}`;
 const subtituloHero = ajustes.hero_subtitulo ?? SUBTITULO_HERO_POR_DEFECTO;
 const textoNosotros = ajustes.nosotros_texto ?? textoNosotrosPorDefecto(ubicacion);
@@ -283,6 +285,12 @@ const preguntas: PreguntaVista[] =
 // inventa aqui. Detras del proxy `Astro.url.origin` resuelve a localhost, asi
 // que la base es la misma que usa Layout para la URL canonica.
 const base = Astro.site ?? new URL(Astro.url.origin);
+
+// `sameAs` son los perfiles oficiales con los que Google confirma que la ficha
+// y la marca son la misma organizacion. Sin ninguna red cargada la propiedad no
+// se emite: un array vacio no aporta nada y ensucia el marcado.
+const perfilesSociales = listarRedes(redes).map(({ url }) => url);
+
 const fichaOrganizacion = serializarJsonLd({
   "@context": "https://schema.org",
   "@type": "Organization",
@@ -291,6 +299,7 @@ const fichaOrganizacion = serializarJsonLd({
   logo: new URL("/brand/logo.png", base).href,
   email: correoContacto,
   telephone: `+${whatsapp}`,
+  ...(perfilesSociales.length > 0 ? { sameAs: perfilesSociales } : {}),
   address: {
     "@type": "PostalAddress",
     // El ajuste es un texto libre («La Molina, Lima — Perú»): se publica tal
@@ -1297,6 +1306,7 @@ const fichaOrganizacion = serializarJsonLd({
     whatsapp={whatsapp}
     correoContacto={correoContacto}
     ubicacion={ubicacion}
+    redes={redes}
     navegacion={navegacion}
     descripcion={textos.pie_descripcion}
   />

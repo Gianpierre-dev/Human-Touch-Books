@@ -2,8 +2,11 @@ import type { APIRoute } from "astro";
 import { bd } from "../../../../lib/bd";
 import { eliminarPortada } from "../../../../lib/almacen";
 import { leerDatosLibro, procesarPortada, verificarLinea } from "../../../../lib/libros";
+import { calcularReordenamiento, type Direccion } from "../../../../lib/orden";
 
 export const prerender = false;
+
+const ORDEN_LISTA = [{ orden: "asc" as const }, { creadoEn: "asc" as const }];
 
 export const POST: APIRoute = async ({ params, request, redirect }) => {
   const id = params.id ?? "";
@@ -11,11 +14,37 @@ export const POST: APIRoute = async ({ params, request, redirect }) => {
   if (!libro) return redirect("/admin?error=noexiste", 303);
 
   const formulario = await request.formData();
+  const accion = String(formulario.get("_accion") ?? "");
 
-  if (formulario.get("_accion") === "eliminar") {
+  if (accion === "eliminar") {
     await bd.libro.delete({ where: { id } });
     await eliminarPortada(libro.portadaUrl);
     return redirect("/admin?ok=eliminado", 303);
+  }
+
+  if (accion === "subir" || accion === "bajar") {
+    // El orden de un libro solo tiene sentido DENTRO de su linea: es como lo
+    // recorre la pagina de la coleccion. Un libro huerfano no se muestra en
+    // ningun sitio, asi que tampoco hay una lista en la que moverlo.
+    if (!libro.lineaId) return redirect("/admin?error=sinlinea", 303);
+
+    const lista = await bd.libro.findMany({
+      where: { lineaId: libro.lineaId },
+      orderBy: ORDEN_LISTA,
+      select: { id: true, orden: true },
+    });
+    // Renumera la linea entera de forma consecutiva: si dos libros comparten
+    // el mismo `orden` (pasa con el valor que trae el formulario por defecto),
+    // intercambiar solo los dos valores no moveria nada.
+    const nuevos = calcularReordenamiento(lista, id, accion as Direccion);
+    if (!nuevos) return redirect("/admin?ok=sincambios", 303);
+
+    await bd.$transaction(
+      nuevos.map((fila) =>
+        bd.libro.update({ where: { id: fila.id }, data: { orden: fila.orden } }),
+      ),
+    );
+    return redirect("/admin?ok=reordenado", 303);
   }
 
   const { datos, error } = leerDatosLibro(formulario);

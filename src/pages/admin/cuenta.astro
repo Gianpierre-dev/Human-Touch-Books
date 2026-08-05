@@ -2,13 +2,27 @@
 import CampoContrasena from "../../components/CampoContrasena.astro";
 import ScriptOjoContrasena from "../../components/ScriptOjoContrasena.astro";
 import PanelLayout from "../../layouts/PanelLayout.astro";
+import { bd } from "../../lib/bd";
 import { LARGO_MAXIMO_CLAVE, LARGO_MINIMO_CLAVE } from "../../lib/sesion";
 
 export const prerender = false;
 
+const usuarioId = Astro.locals.sesion?.usuarioId ?? "";
 const correo = Astro.locals.sesion?.correo ?? "";
 const ok = Astro.url.searchParams.get("ok");
 const error = Astro.url.searchParams.get("error");
+
+// El hash no se trae ni por descuido: aqui solo se listan las cuentas.
+const cuentas = await bd.usuario.findMany({
+  orderBy: { creadoEn: "asc" },
+  select: { id: true, correo: true, creadoEn: true },
+});
+
+const MENSAJES_OK: Record<string, string> = {
+  guardado: "Contraseña actualizada.",
+  creada: "Cuenta agregada. Pásale la contraseña inicial a la persona en mano, no por correo.",
+  eliminada: "Cuenta eliminada. Su sesión se cerró al instante.",
+};
 
 const MENSAJES_ERROR: Record<string, string> = {
   campos: "Completa los tres campos.",
@@ -17,7 +31,23 @@ const MENSAJES_ERROR: Record<string, string> = {
   actual: "La contraseña actual no es correcta.",
   limite: "Demasiados intentos. Espera 15 minutos e inténtalo de nuevo.",
   usuario: "No encontramos tu usuario. Vuelve a iniciar sesión.",
+  cuentacampos: "Completa el correo y la contraseña inicial de la cuenta nueva.",
+  cuentacorreo: "Revisa el correo de la cuenta nueva: no tiene un formato válido.",
+  cuentaclave: `La contraseña inicial debe tener entre ${LARGO_MINIMO_CLAVE} y ${LARGO_MAXIMO_CLAVE} caracteres.`,
+  cuentarepetida: "Ya existe una cuenta con ese correo.",
+  cuentapropia: "No puedes eliminar tu propia cuenta.",
+  cuentanoexiste: "Esa cuenta ya no existe.",
+  cuentaaccion: "No reconocimos la acción solicitada.",
 };
+
+const FECHA = new Intl.DateTimeFormat("es-PE", { dateStyle: "medium" });
+
+const clasesCampo =
+  "mt-1.5 min-h-[44px] w-full rounded-lg border border-line bg-paper px-3.5 py-2.5 text-sm outline-none focus-visible:border-brand focus-visible:ring-2 focus-visible:ring-brand/30";
+const clasesBotonPeligro =
+  "foco-marca inline-flex min-h-[44px] items-center justify-center rounded-full border border-accent/40 bg-surface px-4 text-xs font-bold text-accent-deep transition-colors hover:bg-accent/10";
+const clasesBotonPrincipal =
+  "foco-marca inline-flex min-h-[44px] items-center rounded-full bg-brand px-7 text-sm font-bold text-white transition-colors hover:bg-brand-deep";
 ---
 
 <PanelLayout titulo="Mi cuenta" correo={correo}>
@@ -27,14 +57,14 @@ const MENSAJES_ERROR: Record<string, string> = {
   {
     ok && (
       <p class="mb-5 rounded-lg bg-wa/10 px-4 py-2.5 text-sm font-semibold text-wa-deep">
-        Contraseña actualizada.
+        {MENSAJES_OK[ok] ?? "Listo."}
       </p>
     )
   }
   {
     error && (
       <p class="mb-5 rounded-lg bg-accent/10 px-4 py-2.5 text-sm font-semibold text-accent-deep">
-        {MENSAJES_ERROR[error] ?? "No pudimos cambiar la contraseña."}
+        {MENSAJES_ERROR[error] ?? "No pudimos guardar los cambios."}
       </p>
     )
   }
@@ -83,6 +113,113 @@ const MENSAJES_ERROR: Record<string, string> = {
       >
         Guardar contraseña
       </button>
+    </form>
+  </div>
+
+  <div class="mt-8 max-w-2xl rounded-xl border border-line bg-surface p-6 shadow-sm md:p-8">
+    <h2 class="text-lg font-bold text-ink">Cuentas del equipo</h2>
+    <p class="mt-1.5 text-sm text-ink/70">
+      Todas las cuentas tienen los mismos permisos sobre el panel. Cada persona debe entrar con la
+      suya: una cuenta compartida hace imposible saber quién cambió qué.
+    </p>
+
+    <div class="mt-5 overflow-x-auto rounded-lg border border-line">
+      <table class="w-full text-sm">
+        <caption class="sr-only">Cuentas con acceso al panel</caption>
+        <thead>
+          <tr
+            class="border-b border-line text-left text-xs font-bold tracking-wide text-ink/70 uppercase"
+          >
+            <th scope="col" class="px-4 py-3">Correo</th>
+            <th scope="col" class="px-4 py-3">Creada</th>
+            <th scope="col" class="px-4 py-3 text-right">Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          {
+            cuentas.map((cuenta) => (
+              <tr class="border-b border-line/60 last:border-0">
+                <td class="px-4 py-3 font-semibold text-ink">
+                  {cuenta.correo}
+                  {cuenta.id === usuarioId && (
+                    <span class="ml-2 inline-block rounded-full bg-surface-2 px-2.5 py-0.5 text-[0.7rem] font-bold text-ink/70">
+                      Tu cuenta
+                    </span>
+                  )}
+                </td>
+                <td class="px-4 py-3 text-ink/70">
+                  <time datetime={cuenta.creadoEn.toISOString()}>
+                    {FECHA.format(cuenta.creadoEn)}
+                  </time>
+                </td>
+                <td class="px-4 py-3">
+                  <div class="flex justify-end">
+                    {cuenta.id === usuarioId ? (
+                      <span class="text-xs text-ink/70">Tu cuenta no se elimina desde aquí</span>
+                    ) : (
+                      <form
+                        method="post"
+                        action={`/api/admin/usuarios/${cuenta.id}`}
+                        onsubmit="return confirm('¿Eliminar esta cuenta? La persona pierde el acceso al panel de inmediato. No se puede deshacer.')"
+                      >
+                        <input type="hidden" name="_accion" value="eliminar" />
+                        <button
+                          type="submit"
+                          class={clasesBotonPeligro}
+                          aria-label={`Eliminar la cuenta ${cuenta.correo}`}
+                        >
+                          Eliminar
+                        </button>
+                      </form>
+                    )}
+                  </div>
+                </td>
+              </tr>
+            ))
+          }
+        </tbody>
+      </table>
+    </div>
+
+    <h3 class="mt-8 border-t border-line pt-6 text-base font-bold text-ink">Agregar cuenta</h3>
+
+    <form method="post" action="/api/admin/usuarios">
+      <label class="mt-4 block">
+        <span class="text-sm font-semibold text-ink">
+          Correo de acceso <span class="text-accent-deep">*</span>
+        </span>
+        <input
+          type="email"
+          name="correo"
+          required
+          maxlength={160}
+          autocomplete="off"
+          spellcheck="false"
+          placeholder="persona@humantouchbooks.pe"
+          class={clasesCampo}
+        />
+      </label>
+
+      <CampoContrasena
+        id="clave-inicial"
+        nombre="clave"
+        etiqueta="Contraseña inicial"
+        autocomplete="new-password"
+        minlength={LARGO_MINIMO_CLAVE}
+        maxlength={LARGO_MAXIMO_CLAVE}
+        ayuda={`Entre ${LARGO_MINIMO_CLAVE} y ${LARGO_MAXIMO_CLAVE} caracteres. Entrégasela a la persona en mano.`}
+        clase="mt-4"
+      />
+
+      <p
+        class="mt-4 rounded-lg border border-line bg-surface-2 px-4 py-3 text-xs leading-relaxed text-ink/80"
+      >
+        Esta contraseña es provisional: la persona debe cambiarla desde
+        <strong class="font-semibold text-ink">Mi cuenta</strong> la primera vez que entre al panel. Mientras
+        no lo haga, quien la creó también la conoce.
+      </p>
+
+      <button type="submit" class:list={[clasesBotonPrincipal, "mt-5"]}>Agregar cuenta</button>
     </form>
   </div>
 

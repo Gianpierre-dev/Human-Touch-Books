@@ -130,19 +130,23 @@ const PREGUNTAS = [
 ];
 
 async function main() {
-  const correo = process.env.ADMIN_CORREO;
+  // Guarda por conteo, como las lineas: el seed corre en CADA arranque del
+  // contenedor, y un upsert por correo resucitaria una cuenta que el panel dio
+  // de baja — con la contrasena del .env, que la persona dada de baja conoce.
+  // Solo siembra con la tabla vacia (lo que ademas repone el acceso si el
+  // panel se quedara sin ninguna cuenta). En minusculas, como exige el login.
+  const correo = process.env.ADMIN_CORREO?.trim().toLowerCase();
   const clave = process.env.ADMIN_CLAVE;
-  if (correo && clave) {
-    await prisma.usuario.upsert({
-      where: { correo },
-      update: {},
-      create: {
+  const usuariosExistentes = await prisma.usuario.count();
+  if (usuariosExistentes === 0 && correo && clave) {
+    await prisma.usuario.create({
+      data: {
         correo,
         nombre: "Administrador HTB",
         hashContrasena: await bcrypt.hash(clave, 12),
       },
     });
-    console.log(`usuario admin listo: ${correo}`);
+    console.log(`usuario admin sembrado: ${correo}`);
   }
 
   // Guarda por conteo, como los libros: el seed corre en CADA arranque del

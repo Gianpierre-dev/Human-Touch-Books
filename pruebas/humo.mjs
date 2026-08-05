@@ -147,6 +147,12 @@ async function ejecutar() {
     const respuesta = await pedir("/api/admin/mensajes/x", { method: "POST" });
     afirmarEstado(respuesta, 401, "POST /api/admin/mensajes/x");
   });
+  // Sin cuerpo: el middleware corta antes de leer el formulario, asi que el
+  // caso no llega a crear ningun usuario.
+  await caso("POST /api/admin/usuarios sin sesion responde 401", async () => {
+    const respuesta = await pedir("/api/admin/usuarios", { method: "POST" });
+    afirmarEstado(respuesta, 401, "POST /api/admin/usuarios");
+  });
 
   console.log("\nFormulario de contacto (trampa antispam: NO escribe en la base)");
   await caso("POST /api/contacto con la trampa llena redirige a ?contacto=ok", async () => {

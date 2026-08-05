@@ -16,6 +16,7 @@ import Header from "../components/Header.astro";
 import Footer from "../components/Footer.astro";
 import { bd } from "../lib/bd";
 import { cargarNavegacion } from "../lib/navegacion";
+import { resolverRedes } from "../lib/redes";
 
 export const prerender = false;
 
@@ -29,6 +30,7 @@ const ajustes = Object.fromEntries(filasAjustes.map((ajuste) => [ajuste.clave, a
 const whatsapp = ajustes.whatsapp ?? "51982953436";
 const correoContacto = ajustes.correo_contacto ?? "informes@humantouchbooks.pe";
 const ubicacion = ajustes.ubicacion ?? "La Molina, Lima — Perú";
+const redes = resolverRedes(ajustes);
 ---
 
 {/* `noindex`: la pagina existe para la visitante, no para el buscador. */}
@@ -86,6 +88,7 @@ const ubicacion = ajustes.ubicacion ?? "La Molina, Lima — Perú";
     whatsapp={whatsapp}
     correoContacto={correoContacto}
     ubicacion={ubicacion}
+    redes={redes}
     navegacion={navegacion}
     base="/"
   />

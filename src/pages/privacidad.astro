@@ -10,6 +10,7 @@ import Header from "../components/Header.astro";
 import Footer from "../components/Footer.astro";
 import { bd } from "../lib/bd";
 import { cargarNavegacion } from "../lib/navegacion";
+import { resolverRedes } from "../lib/redes";
 
 export const prerender = false;
 
@@ -20,6 +21,7 @@ const ajustes = Object.fromEntries(filasAjustes.map((ajuste) => [ajuste.clave, a
 const whatsapp = ajustes.whatsapp ?? "51982953436";
 const correoContacto = ajustes.correo_contacto ?? "informes@humantouchbooks.pe";
 const ubicacion = ajustes.ubicacion ?? "La Molina, Lima — Perú";
+const redes = resolverRedes(ajustes);
 
 // Fecha de la ultima revision del texto. Va a mano a proposito: es la fecha en
 // que se reviso la POLITICA, no la del ultimo despliegue. Ponerla con
@@ -197,6 +199,7 @@ const claseParrafo = "mt-3 leading-relaxed text-ink/80";
     whatsapp={whatsapp}
     correoContacto={correoContacto}
     ubicacion={ubicacion}
+    redes={redes}
     navegacion={navegacion}
     base="/"
   />
