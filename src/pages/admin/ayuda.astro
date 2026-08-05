@@ -1,0 +1,225 @@
+---
+import PanelLayout from "../../layouts/PanelLayout.astro";
+
+export const prerender = false;
+
+// Manual de uso del panel, orientado a tareas ("quiero cambiar un texto") y no
+// a pantallas. Vive dentro del panel a proposito: un PDF se pierde y queda
+// viejo; esta pagina acompana al sitio y se actualiza con el.
+
+const indice = [
+  { href: "#como-funciona", texto: "Cómo funciona el panel" },
+  { href: "#textos", texto: "Cambiar un texto de la web" },
+  { href: "#portada", texto: "Las imágenes de la portada" },
+  { href: "#catalogo", texto: "Libros y líneas" },
+  { href: "#paginas", texto: "Las demás páginas" },
+  { href: "#mensajes", texto: "Responder consultas" },
+  { href: "#imagenes", texto: "Qué imagen subir en cada lugar" },
+  { href: "#cuenta", texto: "Tu contraseña" },
+  { href: "#limites", texto: "Lo que no se cambia desde aquí" },
+];
+
+const clasesSeccion = "mt-10 max-w-3xl";
+const clasesTitulo = "text-lg font-bold text-ink";
+const clasesParrafo = "mt-2 text-sm leading-relaxed text-ink/75";
+const clasesLista = "mt-2 list-disc space-y-1.5 pl-5 text-sm leading-relaxed text-ink/75";
+const clasesEnlace = "foco-marca font-semibold text-brand-deep underline underline-offset-2";
+---
+
+<PanelLayout titulo="Ayuda" correo={Astro.locals.sesion?.correo}>
+  <h1 class="text-2xl font-extrabold text-ink">Cómo usar el panel</h1>
+  <p class="mt-1 max-w-3xl text-sm text-ink/70">
+    Todo lo que se ve en la web se administra desde aquí, sin tocar código. Esta guía está
+    organizada por tareas: busca lo que quieres hacer.
+  </p>
+
+  <nav
+    aria-label="Índice de la guía"
+    class="mt-6 max-w-3xl rounded-xl border border-line bg-surface p-5"
+  >
+    <h2 class="text-sm font-bold tracking-wide text-ink/70 uppercase">Índice</h2>
+    <ul class="mt-2 grid gap-x-8 gap-y-1 text-sm sm:grid-cols-2">
+      {
+        indice.map((entrada) => (
+          <li>
+            <a
+              href={entrada.href}
+              class="foco-marca inline-flex min-h-[36px] items-center text-brand-deep"
+            >
+              {entrada.texto}
+            </a>
+          </li>
+        ))
+      }
+    </ul>
+  </nav>
+
+  <section id="como-funciona" class={clasesSeccion} aria-labelledby="titulo-como-funciona">
+    <h2 id="titulo-como-funciona" class={clasesTitulo}>Cómo funciona el panel</h2>
+    <ul class={clasesLista}>
+      <li>
+        <strong class="text-ink">Los cambios se publican al instante.</strong> Al guardar, la web ya muestra
+        lo nuevo. No hay botón de «publicar»: guardar es publicar.
+      </li>
+      <li>
+        <strong class="text-ink">Los campos de texto vacíos muestran el texto original.</strong> El texto
+        gris que ves dentro de un campo vacío es lo que la web está mostrando. Si escribes algo, lo reemplaza;
+        si borras lo que escribiste y guardas, vuelve el original. Nunca puedes «perder» un texto.
+      </li>
+      <li>
+        <strong class="text-ink">Ocultar no es eliminar.</strong> Casi todo tiene un botón para ocultarlo
+        de la web sin borrarlo: sirve para guardar algo a medias. Eliminar, en cambio, no se puede deshacer,
+        y el panel siempre te pide confirmación antes.
+      </li>
+      <li>
+        <strong class="text-ink">El orden se controla con los botones Subir y Bajar</strong> en las listas
+        (imágenes de portada, preguntas, bloques, líneas).
+      </li>
+    </ul>
+  </section>
+
+  <section id="textos" class={clasesSeccion} aria-labelledby="titulo-textos">
+    <h2 id="titulo-textos" class={clasesTitulo}>Cambiar un texto de la web</h2>
+    <p class={clasesParrafo}>
+      Casi todos los textos viven en
+      <a href="/admin/textos" class={clasesEnlace}>Textos</a>, agrupados por sección de la página
+      (Portada, Colección, Contacto…). Cada campo dice dónde se muestra y cuántos caracteres admite.
+    </p>
+    <ul class={clasesLista}>
+      <li>
+        Los <strong class="text-ink">bloques de «Qué aporta Tutoría SMART»</strong> y las
+        <strong class="text-ink">tarjetas de la Plataforma</strong> tienen sus propias pantallas (<a
+          href="/admin/bloques"
+          class={clasesEnlace}>Bloques</a
+        > y
+        <a href="/admin/chips" class={clasesEnlace}>Tarjetas</a>): ahí puedes agregar, quitar y
+        reordenar, no solo editar.
+      </li>
+      <li>
+        Las <strong class="text-ink">preguntas frecuentes</strong> se administran en
+        <a href="/admin/preguntas" class={clasesEnlace}>Preguntas</a>.
+      </li>
+      <li>
+        Los datos de contacto (correo, WhatsApp, horario, ubicación) están en
+        <a href="/admin/ajustes" class={clasesEnlace}>Ajustes</a> y se actualizan en toda la web a la
+        vez.
+      </li>
+      <li>
+        Los textos propios de cada página de línea (Primaria, Secundaria, HTB Lector) se editan en
+        la ficha de esa línea, en <a href="/admin/lineas" class={clasesEnlace}>Líneas</a>.
+      </li>
+    </ul>
+  </section>
+
+  <section id="portada" class={clasesSeccion} aria-labelledby="titulo-portada">
+    <h2 id="titulo-portada" class={clasesTitulo}>Las imágenes de la portada</h2>
+    <p class={clasesParrafo}>
+      En <a href="/admin/portada" class={clasesEnlace}>Portada</a> subes las imágenes grandes de arriba.
+      Con una sola se muestra fija; con dos o más se arma un carrusel que rota solo. Cada imagen lleva
+      un texto alternativo: es lo que «lee» una persona ciega y lo que se muestra si la imagen no carga
+      — describe lo que se ve, en una frase.
+    </p>
+    <p class={clasesParrafo}>
+      Las fotos de las demás secciones (el retrato de Nosotros, la imagen de la Plataforma) se
+      cambian en <a href="/admin/imagenes" class={clasesEnlace}>Imágenes</a>, y siempre puedes
+      volver a la original con el botón Restaurar.
+    </p>
+  </section>
+
+  <section id="catalogo" class={clasesSeccion} aria-labelledby="titulo-catalogo">
+    <h2 id="titulo-catalogo" class={clasesTitulo}>Libros y líneas</h2>
+    <ul class={clasesLista}>
+      <li>
+        <strong class="text-ink">Cada libro pertenece a una línea</strong> (Tutoría SMART Primaria, Secundaria,
+        HTB Lector). La línea decide en qué página aparece el libro y con qué color.
+      </li>
+      <li>
+        En <a href="/admin" class={clasesEnlace}>Libros</a> cargas título, grado, sinopsis, la
+        <strong class="text-ink">descripción breve</strong> (la frase que acompaña al libro en la página
+        de su línea) y la portada. Marca <strong class="text-ink">Destacado</strong> para que aparezca
+        también en la página de inicio.
+      </li>
+      <li>
+        En <a href="/admin/lineas" class={clasesEnlace}>Líneas</a> editas la identidad de cada línea:
+        nombre, color, textos de su página y sus imágenes. El panel rechaza colores demasiado claros:
+        el texto blanco tiene que poder leerse encima.
+      </li>
+      <li>
+        Si eliminas una línea, sus libros no se borran, pero
+        <strong class="text-ink">dejan de mostrarse en la web</strong> hasta que les asignes otra. El
+        panel te lo avisa con un cartel rojo.
+      </li>
+    </ul>
+  </section>
+
+  <section id="paginas" class={clasesSeccion} aria-labelledby="titulo-paginas">
+    <h2 id="titulo-paginas" class={clasesTitulo}>Las demás páginas</h2>
+    <p class={clasesParrafo}>
+      Las páginas como «¿Quiénes somos?» o «Misión y visión» viven en
+      <a href="/admin/paginas" class={clasesEnlace}>Páginas</a>. Cada una tiene su titular, sus
+      párrafos, su fotografía y sus bloques.
+    </p>
+    <ul class={clasesLista}>
+      <li>
+        Una página nueva nace <strong class="text-ink">sin publicar</strong>: puedes escribirla con
+        calma y nadie la ve. Al publicarla aparece sola en el menú y en el pie de toda la web.
+      </li>
+      <li>
+        «Compromiso» ya está creada esperando su contenido: escríbela y publícala cuando esté lista.
+      </li>
+    </ul>
+  </section>
+
+  <section id="mensajes" class={clasesSeccion} aria-labelledby="titulo-mensajes">
+    <h2 id="titulo-mensajes" class={clasesTitulo}>Responder consultas</h2>
+    <p class={clasesParrafo}>
+      Cada formulario enviado desde la web llega a
+      <a href="/admin/mensajes" class={clasesEnlace}>Mensajes</a>, con los datos de contacto de
+      quien escribió. El número rojo del menú te avisa cuántos están sin atender; márcalos como
+      atendidos cuando los respondas, para que el equipo sepa qué falta. Conviene revisarlos a
+      diario: un colegio que pregunta y no recibe respuesta, compra en otro lado.
+    </p>
+  </section>
+
+  <section id="imagenes" class={clasesSeccion} aria-labelledby="titulo-imagenes">
+    <h2 id="titulo-imagenes" class={clasesTitulo}>Qué imagen subir en cada lugar</h2>
+    <p class={clasesParrafo}>
+      El panel acepta JPG, PNG o WebP de hasta 5 MB y optimiza todo lo que subes, pero la imagen
+      correcta hace la diferencia:
+    </p>
+    <ul class={clasesLista}>
+      <li>
+        <strong class="text-ink">Portada</strong>: fotografías apaisadas de al menos 1600 × 800,
+        todas con la misma medida, sin letras propias y con la mitad izquierda despejada — ahí se
+        escribe el título de la web.
+      </li>
+      <li>
+        <strong class="text-ink">Portadas de libros</strong>: la tapa sola, vertical, sin lomo ni
+        contratapa.
+      </li>
+      <li>
+        <strong class="text-ink">Fotos de secciones</strong>: cada campo del panel indica la
+        orientación recomendada. En caso de duda, más grande es mejor: el panel la achica solo.
+      </li>
+    </ul>
+  </section>
+
+  <section id="cuenta" class={clasesSeccion} aria-labelledby="titulo-cuenta">
+    <h2 id="titulo-cuenta" class={clasesTitulo}>Tu contraseña</h2>
+    <p class={clasesParrafo}>
+      La cambias en <a href="/admin/cuenta" class={clasesEnlace}>Mi cuenta</a>, con la actual a
+      mano. Usa al menos 10 caracteres. Al cambiarla, cualquier otra sesión abierta se cierra sola.
+      Si la olvidas por completo, escribe al equipo que mantiene el sitio para restablecerla.
+    </p>
+  </section>
+
+  <section id="limites" class={clasesSeccion} aria-labelledby="titulo-limites">
+    <h2 id="titulo-limites" class={clasesTitulo}>Lo que no se cambia desde aquí</h2>
+    <p class={clasesParrafo}>
+      Los textos de los botones, las etiquetas y mensajes del formulario de contacto y la política
+      de privacidad están fijos a propósito: son parte del funcionamiento del sitio y cambiarlos a
+      la ligera puede romper la experiencia o el cumplimiento legal. Si algo de eso necesita
+      cambiar, pídelo al equipo que mantiene el sitio.
+    </p>
+  </section>
+</PanelLayout>
