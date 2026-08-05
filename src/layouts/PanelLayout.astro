@@ -37,7 +37,7 @@ const rutaActual = Astro.url.pathname.replace(/\/$/, "") || "/admin";
         <span class="text-[0.95rem] leading-tight">Panel de<br />administración</span>
       </a>
 
-      <div class="flex-1 overflow-y-auto px-3 py-5">
+      <div class="panel-desplazable flex-1 overflow-y-auto px-3 py-4">
         {correo && <NavPanel rutaActual={rutaActual} mensajesPendientes={mensajesPendientes} />}
       </div>
 

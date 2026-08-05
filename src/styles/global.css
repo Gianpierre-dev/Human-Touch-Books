@@ -450,3 +450,38 @@ body {
     transition: transform 0.2s ease-out;
   }
 }
+
+/*
+  Barra de scroll del panel (sidebar sobre navy).
+  La nativa del sistema es gruesa y clara: sobre el azul oscuro se lee como un
+  parche gris. Esta es fina, translucida y reserva su canal con
+  `scrollbar-gutter` para que el contenido no salte cuando aparece.
+*/
+.panel-desplazable {
+  scrollbar-gutter: stable;
+  /* Firefox */
+  scrollbar-width: thin;
+  scrollbar-color: rgb(255 255 255 / 0.25) transparent;
+}
+
+/* WebKit (Chrome, Edge, Safari) */
+.panel-desplazable::-webkit-scrollbar {
+  width: 8px;
+}
+
+.panel-desplazable::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.panel-desplazable::-webkit-scrollbar-thumb {
+  border-radius: 9999px;
+  background-color: rgb(255 255 255 / 0.25);
+  /* Borde del color del fondo: afina visualmente el pulgar sin achicar el
+     area real de agarre. */
+  border: 2px solid transparent;
+  background-clip: content-box;
+}
+
+.panel-desplazable::-webkit-scrollbar-thumb:hover {
+  background-color: rgb(255 255 255 / 0.4);
+}
