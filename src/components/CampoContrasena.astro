@@ -40,12 +40,14 @@ const idAyuda = ayuda ? `ayuda-${id}` : undefined;
       spellcheck="false"
       class="min-h-[44px] w-full rounded-lg border border-line bg-paper py-2.5 pr-12 pl-3.5 text-sm outline-none focus-visible:border-brand focus-visible:ring-2 focus-visible:ring-brand/30"
     />
-    {/*
+    {
+      /*
       type="button" para que no envie el formulario.
       Sin texto visible, el nombre accesible lo pone el aria-label y cambia con
       el estado, asi que no hay conflicto con "Etiqueta en el nombre" (2.5.3).
       44x44 px de area de toque: inset-y-0 sobre un campo de 44 px de alto.
-    */}
+    */
+    }
     <button
       type="button"
       hidden
@@ -87,5 +89,11 @@ const idAyuda = ayuda ? `ayuda-${id}` : undefined;
       </svg>
     </button>
   </div>
-  {ayuda && <p id={idAyuda} class="mt-1.5 text-xs text-ink/70">{ayuda}</p>}
+  {
+    ayuda && (
+      <p id={idAyuda} class="mt-1.5 text-xs text-ink/70">
+        {ayuda}
+      </p>
+    )
+  }
 </div>

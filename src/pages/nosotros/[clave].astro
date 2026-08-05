@@ -109,8 +109,10 @@ const imagenSocial = pagina.imagenUrl
               </span>
             )
           }
-          {/* Regla del sistema: el azul de marca como TEXTO solo sobre blanco
-              puro, que es donde cumple 4,5:1. Por eso el hero va sin tinte. */}
+          {
+            /* Regla del sistema: el azul de marca como TEXTO solo sobre blanco
+              puro, que es donde cumple 4,5:1. Por eso el hero va sin tinte. */
+          }
           <h1
             id="titulo-pagina"
             class:list={[
@@ -142,7 +144,7 @@ const imagenSocial = pagina.imagenUrl
           <div class="mt-8 flex flex-wrap items-center gap-3.5">
             <a
               href="#contacto-institucional"
-              class="foco-marca boton-elevar [--sombra-hover:rgb(18_74_153_/_0.5)] inline-flex min-h-[52px] items-center gap-2.5 rounded-full bg-brand px-8 text-[0.95rem] font-bold text-white shadow-lg hover:bg-brand-deep"
+              class="foco-marca boton-elevar inline-flex min-h-[52px] items-center gap-2.5 rounded-full bg-brand px-8 text-[0.95rem] font-bold text-white shadow-lg [--sombra-hover:rgb(18_74_153_/_0.5)] hover:bg-brand-deep"
             >
               <svg viewBox="0 0 24 24" class="h-4.5 w-4.5 fill-current" aria-hidden="true">
                 <path
@@ -172,7 +174,7 @@ const imagenSocial = pagina.imagenUrl
                 width={ancho}
                 height={alto}
                 style={`aspect-ratio: ${ancho} / ${alto};`}
-                class="block w-full rounded-2xl object-cover shadow-xl shadow-navy/15 ring-1 ring-line"
+                class="block w-full rounded-2xl object-cover shadow-xl ring-1 shadow-navy/15 ring-line"
                 loading="eager"
                 fetchpriority="high"
               />
@@ -244,7 +246,10 @@ const imagenSocial = pagina.imagenUrl
     <!-- VALORES -->
     {
       valores.length > 0 && (
-        <section class="border-t border-line bg-surface-2 py-16 md:py-20" aria-labelledby="titulo-valores">
+        <section
+          class="border-t border-line bg-surface-2 py-16 md:py-20"
+          aria-labelledby="titulo-valores"
+        >
           <div class="mx-auto max-w-6xl px-4 md:px-8">
             <div class="reveal-scroll text-center">
               {pagina.bloquesAntetitulo && (
@@ -300,26 +305,26 @@ const imagenSocial = pagina.imagenUrl
               ))}
             </ul>
 
-            {
-              pagina.cierreTexto && (
-                <p class="reveal-scroll mx-auto mt-12 max-w-[62ch] text-center text-[1.05rem] leading-relaxed text-ink/80">
-                  {pagina.cierreTexto}
-                  {pagina.cierreDestacado && (
-                    <>
-                      {" "}
-                      <strong class="font-bold text-brand-deep">{pagina.cierreDestacado}</strong>
-                    </>
-                  )}
-                </p>
-              )
-            }
+            {pagina.cierreTexto && (
+              <p class="reveal-scroll mx-auto mt-12 max-w-[62ch] text-center text-[1.05rem] leading-relaxed text-ink/80">
+                {pagina.cierreTexto}
+                {pagina.cierreDestacado && (
+                  <>
+                    {" "}
+                    <strong class="font-bold text-brand-deep">{pagina.cierreDestacado}</strong>
+                  </>
+                )}
+              </p>
+            )}
           </div>
         </section>
       )
     }
 
-    {/* La frase de cierre acompaña a los valores. Sin valores cargados, se
-        muestra igual: es contenido propio y no puede desaparecer con ellos. */}
+    {
+      /* La frase de cierre acompaña a los valores. Sin valores cargados, se
+        muestra igual: es contenido propio y no puede desaparecer con ellos. */
+    }
     {
       valores.length === 0 && pagina.cierreTexto && (
         <section class="border-t border-line bg-surface-2 py-14" aria-label="Cierre">
@@ -337,8 +342,10 @@ const imagenSocial = pagina.imagenUrl
     }
 
     <!-- CIERRE DE CONTACTO -->
-    {/* Mismo patron que la franja final de /lineas/{clave}, con el azul de
-        marca: una pagina institucional no pertenece a ninguna linea. */}
+    {
+      /* Mismo patron que la franja final de /lineas/{clave}, con el azul de
+        marca: una pagina institucional no pertenece a ninguna linea. */
+    }
     <section
       id="contacto-institucional"
       class="franja-marca text-white"
@@ -354,8 +361,10 @@ const imagenSocial = pagina.imagenUrl
           >
             ¿Quieres conocer nuestros materiales?
           </h2>
-          {/* Blanco puro: bajarlo a /85 lo funde con el fondo y el contraste
-              cae por debajo del mínimo. */}
+          {
+            /* Blanco puro: bajarlo a /85 lo funde con el fondo y el contraste
+              cae por debajo del mínimo. */
+          }
           <p class="mt-3 leading-relaxed text-white">
             Escríbenos y te acompañamos a elegir la propuesta que necesita tu institución.
           </p>

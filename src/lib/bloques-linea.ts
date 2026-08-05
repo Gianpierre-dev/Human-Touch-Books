@@ -96,12 +96,7 @@ export interface DatosBloqueLinea {
 }
 
 export type ErrorBloqueLinea =
-  | "sintitulo"
-  | "titulolargo"
-  | "sintexto"
-  | "textolargo"
-  | "orden"
-  | "tipo";
+  "sintitulo" | "titulolargo" | "sintexto" | "textolargo" | "orden" | "tipo";
 
 /**
  * Lee y valida el formulario de un pilar o de un argumento. El `maxlength` del

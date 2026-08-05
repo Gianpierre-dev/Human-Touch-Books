@@ -65,11 +65,13 @@ const PAGINAS = [
       },
       {
         titulo: "Compromiso",
-        texto: "Nos dedicamos con pasión a brindar materiales que realmente generan impacto positivo.",
+        texto:
+          "Nos dedicamos con pasión a brindar materiales que realmente generan impacto positivo.",
       },
       {
         titulo: "Excelencia",
-        texto: "Buscamos la mejora continua en cada publicación, cuidando la calidad de nuestros contenidos.",
+        texto:
+          "Buscamos la mejora continua en cada publicación, cuidando la calidad de nuestros contenidos.",
       },
     ],
   },

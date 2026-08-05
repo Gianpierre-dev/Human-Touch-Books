@@ -41,7 +41,10 @@ const MARGEN = 0.1;
  * otro encuadre.
  */
 async function cajaDelIsotipo() {
-  const { data, info } = await sharp(ORIGEN).ensureAlpha().raw().toBuffer({ resolveWithObject: true });
+  const { data, info } = await sharp(ORIGEN)
+    .ensureAlpha()
+    .raw()
+    .toBuffer({ resolveWithObject: true });
   const { width, height, channels } = info;
 
   let izquierda = width;
@@ -64,7 +67,12 @@ async function cajaDelIsotipo() {
 
   if (derecha < 0) throw new Error("No se encontro el isotipo azul dentro del logo.");
 
-  return { left: izquierda, top: arriba, width: derecha - izquierda + 1, height: abajo - arriba + 1 };
+  return {
+    left: izquierda,
+    top: arriba,
+    width: derecha - izquierda + 1,
+    height: abajo - arriba + 1,
+  };
 }
 
 async function principal() {
@@ -84,7 +92,9 @@ async function principal() {
     await sharp({
       create: { width: lado, height: lado, channels: 4, background: "#ffffff" },
     })
-      .composite([{ input: encajado, left: Math.round(lado * MARGEN), top: Math.round(lado * MARGEN) }])
+      .composite([
+        { input: encajado, left: Math.round(lado * MARGEN), top: Math.round(lado * MARGEN) },
+      ])
       .png({ compressionLevel: 9 })
       .toFile(salida);
 
@@ -92,7 +102,9 @@ async function principal() {
     console.log(`${relative(RAIZ, salida)} — ${lado}x${lado}, ${(size / 1024).toFixed(1)} KB`);
   }
 
-  console.log(`isotipo recortado del logo: ${caja.width}x${caja.height} en (${caja.left}, ${caja.top})`);
+  console.log(
+    `isotipo recortado del logo: ${caja.width}x${caja.height} en (${caja.left}, ${caja.top})`,
+  );
 }
 
 await principal();

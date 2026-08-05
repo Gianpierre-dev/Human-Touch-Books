@@ -47,9 +47,11 @@ const clasesCampo =
       <input type="text" name="subtitulo" value={libro?.subtitulo ?? ""} class={clasesCampo} />
     </label>
 
-    {/* La linea manda: decide la pagina publica en la que sale el libro y la
+    {
+      /* La linea manda: decide la pagina publica en la que sale el libro y la
         seccion de la portada. Por eso es obligatoria y el tipo va entre
-        paréntesis, para saber de antemano dónde va a aparecer el título. */}
+        paréntesis, para saber de antemano dónde va a aparecer el título. */
+    }
     <label class="block">
       <span class="text-sm font-semibold text-ink">Línea *</span>
       <select name="linea_id" required class={clasesCampo}>
@@ -80,9 +82,7 @@ const clasesCampo =
         class={clasesCampo}
       />
       <span id="ayuda-descripcion-corta" class="mt-1.5 block text-xs text-ink/70">
-        Frase breve que acompaña al libro en la página de su línea. Hasta {
-          LIMITE_DESCRIPCION_CORTA
-        } caracteres.
+        Frase breve que acompaña al libro en la página de su línea. Hasta {LIMITE_DESCRIPCION_CORTA} caracteres.
       </span>
     </label>
 
@@ -124,7 +124,9 @@ const clasesCampo =
 
     <label class="block sm:col-span-2">
       <span class="text-sm font-semibold text-ink">Sinopsis *</span>
-      <textarea name="sinopsis" rows="4" required class={clasesCampo}>{libro?.sinopsis ?? ""}</textarea>
+      <textarea name="sinopsis" rows="4" required class={clasesCampo}
+        >{libro?.sinopsis ?? ""}</textarea
+      >
     </label>
 
     <div class="sm:col-span-2">

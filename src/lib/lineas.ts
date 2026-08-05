@@ -171,7 +171,9 @@ export interface ContenidoLineaResuelto {
 }
 
 /** Defectos de cada campo, derivados de la linea. Los usa la web y el panel. */
-export function defectosContenidoLinea(linea: IdentidadLinea): Record<keyof ContenidoLinea, string> {
+export function defectosContenidoLinea(
+  linea: IdentidadLinea,
+): Record<keyof ContenidoLinea, string> {
   // «Colección HTB Lector» ya se llama coleccion: anteponerselo de nuevo daba
   // «Colección Colección HTB Lector».
   const tituloColeccion = /^colecci[óo]n\b/i.test(linea.nombre)

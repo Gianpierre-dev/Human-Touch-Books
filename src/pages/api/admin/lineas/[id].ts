@@ -38,7 +38,9 @@ export const POST: APIRoute = async ({ params, request, redirect }) => {
     if (!nuevos) return redirect(`${DESTINO}?ok=sincambios`, 303);
 
     await bd.$transaction(
-      nuevos.map((fila) => bd.linea.update({ where: { id: fila.id }, data: { orden: fila.orden } })),
+      nuevos.map((fila) =>
+        bd.linea.update({ where: { id: fila.id }, data: { orden: fila.orden } }),
+      ),
     );
     return redirect(`${DESTINO}?ok=reordenada`, 303);
   }

@@ -25,7 +25,9 @@ const limitadorCorreo = crearLimitadorIntentos(INTENTOS_CORREO_MAXIMOS, VENTANA_
 
 export const POST: APIRoute = async ({ request, redirect, clientAddress }) => {
   const datos = await request.formData();
-  const correo = String(datos.get("correo") ?? "").trim().toLowerCase();
+  const correo = String(datos.get("correo") ?? "")
+    .trim()
+    .toLowerCase();
   const clave = String(datos.get("clave") ?? "");
 
   if (!correo || !clave) {

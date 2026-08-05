@@ -157,7 +157,10 @@ async function main() {
   }
 
   const idPorClave = new Map(
-    (await prisma.linea.findMany({ select: { id: true, clave: true } })).map((l) => [l.clave, l.id]),
+    (await prisma.linea.findMany({ select: { id: true, clave: true } })).map((l) => [
+      l.clave,
+      l.id,
+    ]),
   );
 
   const existentes = await prisma.libro.count();

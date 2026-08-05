@@ -138,20 +138,24 @@ const listaLibros =
 
   {listaLibros && <script type="application/ld+json" is:inline set:html={listaLibros} />}
 
-  {/*
+  {
+    /*
     El color de identidad se inyecta UNA vez, aqui, como custom property: las
     secciones lo heredan y ninguna clase de Tailwind se genera de forma dinamica
     (`text-${x}` nunca se compilaria). Ver la nota en src/styles/global.css.
-  */}
+  */
+  }
   <main id="contenido" tabindex="-1" style={`--color-linea: ${linea.colorHex}`}>
     <!-- HERO DE LINEA -->
-    {/*
+    {
+      /*
       Fondo BLANCO, no teñido, a proposito: el antetitulo va en el color de la
       linea y la garantia del panel es 4,5:1 contra BLANCO PURO. Sobre un tinte
       —aunque sea del 7%— el azul de Primaria cae a 4,42:1 y deja de cumplir.
       Regla de la pagina: el color de linea como TEXTO solo sobre blanco; el
       tinte se reserva para secciones donde el texto es `ink`.
-    */}
+    */
+    }
     <section class="border-b border-line bg-surface" aria-labelledby="titulo-linea">
       <div
         class:list={[
@@ -160,9 +164,7 @@ const listaLibros =
         ]}
       >
         <div class="reveal">
-          <span
-            class="text-xs font-bold tracking-[0.2em] text-[var(--color-linea)] uppercase"
-          >
+          <span class="text-xs font-bold tracking-[0.2em] text-[var(--color-linea)] uppercase">
             {contenido.heroAntetitulo}
           </span>
           <h1
@@ -171,8 +173,10 @@ const listaLibros =
           >
             {contenido.heroTitulo}
           </h1>
-          {/* Insignia del nivel: es la etiqueta corta de la linea, el dato que ya
-              distingue Primaria de Secundaria en el panel. */}
+          {
+            /* Insignia del nivel: es la etiqueta corta de la linea, el dato que ya
+              distingue Primaria de Secundaria en el panel. */
+          }
           <p class="mt-4">
             <span
               class="inline-flex min-h-[36px] items-center rounded-full bg-[var(--color-linea)] px-5 text-sm font-bold tracking-[0.16em] text-white uppercase"
@@ -217,7 +221,7 @@ const listaLibros =
                 width={anchoHero}
                 height={altoHero}
                 style={`aspect-ratio: ${anchoHero} / ${altoHero};`}
-                class="block w-full rounded-2xl object-cover shadow-xl shadow-navy/15 ring-1 ring-line"
+                class="block w-full rounded-2xl object-cover shadow-xl ring-1 shadow-navy/15 ring-line"
                 loading="eager"
                 fetchpriority="high"
               />
@@ -228,8 +232,10 @@ const listaLibros =
     </section>
 
     <!-- PILARES -->
-    {/* Aqui SI va el tinte de la linea: todos los textos de la seccion son
-        `ink` y los circulos traen su propio color de la paleta fija. */}
+    {
+      /* Aqui SI va el tinte de la linea: todos los textos de la seccion son
+        `ink` y los circulos traen su propio color de la paleta fija. */
+    }
     {
       pilares.length > 0 && (
         <section class="linea-tinte py-16 md:py-20" aria-labelledby="titulo-pilares">
@@ -274,7 +280,10 @@ const listaLibros =
     }
 
     <!-- COLECCION -->
-    <section class="border-t border-line bg-paper py-16 md:py-20" aria-labelledby="titulo-coleccion">
+    <section
+      class="border-t border-line bg-paper py-16 md:py-20"
+      aria-labelledby="titulo-coleccion"
+    >
       <div class="mx-auto max-w-6xl px-4 md:px-8">
         <h2
           id="titulo-coleccion"
@@ -308,7 +317,7 @@ const listaLibros =
                       alt={`Portada de ${libro.titulo}`}
                       width="800"
                       height="991"
-                      class="aspect-[800/991] w-full max-w-[128px] rounded-lg object-cover shadow-md shadow-navy/15 ring-1 ring-black/5"
+                      class="aspect-[800/991] w-full max-w-[128px] rounded-lg object-cover shadow-md ring-1 shadow-navy/15 ring-black/5"
                       loading="lazy"
                     />
                     <div>
@@ -392,9 +401,11 @@ const listaLibros =
           >
             {contenido.ctaTitulo}
           </h2>
-          {/* Blanco puro: la garantia de contraste del color de linea (4,5:1)
+          {
+            /* Blanco puro: la garantia de contraste del color de linea (4,5:1)
               se mide contra blanco pleno. Bajarlo a /85 lo funde con el fondo y
-              en el azul de Primaria cae a 3,96:1. */}
+              en el azul de Primaria cae a 3,96:1. */
+          }
           <p class="mt-3 leading-relaxed text-white">{contenido.ctaParrafo}</p>
         </div>
         <div class="flex w-full flex-wrap items-center gap-3.5 md:w-auto">

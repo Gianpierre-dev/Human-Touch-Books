@@ -156,12 +156,7 @@ export interface DatosValor {
 }
 
 export type ErrorSeccion =
-  | "sintitulo"
-  | "titulolargo"
-  | "sintexto"
-  | "textolargo"
-  | "destacadolargo"
-  | "orden";
+  "sintitulo" | "titulolargo" | "sintexto" | "textolargo" | "destacadolargo" | "orden";
 
 function leerOrden(datos: FormData): number | null {
   const ordenTexto = String(datos.get("orden") ?? "0").trim();

@@ -73,7 +73,8 @@ export const ESTILOS_CHIP: readonly EstiloChip[] = [
   {
     color: "#5b21b6",
     bg: "#f1eafd",
-    icono: "M12 2 4 5v6c0 5 3.4 9.7 8 11 4.6-1.3 8-6 8-11V5l-8-3Zm-1 14-3.5-3.5 1.4-1.4L11 13.2l4.6-4.6 1.4 1.4L11 16Z",
+    icono:
+      "M12 2 4 5v6c0 5 3.4 9.7 8 11 4.6-1.3 8-6 8-11V5l-8-3Zm-1 14-3.5-3.5 1.4-1.4L11 13.2l4.6-4.6 1.4 1.4L11 16Z",
   },
   {
     color: "#a15c00",

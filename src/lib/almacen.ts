@@ -146,9 +146,7 @@ export async function eliminarPortada(url: string): Promise<void> {
   if (!url.startsWith("/uploads/")) return; // portadas del repo no se tocan
   const nombre = url.slice("/uploads/".length);
   if (!esNombreSeguro(nombre)) return;
-  await cliente.send(
-    new DeleteObjectCommand({ Bucket: BUCKET, Key: `${PREFIJO}${nombre}` }),
-  );
+  await cliente.send(new DeleteObjectCommand({ Bucket: BUCKET, Key: `${PREFIJO}${nombre}` }));
 }
 
 export async function obtenerPortada(

@@ -64,15 +64,18 @@ const hayMedidasSociales = social.ancho !== undefined && social.alto !== undefin
     <meta name="description" content={description} />
     <meta name="theme-color" content="#f6f9fd" />
     <meta name="color-scheme" content="light" />
-    {/* Iconos cuadrados con el isotipo (no el logotipo apaisado, que a 32 px se
-        vuelve ilegible). Los genera scripts/generar-favicons.mjs. */}
+    {
+      /* Iconos cuadrados con el isotipo (no el logotipo apaisado, que a 32 px se
+        vuelve ilegible). Los genera scripts/generar-favicons.mjs. */
+    }
     <link rel="icon" type="image/png" sizes="512x512" href="/brand/icono-512.png" />
     <link rel="apple-touch-icon" sizes="180x180" href="/brand/icono-apple-180.png" />
     <link rel="canonical" href={urlCanonica} />
     {noindex && <meta name="robots" content="noindex" />}
     <title>{title}</title>
 
-    {/*
+    {
+      /*
       Tipografia autoalojada (los @font-face viven en src/styles/global.css).
       Se precargan las DOS caras que pinta el primer viewport: la sans del
       cuerpo y la serif de los titulares. Precargar de mas compite por ancho de
@@ -80,7 +83,8 @@ const hayMedidasSociales = social.ancho !== undefined && social.alto !== undefin
       `crossorigin` es obligatorio aunque el archivo sea del mismo origen: las
       fuentes se piden en modo CORS y sin el atributo el navegador descarga el
       archivo DOS veces.
-    */}
+    */
+    }
     <link
       rel="preload"
       as="font"
@@ -114,7 +118,13 @@ const hayMedidasSociales = social.ancho !== undefined && social.alto !== undefin
     <meta name="twitter:card" content="summary_large_image" />
   </head>
   <body class="min-h-screen antialiased">
-    {anclaContenido && <a class="salto-contenido" href={anclaContenido}>Saltar al contenido</a>}
+    {
+      anclaContenido && (
+        <a class="salto-contenido" href={anclaContenido}>
+          Saltar al contenido
+        </a>
+      )
+    }
     <slot />
   </body>
 </html>

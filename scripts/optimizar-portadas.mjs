@@ -67,9 +67,7 @@ async function principal() {
   }
 
   const ahorro = totalAntes === 0 ? 0 : (1 - totalDespues / totalAntes) * 100;
-  console.log(
-    `\nTotal: ${enKb(totalAntes)} → ${enKb(totalDespues)} (-${ahorro.toFixed(0)} %)`,
-  );
+  console.log(`\nTotal: ${enKb(totalAntes)} → ${enKb(totalDespues)} (-${ahorro.toFixed(0)} %)`);
 }
 
 await principal();

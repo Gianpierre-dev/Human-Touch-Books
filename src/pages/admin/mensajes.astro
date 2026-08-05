@@ -63,7 +63,12 @@ const formatoFecha = new Intl.DateTimeFormat("es-PE", {
           </thead>
           <tbody>
             {mensajes.map((mensaje) => (
-              <tr class:list={["border-b border-line/60 last:border-0", !mensaje.atendido && "bg-brand/5"]}>
+              <tr
+                class:list={[
+                  "border-b border-line/60 last:border-0",
+                  !mensaje.atendido && "bg-brand/5",
+                ]}
+              >
                 <td class="px-4 py-3 whitespace-nowrap text-ink/70">
                   {formatoFecha.format(mensaje.creadoEn)}
                 </td>

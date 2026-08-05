@@ -10,12 +10,7 @@ export interface DatosPregunta {
 
 /** Codigos de error que la vista traduce a texto. */
 export type ErrorPregunta =
-  | "sinpregunta"
-  | "preguntalarga"
-  | "sinrespuesta"
-  | "respuestalarga"
-  | "enlace"
-  | "orden";
+  "sinpregunta" | "preguntalarga" | "sinrespuesta" | "respuestalarga" | "enlace" | "orden";
 
 // Los enlaces de accion apuntan a secciones de la propia landing (anclas). No se
 // admiten URLs externas: evita convertir el panel en un redirector abierto.

@@ -21,7 +21,10 @@ export const POST: APIRoute = async ({ request, redirect }) => {
     return redirect(`/admin/libros/nuevo?error=${encodeURIComponent(portada.error)}`, 303);
   }
   if (!portada.url) {
-    return redirect(`/admin/libros/nuevo?error=${encodeURIComponent("La portada es obligatoria.")}`, 303);
+    return redirect(
+      `/admin/libros/nuevo?error=${encodeURIComponent("La portada es obligatoria.")}`,
+      303,
+    );
   }
 
   await bd.libro.create({ data: { ...datos, portadaUrl: portada.url } });

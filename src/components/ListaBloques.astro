@@ -165,9 +165,9 @@ const clasesBotonPrincipal =
   {encabezado}
 </Encabezado>
 <p class="mt-1 text-sm text-ink/70">
-  {elementos.length} {elementos.length === 1 ? singular : plural}, {activos} visible{
-    activos === 1 ? "" : "s"
-  } en la web. {descripcion}
+  {elementos.length}
+  {elementos.length === 1 ? singular : plural}, {activos} visible{activos === 1 ? "" : "s"} en la web.
+  {descripcion}
 </p>
 
 {
@@ -193,13 +193,15 @@ const clasesBotonPrincipal =
   )
 }
 
-{/* Ocultar todo no devuelve el contenido original: deja la zona sin
-    elementos. Conviene decirlo antes de que sorprenda en la web. */}
+{
+  /* Ocultar todo no devuelve el contenido original: deja la zona sin
+    elementos. Conviene decirlo antes de que sorprenda en la web. */
+}
 {
   elementos.length > 0 && activos === 0 && (
     <p class="mt-6 rounded-lg border border-line bg-surface-2 px-4 py-3 text-sm text-ink/75">
-      Ningún elemento está visible, así que esta zona no se muestra en la web.
-      Activa al menos uno para que vuelva a verse.
+      Ningún elemento está visible, así que esta zona no se muestra en la web. Activa al menos uno
+      para que vuelva a verse.
     </p>
   )
 }
@@ -321,13 +323,28 @@ const clasesBotonPrincipal =
                 Texto <span class="text-accent-deep">*</span>
               </span>
               {/* Sin saltos de línea alrededor: el contenido del textarea ES su valor. */}
-              <textarea name="texto" rows={filasTexto} required maxlength={limites.texto} class={clasesCampo}>{elemento.texto ?? ""}</textarea>
+              <textarea
+                name="texto"
+                rows={filasTexto}
+                required
+                maxlength={limites.texto}
+                class={clasesCampo}
+              >
+                {elemento.texto ?? ""}
+              </textarea>
             </label>
           )}
           {campoOpcional && (
             <label class="mt-4 block">
               <span class="text-sm font-semibold text-ink">{campoOpcional.etiqueta}</span>
-              <textarea name={campoOpcional.nombre} rows={campoOpcional.filas ?? 2} maxlength={campoOpcional.limite} class={clasesCampo}>{elemento.valorOpcional ?? ""}</textarea>
+              <textarea
+                name={campoOpcional.nombre}
+                rows={campoOpcional.filas ?? 2}
+                maxlength={campoOpcional.limite}
+                class={clasesCampo}
+              >
+                {elemento.valorOpcional ?? ""}
+              </textarea>
               <span class="mt-1.5 block text-xs text-ink/70">
                 {campoOpcional.ayuda} Puede quedar vacío. Hasta {campoOpcional.limite} caracteres.
               </span>
@@ -386,7 +403,7 @@ const clasesBotonPrincipal =
             maxlength={limites.texto}
             aria-describedby={idAyudaTexto}
             class={clasesCampo}
-          ></textarea>
+          />
         </label>
         <p id={idAyudaTexto} class="mt-1.5 text-xs text-ink/70">
           {ayudaTexto} Hasta {limites.texto} caracteres.

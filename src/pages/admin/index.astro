@@ -27,8 +27,8 @@ const sinLinea = libros.filter((libro) => !libro.lineaRel).length;
     <div>
       <h1 class="text-2xl font-extrabold text-ink">Libros</h1>
       <p class="mt-1 text-sm text-ink/60">
-        {libros.length} título{libros.length === 1 ? "" : "s"} en el catálogo. Los cambios se
-        publican al instante en la web.
+        {libros.length} título{libros.length === 1 ? "" : "s"} en el catálogo. Los cambios se publican
+        al instante en la web.
       </p>
     </div>
     <a
@@ -50,7 +50,9 @@ const sinLinea = libros.filter((libro) => !libro.lineaRel).length;
   {
     sinLinea > 0 && (
       <p class="mt-4 rounded-lg border border-accent/30 bg-accent/10 px-4 py-2.5 text-sm font-semibold text-accent-deep">
-        {sinLinea === 1 ? "Hay 1 libro sin línea asignada. No se muestra" : `Hay ${sinLinea} libros sin línea asignada. No se muestran`}{" "}
+        {sinLinea === 1
+          ? "Hay 1 libro sin línea asignada. No se muestra"
+          : `Hay ${sinLinea} libros sin línea asignada. No se muestran`}{" "}
         en la web hasta que le asignes una desde su ficha.
       </p>
     )
@@ -59,7 +61,9 @@ const sinLinea = libros.filter((libro) => !libro.lineaRel).length;
   <div class="mt-6 overflow-x-auto rounded-xl border border-line bg-surface shadow-sm">
     <table class="w-full text-sm">
       <thead>
-        <tr class="border-b border-line text-left text-xs font-bold tracking-wide text-ink/60 uppercase">
+        <tr
+          class="border-b border-line text-left text-xs font-bold tracking-wide text-ink/60 uppercase"
+        >
           <th class="px-4 py-3">Portada</th>
           <th class="px-4 py-3">Título</th>
           <th class="px-4 py-3">Línea</th>

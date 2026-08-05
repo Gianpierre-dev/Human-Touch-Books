@@ -81,8 +81,10 @@ const claseItemPanel =
       />
     </a>
 
-    {/* La barra completa entra recien en lg: entre 768 y 1024 las etiquetas
-        largas y el numero de WhatsApp se peleaban la misma linea. */}
+    {
+      /* La barra completa entra recien en lg: entre 768 y 1024 las etiquetas
+        largas y el numero de WhatsApp se peleaban la misma linea. */
+    }
     <nav
       class="menu-escritorio hidden items-center gap-6 lg:flex xl:gap-7"
       aria-label="Navegación principal"
@@ -94,9 +96,7 @@ const claseItemPanel =
       {
         grupos.map((grupo) => (
           <details class="menu-grupo relative" data-grupo={grupo.id}>
-            <summary
-              class:list={[claseResumenBarra, grupoActual === grupo.id && "!text-brand"]}
-            >
+            <summary class:list={[claseResumenBarra, grupoActual === grupo.id && "!text-brand"]}>
               <span class="enlace-sub">{grupo.etiqueta}</span>
               {grupoActual === grupo.id && <span class="sr-only">(sección actual)</span>}
               <svg
@@ -145,7 +145,7 @@ const claseItemPanel =
     <div class="flex items-center gap-2">
       <a
         href={`https://wa.me/${whatsapp}`}
-        class="foco-marca boton-elevar [--sombra-hover:rgb(10_92_43_/_0.5)] inline-flex min-h-[44px] items-center gap-2 rounded-full bg-wa px-4 text-[0.8125rem] font-bold whitespace-nowrap text-white shadow-sm hover:bg-wa-mas sm:px-5 sm:text-sm"
+        class="foco-marca boton-elevar inline-flex min-h-[44px] items-center gap-2 rounded-full bg-wa px-4 text-[0.8125rem] font-bold whitespace-nowrap text-white shadow-sm [--sombra-hover:rgb(10_92_43_/_0.5)] hover:bg-wa-mas sm:px-5 sm:text-sm"
         aria-label={`Escríbenos por WhatsApp al ${whatsappVisible}`}
       >
         <svg viewBox="0 0 24 24" class="h-4 w-4 shrink-0 fill-current" aria-hidden="true">
@@ -153,29 +153,33 @@ const claseItemPanel =
             d="M12 2a10 10 0 0 0-8.6 15l-1.3 4.7 4.8-1.3A10 10 0 1 0 12 2Zm5.3 14.2c-.2.6-1.3 1.2-1.8 1.2-.5.1-1 .1-1.7-.1-.4-.2-.9-.3-1.6-.6-2.7-1.2-4.5-4-4.6-4.2-.2-.2-1.1-1.5-1.1-2.8 0-1.3.7-2 .9-2.2.2-.3.5-.3.7-.3h.5c.2 0 .4 0 .6.5l.8 2c.1.2.1.4 0 .5l-.4.6c-.2.2-.3.4-.1.7.2.3.9 1.4 1.9 2.3 1.3 1.1 2.3 1.4 2.6 1.6.3.1.5.1.7-.1l.7-.8c.2-.3.4-.2.7-.1l2 .9c.3.2.5.2.6.4.1.1.1.7-.1 1.3Z"
           ></path>
         </svg>
-        {/* En lg+ el numero cede su sitio a la barra de navegacion y al CTA
+        {
+          /* En lg+ el numero cede su sitio a la barra de navegacion y al CTA
             primario; sigue disponible para lectores de pantalla por el aria-label,
-            y visible en el bloque de contacto y en el pie. */}
+            y visible en el bloque de contacto y en el pie. */
+        }
         <span class="hidden sm:inline" aria-hidden="true">WhatsApp</span>
         <span class="lg:hidden" aria-hidden="true">{whatsappVisible}</span>
       </a>
 
       <a
         href={enlaceContacto}
-        class="foco-marca boton-elevar [--sombra-hover:rgb(18_74_153_/_0.5)] hidden min-h-[44px] items-center rounded-full bg-brand px-5 text-sm font-bold whitespace-nowrap text-white hover:bg-brand-deep lg:inline-flex"
+        class="foco-marca boton-elevar hidden min-h-[44px] items-center rounded-full bg-brand px-5 text-sm font-bold whitespace-nowrap text-white [--sombra-hover:rgb(18_74_153_/_0.5)] hover:bg-brand-deep lg:inline-flex"
       >
         Solicitar acceso
       </a>
 
-      {/* Menu movil: los mismos grupos, anidados. Un <details> por grupo dentro
+      {
+        /* Menu movil: los mismos grupos, anidados. Un <details> por grupo dentro
           del <details> del cajon; sin anidar quedaba una lista plana de diez
-          enlaces sin jerarquia. */}
+          enlaces sin jerarquia. */
+      }
       <details id="menu-movil" class="relative lg:hidden">
         <summary
           class="foco-marca inline-flex min-h-[44px] min-w-[44px] cursor-pointer list-none items-center justify-center gap-1.5 rounded-full border border-line px-3 text-sm font-semibold text-ink transition-colors hover:bg-surface-2 [&::-webkit-details-marker]:hidden"
         >
           <svg viewBox="0 0 24 24" class="h-5 w-5 fill-current" aria-hidden="true">
-            <path d="M3 6h18v2H3V6Zm0 5h18v2H3v-2Zm0 5h18v2H3v-2Z" />
+            <path d="M3 6h18v2H3V6Zm0 5h18v2H3v-2Zm0 5h18v2H3v-2Z"></path>
           </svg>
           <span class="sr-only">Menú</span>
         </summary>
@@ -193,7 +197,11 @@ const claseItemPanel =
 
           {
             grupos.map((grupo) => (
-              <details class="menu-grupo mt-0.5" data-grupo={`movil-${grupo.id}`} open={grupoActual === grupo.id}>
+              <details
+                class="menu-grupo mt-0.5"
+                data-grupo={`movil-${grupo.id}`}
+                open={grupoActual === grupo.id}
+              >
                 <summary
                   class:list={[
                     "foco-marca flex min-h-[44px] cursor-pointer list-none items-center gap-1.5 rounded-lg px-3 text-[0.95rem] font-bold text-ink transition-colors hover:bg-surface-2 [&::-webkit-details-marker]:hidden",
@@ -248,7 +256,7 @@ const claseItemPanel =
 
           <a
             href={enlaceContacto}
-            class="foco-marca boton-elevar [--sombra-hover:rgb(18_74_153_/_0.5)] mt-2 flex min-h-[44px] items-center justify-center rounded-full bg-brand px-3 text-sm font-bold text-white hover:bg-brand-deep"
+            class="foco-marca boton-elevar mt-2 flex min-h-[44px] items-center justify-center rounded-full bg-brand px-3 text-sm font-bold text-white [--sombra-hover:rgb(18_74_153_/_0.5)] hover:bg-brand-deep"
           >
             Solicitar acceso
           </a>
@@ -257,12 +265,14 @@ const claseItemPanel =
     </div>
   </div>
 
-  {/*
+  {
+    /*
     Comodidades de raton y teclado SOBRE un menu que ya funciona sin esto:
     cerrar con Escape, cerrar al hacer clic fuera, y que abrir un desplegable de
     la barra cierre el otro. Nada de esto crea comportamiento nuevo: si el
     script no corre, los <details> se siguen abriendo y cerrando con Enter.
-  */}
+  */
+  }
   <script is:inline>
     (() => {
       const cabecera = document.currentScript?.closest("header");

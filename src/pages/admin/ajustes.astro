@@ -48,7 +48,12 @@ const clasesCampo =
   >
     <label class="block">
       <span class="text-sm font-semibold text-ink">Correo de contacto</span>
-      <input type="email" name="correo_contacto" value={ajustes.correo_contacto ?? ""} class={clasesCampo} />
+      <input
+        type="email"
+        name="correo_contacto"
+        value={ajustes.correo_contacto ?? ""}
+        class={clasesCampo}
+      />
     </label>
     <label class="mt-4 block">
       <span class="text-sm font-semibold text-ink">WhatsApp (solo números, con 51)</span>
@@ -65,10 +70,12 @@ const clasesCampo =
 
     <h2 class="mt-8 border-t border-line pt-6 text-lg font-bold text-ink">Textos de la página</h2>
 
-    {/* Estos dos campos van VACIOS cuando no hay valor propio: el texto que se
+    {
+      /* Estos dos campos van VACIOS cuando no hay valor propio: el texto que se
         ve en gris es el que la web usa por defecto y se calcula solo (el de
         Nosotros incluye la ubicación de arriba). Si se precargara como valor,
-        al guardar cualquier otro ajuste se congelaría ese texto para siempre. */}
+        al guardar cualquier otro ajuste se congelaría ese texto para siempre. */
+    }
     <label class="mt-4 block">
       <span class="text-sm font-semibold text-ink">Subtítulo de la portada</span>
       <input
@@ -82,8 +89,8 @@ const clasesCampo =
       />
     </label>
     <p id="ayuda-hero-subtitulo" class="mt-1.5 text-xs text-ink/70">
-      Se muestra bajo el titular principal. Hasta {LIMITES.subtituloHero} caracteres. Déjalo vacío
-      para usar el texto por defecto.
+      Se muestra bajo el titular principal. Hasta {LIMITES.subtituloHero} caracteres. Déjalo vacío para
+      usar el texto por defecto.
     </p>
 
     <label class="mt-4 block">
@@ -95,11 +102,12 @@ const clasesCampo =
         maxlength={LIMITES.textoNosotros}
         placeholder={textoNosotrosPorDefecto(ubicacion)}
         aria-describedby="ayuda-nosotros-texto"
-        class={clasesCampo}>{ajustes.nosotros_texto ?? ""}</textarea>
+        class={clasesCampo}>{ajustes.nosotros_texto ?? ""}</textarea
+      >
     </label>
     <p id="ayuda-nosotros-texto" class="mt-1.5 text-xs text-ink/70">
-      Párrafo de presentación de la editorial. Hasta {LIMITES.textoNosotros} caracteres. Déjalo
-      vacío para usar el texto por defecto, que incluye la ubicación de arriba.
+      Párrafo de presentación de la editorial. Hasta {LIMITES.textoNosotros} caracteres. Déjalo vacío
+      para usar el texto por defecto, que incluye la ubicación de arriba.
     </p>
 
     <button

@@ -69,8 +69,7 @@ const GRUPOS: { titulo: string; enlaces: Enlace[] }[] = [
       {
         href: "/admin/lineas",
         etiqueta: "Líneas",
-        icono:
-          "M4 5h16v2H4V5Zm0 6h10v2H4v-2Zm0 6h13v2H4v-2Zm14-6h2v2h-2v-2Zm1 6h2v2h-2v-2Z",
+        icono: "M4 5h16v2H4V5Zm0 6h10v2H4v-2Zm0 6h13v2H4v-2Zm14-6h2v2h-2v-2Zm1 6h2v2h-2v-2Z",
       },
       {
         href: "/admin",
@@ -98,7 +97,8 @@ const GRUPOS: { titulo: string; enlaces: Enlace[] }[] = [
         href: "/admin/mensajes",
         etiqueta: "Mensajes",
         insignia: mensajesPendientes,
-        icono: "M20 4H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2Zm0 4-8 5-8-5V6l8 5 8-5v2Z",
+        icono:
+          "M20 4H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2Zm0 4-8 5-8-5V6l8 5 8-5v2Z",
       },
     ],
   },
@@ -114,7 +114,8 @@ const GRUPOS: { titulo: string; enlaces: Enlace[] }[] = [
       {
         href: "/admin/cuenta",
         etiqueta: "Mi cuenta",
-        icono: "M12 12a5 5 0 1 0 0-10 5 5 0 0 0 0 10Zm0 2c-4.1 0-9 2.1-9 5v3h18v-3c0-2.9-4.9-5-9-5Z",
+        icono:
+          "M12 12a5 5 0 1 0 0-10 5 5 0 0 0 0 10Zm0 2c-4.1 0-9 2.1-9 5v3h18v-3c0-2.9-4.9-5-9-5Z",
       },
     ],
   },
@@ -124,8 +125,10 @@ const esActual = (enlace: Enlace): boolean =>
   enlace.exacto ? rutaActual === enlace.href : rutaActual.startsWith(enlace.href);
 ---
 
-{/* gap-4 y no gap-6: con cinco grupos, el aire extra empujaba Configuracion
-    bajo el pliegue y habia que scrollear para descubrir que existia. */}
+{
+  /* gap-4 y no gap-6: con cinco grupos, el aire extra empujaba Configuracion
+    bajo el pliegue y habia que scrollear para descubrir que existia. */
+}
 <nav aria-label="Secciones del panel" class="flex flex-col gap-4">
   {
     GRUPOS.map((grupo) => (

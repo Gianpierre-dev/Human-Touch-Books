@@ -45,10 +45,7 @@ async function principal() {
       throw new Error(`${origen}: el recorte se sale de la imagen (${width}x${height}).`);
     }
 
-    await sharp(rutaOrigen)
-      .extract(recorte)
-      .png({ compressionLevel: 9 })
-      .toFile(rutaDestino);
+    await sharp(rutaOrigen).extract(recorte).png({ compressionLevel: 9 }).toFile(rutaDestino);
 
     console.log(
       `${relative(RAIZ, rutaOrigen)} ${width}x${height} → ` +

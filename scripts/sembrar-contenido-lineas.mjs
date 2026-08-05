@@ -48,11 +48,9 @@ const CONTENIDO = [
       coleccionTitulo: "Colección Tutoría SMART",
       argumentosTitulo: "¿Por qué elegir Tutoría SMART?",
       ctaTitulo: "¿Deseas implementar Tutoría SMART en tu institución?",
-      ctaParrafo:
-        "Estamos listos para acompañarte en este gran paso hacia una educación integral.",
+      ctaParrafo: "Estamos listos para acompañarte en este gran paso hacia una educación integral.",
       heroImagenUrl: "/lineas/primaria-hero.jpg",
-      heroImagenAlt:
-        "Estudiantes de primaria trabajando juntos alrededor de una mesa en el aula",
+      heroImagenAlt: "Estudiantes de primaria trabajando juntos alrededor de una mesa en el aula",
     },
     pilares: [
       "Inteligencia emocional",

@@ -10,8 +10,7 @@ const METODOS_SEGUROS = new Set(["GET", "HEAD", "OPTIONS"]);
 function origenValido(request: Request): boolean {
   const origen = request.headers.get("origin");
   if (!origen) return true; // clientes sin Origin (no navegadores)
-  const hostPublico =
-    request.headers.get("x-forwarded-host") ?? request.headers.get("host") ?? "";
+  const hostPublico = request.headers.get("x-forwarded-host") ?? request.headers.get("host") ?? "";
   try {
     return new URL(origen).host === hostPublico;
   } catch {

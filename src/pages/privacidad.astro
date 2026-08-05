@@ -65,18 +65,22 @@ const claseParrafo = "mt-3 leading-relaxed text-ink/80";
             El responsable del tratamiento es Human Touch Books · Editorial, con domicilio en {
               ubicacion
             }. Puedes escribirnos en cualquier momento a{" "}
-            {/* El punto va pegado al enlace: un salto de línea antes de `</a>`
-                mete un espacio real y el cierre queda separado. */}
-            <a href={`mailto:${correoContacto}`} class="foco-marca font-semibold text-brand"><span class="enlace-sub">{correoContacto}</span></a>.
+            {
+              /* El punto va pegado al enlace: un salto de línea antes de `</a>`
+                mete un espacio real y el cierre queda separado. */
+            }
+            <a href={`mailto:${correoContacto}`} class="foco-marca font-semibold text-brand"
+              ><span class="enlace-sub">{correoContacto}</span></a
+            >.
           </p>
         </section>
 
         <section aria-labelledby="titulo-datos">
           <h2 id="titulo-datos" class={claseTitulo}>Qué datos recogemos</h2>
           <p class={claseParrafo}>
-            Únicamente los que tú escribes en el formulario de contacto: nombre, correo
-            electrónico, teléfono, asunto de la consulta y el mensaje. No pedimos ningún dato
-            sensible y no recogemos información adicional sobre ti sin que lo sepas.
+            Únicamente los que tú escribes en el formulario de contacto: nombre, correo electrónico,
+            teléfono, asunto de la consulta y el mensaje. No pedimos ningún dato sensible y no
+            recogemos información adicional sobre ti sin que lo sepas.
           </p>
         </section>
 
@@ -94,9 +98,9 @@ const claseParrafo = "mt-3 leading-relaxed text-ink/80";
           <h2 id="titulo-terceros" class={claseTitulo}>Con quién los compartimos</h2>
           <p class={claseParrafo}>
             Con nadie. No vendemos, cedemos ni transferimos tus datos a terceros. Solo accede a
-            ellos el equipo de Human Touch Books encargado de atender tu consulta, y los
-            proveedores tecnológicos que alojan el sitio, que actúan siguiendo nuestras
-            instrucciones y bajo obligación de confidencialidad.
+            ellos el equipo de Human Touch Books encargado de atender tu consulta, y los proveedores
+            tecnológicos que alojan el sitio, que actúan siguiendo nuestras instrucciones y bajo
+            obligación de confidencialidad.
           </p>
         </section>
 
@@ -112,45 +116,47 @@ const claseParrafo = "mt-3 leading-relaxed text-ink/80";
         <section aria-labelledby="titulo-derechos">
           <h2 id="titulo-derechos" class={claseTitulo}>Tus derechos</h2>
           <p class={claseParrafo}>
-            En cualquier momento puedes ejercer tus derechos de acceso, rectificación, cancelación
-            y oposición (derechos ARCO) sobre tus datos personales:
+            En cualquier momento puedes ejercer tus derechos de acceso, rectificación, cancelación y
+            oposición (derechos ARCO) sobre tus datos personales:
           </p>
           <ul class="mt-4 space-y-2 leading-relaxed text-ink/80">
             <li class="flex gap-3">
               <span class="mt-2.5 h-1.5 w-1.5 shrink-0 rounded-full bg-brand" aria-hidden="true"
               ></span>
-              <span><strong class="font-semibold text-ink">Acceso:</strong> saber qué datos tuyos tenemos.</span>
-            </li>
-            <li class="flex gap-3">
-              <span class="mt-2.5 h-1.5 w-1.5 shrink-0 rounded-full bg-brand" aria-hidden="true"
-              ></span>
               <span
-                ><strong class="font-semibold text-ink">Rectificación:</strong> corregirlos si están
-                equivocados o incompletos.</span
+                ><strong class="font-semibold text-ink">Acceso:</strong> saber qué datos tuyos tenemos.</span
               >
             </li>
             <li class="flex gap-3">
               <span class="mt-2.5 h-1.5 w-1.5 shrink-0 rounded-full bg-brand" aria-hidden="true"
               ></span>
               <span
-                ><strong class="font-semibold text-ink">Cancelación:</strong> pedir que los
-                eliminemos.</span
+                ><strong class="font-semibold text-ink">Rectificación:</strong> corregirlos si están equivocados
+                o incompletos.</span
               >
             </li>
             <li class="flex gap-3">
               <span class="mt-2.5 h-1.5 w-1.5 shrink-0 rounded-full bg-brand" aria-hidden="true"
               ></span>
               <span
-                ><strong class="font-semibold text-ink">Oposición:</strong> pedir que dejemos de
-                usarlos.</span
+                ><strong class="font-semibold text-ink">Cancelación:</strong> pedir que los eliminemos.</span
+              >
+            </li>
+            <li class="flex gap-3">
+              <span class="mt-2.5 h-1.5 w-1.5 shrink-0 rounded-full bg-brand" aria-hidden="true"
+              ></span>
+              <span
+                ><strong class="font-semibold text-ink">Oposición:</strong> pedir que dejemos de usarlos.</span
               >
             </li>
           </ul>
           <p class={claseParrafo}>
             Para ejercerlos, escríbenos a{" "}
-            <a href={`mailto:${correoContacto}`} class="foco-marca font-semibold text-brand"><span class="enlace-sub">{correoContacto}</span></a>{" "}
-            indicando tu nombre y qué derecho quieres ejercer. Te respondemos en un plazo máximo de
-            veinte días hábiles.
+            <a href={`mailto:${correoContacto}`} class="foco-marca font-semibold text-brand"
+              ><span class="enlace-sub">{correoContacto}</span></a
+            >{" "}
+            indicando tu nombre y qué derecho quieres ejercer. Te respondemos en un plazo máximo de veinte
+            días hábiles.
           </p>
         </section>
 
@@ -158,9 +164,9 @@ const claseParrafo = "mt-3 leading-relaxed text-ink/80";
           <h2 id="titulo-seguridad" class={claseTitulo}>Cómo protegemos tus datos</h2>
           <p class={claseParrafo}>
             El sitio funciona sobre conexión cifrada y el acceso a los mensajes recibidos está
-            restringido a las personas autorizadas de la editorial, mediante cuentas con
-            contraseña. Aplicamos las medidas técnicas y organizativas razonables para evitar
-            accesos no autorizados, pérdidas o alteraciones.
+            restringido a las personas autorizadas de la editorial, mediante cuentas con contraseña.
+            Aplicamos las medidas técnicas y organizativas razonables para evitar accesos no
+            autorizados, pérdidas o alteraciones.
           </p>
         </section>
 
@@ -196,7 +202,8 @@ const claseParrafo = "mt-3 leading-relaxed text-ink/80";
   />
 </Layout>
 
-{/*
+{
+  /*
   NOTA PARA EL EQUIPO (no se muestra en la pagina):
   Este texto es un borrador estandar redactado para un formulario de contacto
   simple, alineado con la Ley N.° 29733 y su reglamento. NO sustituye la
@@ -204,4 +211,5 @@ const claseParrafo = "mt-3 leading-relaxed text-ink/80";
   social y el domicilio fiscal exactos, el plazo de conservacion, y si
   corresponde inscribir el banco de datos personales en el Registro Nacional de
   Proteccion de Datos Personales.
-*/}
+*/
+}

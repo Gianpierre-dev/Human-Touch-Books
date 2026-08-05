@@ -23,9 +23,11 @@ const rutaActual = Astro.url.pathname.replace(/\/$/, "") || "/admin";
   noindex
 >
   <div class="min-h-screen bg-paper lg:grid lg:grid-cols-[17rem_1fr]">
-    {/* Barra lateral fija en escritorio: con una decena de secciones, una barra
+    {
+      /* Barra lateral fija en escritorio: con una decena de secciones, una barra
         horizontal obliga a repartir los enlaces en dos lineas y deja de leerse
-        de un vistazo. La lateral crece sin romperse. */}
+        de un vistazo. La lateral crece sin romperse. */
+    }
     <aside
       class="sticky top-0 hidden h-screen flex-col border-r border-white/10 bg-navy text-white lg:flex"
     >
@@ -59,7 +61,7 @@ const rutaActual = Astro.url.pathname.replace(/\/$/, "") || "/admin";
             <form method="post" action="/api/admin/salir">
               <button
                 type="submit"
-                class="foco-claro flex w-full min-h-[44px] items-center gap-3 rounded-lg px-3 text-[0.9375rem] font-semibold text-white/80 transition-colors hover:bg-white/10 hover:text-white"
+                class="foco-claro flex min-h-[44px] w-full items-center gap-3 rounded-lg px-3 text-[0.9375rem] font-semibold text-white/80 transition-colors hover:bg-white/10 hover:text-white"
               >
                 <svg viewBox="0 0 24 24" class="h-5 w-5 shrink-0 fill-current" aria-hidden="true">
                   <path d="M10 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h5v-2H5V5h5V3Zm6.2 4.6-1.4 1.4 2 2H8v2h8.8l-2 2 1.4 1.4L21 12l-4.8-4.4Z" />
@@ -72,8 +74,10 @@ const rutaActual = Astro.url.pathname.replace(/\/$/, "") || "/admin";
       }
     </aside>
 
-    {/* En pantallas menores la misma navegacion vive en un cajon desplegable.
-        Es <details>: funciona con teclado y sin JavaScript. */}
+    {
+      /* En pantallas menores la misma navegacion vive en un cajon desplegable.
+        Es <details>: funciona con teclado y sin JavaScript. */
+    }
     <header class="sticky top-0 z-40 border-b border-white/10 bg-navy text-white lg:hidden">
       <div class="flex items-center justify-between gap-3 px-4 py-2.5">
         <a href="/admin" class="foco-claro flex items-center gap-2.5 font-bold">
@@ -112,7 +116,7 @@ const rutaActual = Astro.url.pathname.replace(/\/$/, "") || "/admin";
                   <form method="post" action="/api/admin/salir">
                     <button
                       type="submit"
-                      class="foco-claro flex w-full min-h-[44px] items-center rounded-lg px-3 text-[0.9375rem] font-semibold text-white/80 transition-colors hover:bg-white/10 hover:text-white"
+                      class="foco-claro flex min-h-[44px] w-full items-center rounded-lg px-3 text-[0.9375rem] font-semibold text-white/80 transition-colors hover:bg-white/10 hover:text-white"
                     >
                       Cerrar sesión
                     </button>
