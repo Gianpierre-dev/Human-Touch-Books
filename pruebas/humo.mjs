@@ -93,6 +93,7 @@ async function ejecutar() {
   console.log("\nPaginas institucionales");
   await caso("/nosotros/quienes-somos responde 200", paginaViva("/nosotros/quienes-somos"));
   await caso("/nosotros/mision-vision responde 200", paginaViva("/nosotros/mision-vision"));
+  await caso("/nosotros/compromiso responde 200", paginaViva("/nosotros/compromiso"));
 
   console.log("\nRutas fijas y rastreo");
   await caso("/privacidad responde 200", paginaViva("/privacidad"));
@@ -123,9 +124,9 @@ async function ejecutar() {
     afirmarEstado(respuesta, 404, ruta);
     afirmarContiene(cuerpo, "Human Touch Books", ruta);
   });
-  await caso("/nosotros/compromiso (despublicada) responde 404", async () => {
-    const { respuesta } = await pagina("/nosotros/compromiso");
-    afirmarEstado(respuesta, 404, "/nosotros/compromiso");
+  await caso("una pagina institucional inventada responde 404", async () => {
+    const { respuesta } = await pagina("/nosotros/pagina-inventada");
+    afirmarEstado(respuesta, 404, "/nosotros/pagina-inventada");
   });
   await caso("/500 responde 500 con la marca", async () => {
     const { respuesta, cuerpo } = await pagina("/500");

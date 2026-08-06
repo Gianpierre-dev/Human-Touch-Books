@@ -27,12 +27,12 @@ import {
 export const prerender = false;
 
 // Catalogo y ajustes administrados desde el panel (/admin). La clasificacion la
-// aporta la linea a la que pertenece cada libro: se trae solo su `tipo`, que es
-// lo unico que decide en que seccion va el titulo.
+// aporta la linea a la que pertenece cada libro: su `tipo` decide la seccion y
+// su clave/etiqueta arman los subgrupos de la coleccion escolar.
 const libros = await bd.libro.findMany({
   where: { destacado: true },
-  orderBy: [{ orden: "asc" }, { creadoEn: "asc" }],
-  include: { lineaRel: { select: { tipo: true } } },
+  orderBy: [{ lineaRel: { orden: "asc" } }, { orden: "asc" }, { creadoEn: "asc" }],
+  include: { lineaRel: { select: { tipo: true, clave: true, etiquetaCorta: true } } },
 });
 
 // Cada tipo de linea se muestra en su propio bloque: mezclarlos en una sola tira
@@ -51,11 +51,43 @@ const literatura = libros.filter((l) => l.lineaRel?.tipo === "literatura");
 const anclaCatalogo =
   escolares.length > 0 ? "#coleccion" : literatura.length > 0 ? "#plan-lector" : null;
 
-const gradosEscolares = escolares.map((l) => l.grado).filter((g): g is string => Boolean(g));
+// La coleccion escolar se muestra agrupada por linea: una grilla plana con
+// Primaria y Secundaria mezcladas obligaba a leer el grado de cada tapa para
+// ubicarse. Con una sola linea el subtitulo sobra y no se pinta.
+interface GrupoEscolar {
+  clave: string;
+  etiqueta: string;
+  libros: typeof escolares;
+}
+const gruposEscolares: GrupoEscolar[] = [];
+for (const libro of escolares) {
+  if (!libro.lineaRel) continue;
+  const ultimo = gruposEscolares.at(-1);
+  if (ultimo?.clave === libro.lineaRel.clave) ultimo.libros.push(libro);
+  else
+    gruposEscolares.push({
+      clave: libro.lineaRel.clave,
+      etiqueta: libro.lineaRel.etiquetaCorta,
+      libros: [libro],
+    });
+}
+// Con subgrupos, el titulo del libro baja un nivel (h2 seccion > h3 grupo > h4
+// libro); sin ellos se queda en h3 para no saltar de h2 a h4.
+const EtiquetaLibro = gruposEscolares.length > 1 ? "h4" : "h3";
+
+// Los textos que hablan del catalogo ("reune N titulos, de X a Y") se calculan
+// sobre el catalogo escolar COMPLETO, no sobre los destacados: destacar 3 de 12
+// titulos no puede hacer que la web diga que la coleccion "reune 3 titulos".
+const catalogoEscolar = await bd.libro.findMany({
+  where: { lineaRel: { tipo: "escolar" } },
+  orderBy: [{ lineaRel: { orden: "asc" } }, { orden: "asc" }, { creadoEn: "asc" }],
+  select: { grado: true, subtitulo: true },
+});
+const gradosEscolares = catalogoEscolar.map((l) => l.grado).filter((g): g is string => Boolean(g));
 const primerGrado = gradosEscolares.at(0);
 const ultimoGrado = gradosEscolares.at(-1);
 // Subtitulo comun de la serie: viene del catalogo, no se inventa aqui.
-const subtituloSerie = escolares.at(0)?.subtitulo ?? "";
+const subtituloSerie = catalogoEscolar.at(0)?.subtitulo ?? "";
 
 // Menu de dos niveles: paginas institucionales y lineas activas. La consulta
 // vive en src/lib/navegacion.ts y el Header solo la recibe por props.
@@ -242,7 +274,7 @@ const preguntasPorDefecto: PreguntaVista[] = [
     pregunta: "¿Para qué grados está disponible la colección?",
     respuesta:
       primerGrado && ultimoGrado
-        ? `Tutoría SMART reúne ${escolares.length} títulos, uno por grado: de ${primerGrado} a ${ultimoGrado}.` +
+        ? `Tutoría SMART reúne ${catalogoEscolar.length} títulos, uno por grado: de ${primerGrado} a ${ultimoGrado}.` +
           (literatura.length > 0 ? " Además contamos con una línea de Plan Lector." : "")
         : "Escríbenos y te enviamos el detalle de los títulos disponibles.",
   },
@@ -600,33 +632,54 @@ const fichaOrganizacion = serializarJsonLd({
             </div>
 
             {/* Grilla estatica: la tira animada anterior impedia leer los titulos y
-                no se podia detener (WCAG 2.2.2). */}
-            <ul class="mt-12 grid grid-cols-2 gap-x-5 gap-y-9 sm:grid-cols-3 lg:grid-cols-6">
-              {escolares.map((libro) => (
-                <li class="reveal-scroll">
-                  <a
-                    href="#contacto"
-                    class="foco-marca group block text-center"
-                    aria-label={`Solicitar información sobre ${libro.titulo}`}
-                  >
-                    <img
-                      src={libro.portadaUrl}
-                      alt={`Portada de ${libro.titulo}`}
-                      loading="lazy"
-                      width="800"
-                      height="991"
-                      class="aspect-[800/991] w-full rounded-lg object-cover shadow-lg ring-1 shadow-navy/15 ring-black/5 transition duration-300 ease-out group-hover:ring-brand/40 motion-safe:group-hover:-translate-y-1.5 motion-safe:group-hover:shadow-xl motion-safe:group-hover:shadow-navy/25"
-                    />
-                    <h3 class="mt-3.5 text-[0.9375rem] leading-snug font-bold text-ink transition-colors group-hover:text-brand">
-                      {libro.titulo}
-                    </h3>
-                    <p class="mt-0.5 text-[0.8125rem] font-medium text-ink/70">
-                      {libro.grado ?? libro.nivel}
-                    </p>
-                  </a>
-                </li>
-              ))}
-            </ul>
+                no se podia detener (WCAG 2.2.2). Un subgrupo por linea, cada uno
+                con su enlace a la pagina completa de esa linea. */}
+            {gruposEscolares.map((grupo) => (
+              <div class="mt-12">
+                {gruposEscolares.length > 1 && (
+                  <div class="reveal-scroll flex flex-wrap items-baseline justify-between gap-x-6 gap-y-1">
+                    <h3 class="font-display text-xl font-bold text-ink">{grupo.etiqueta}</h3>
+                    <a
+                      href={`/lineas/${grupo.clave}`}
+                      class="foco-marca inline-flex min-h-[44px] items-center text-sm font-semibold text-brand"
+                    >
+                      <span class="enlace-sub">Ver todo {grupo.etiqueta}</span>
+                    </a>
+                  </div>
+                )}
+                <ul
+                  class:list={[
+                    "grid grid-cols-2 gap-x-5 gap-y-9 sm:grid-cols-3 lg:grid-cols-6",
+                    gruposEscolares.length > 1 && "mt-5",
+                  ]}
+                >
+                  {grupo.libros.map((libro) => (
+                    <li class="reveal-scroll">
+                      <a
+                        href="#contacto"
+                        class="foco-marca group block text-center"
+                        aria-label={`Solicitar información sobre ${libro.titulo}`}
+                      >
+                        <img
+                          src={libro.portadaUrl}
+                          alt={`Portada de ${libro.titulo}`}
+                          loading="lazy"
+                          width="800"
+                          height="991"
+                          class="aspect-[800/991] w-full rounded-lg object-cover shadow-lg ring-1 shadow-navy/15 ring-black/5 transition duration-300 ease-out group-hover:ring-brand/40 motion-safe:group-hover:-translate-y-1.5 motion-safe:group-hover:shadow-xl motion-safe:group-hover:shadow-navy/25"
+                        />
+                        <EtiquetaLibro class="mt-3.5 text-[0.9375rem] leading-snug font-bold text-ink transition-colors group-hover:text-brand">
+                          {libro.titulo}
+                        </EtiquetaLibro>
+                        <p class="mt-0.5 text-[0.8125rem] font-medium text-ink/70">
+                          {libro.grado ?? libro.nivel}
+                        </p>
+                      </a>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ))}
 
             <div class="reveal-scroll mt-12 flex justify-center">
               <a
