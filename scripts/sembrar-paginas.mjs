@@ -12,9 +12,8 @@
 // ya administro paginas desde el panel), y en los dos casos lo correcto es no
 // escribir.
 //
-// COMPROMISO SE CREA VACIA Y DESPUBLICADA: la pieza no existe y su contenido no
-// se inventa. Al estar despublicada no aparece en el menu y su URL responde 404,
-// asi que el cliente puede escribirla con calma desde /admin/paginas.
+// COMPROMISO SE SIEMBRA PUBLICADA: su pieza de diseno llego el 2026-08-05 (los
+// tres compromisos y la franja de cierre) y el contenido de abajo la transcribe.
 //
 // LAS IMAGENES SON PROVISIONALES: /lineas/quienes-somos-hero.jpg y
 // /lineas/institucional-hero.jpg son recortes de las propias piezas de diseno,
@@ -136,14 +135,42 @@ const PAGINAS = [
     ],
   },
   {
-    // Sin contenido a proposito: la pieza no existe y no se inventa.
     clave: "compromiso",
     titulo: "Compromiso",
     orden: 3,
-    activa: false,
-    contenido: null,
+    activa: true,
+    contenido: {
+      antetitulo: "Compromiso",
+      tituloPagina: "Nuestro compromiso con",
+      tituloDestacado: "la comunidad educativa.",
+      parrafos:
+        "En Human Touch Books asumimos compromisos concretos con los estudiantes, los docentes y las familias: educar en valores, acompañar la labor del maestro y actuar con integridad en cada publicación.",
+      imagenUrl: "/lineas/compromiso-hero.jpg",
+      imagenAlt:
+        "Logotipo de Human Touch Books con el lema «Inspiramos conocimiento, transformamos vidas» sobre un escritorio con libros",
+      bloquesAntetitulo: "Nuestro compromiso",
+      bloquesTitulo: "Compromisos que guían nuestro trabajo",
+      cierreTexto: "Publicaciones educativas de calidad y apoyo integral a docentes y estudiantes:",
+      cierreDestacado: "comprometidos con la formación de mejores personas.",
+    },
     secciones: [],
-    valores: [],
+    valores: [
+      {
+        titulo: "Educación en valores",
+        texto:
+          "Proponemos que los estudiantes aprendan principios éticos y normas que guíen su comportamiento y convivencia con los demás. No se trata solo de adquirir conocimientos académicos, sino de formar el carácter y la manera de actuar en la vida cotidiana.",
+      },
+      {
+        titulo: "Soporte al docente",
+        texto:
+          "Facilitamos el trabajo de los maestros con recursos digitales —videos, actividades y evaluaciones— disponibles en la plataforma HTB.",
+      },
+      {
+        titulo: "Integridad y ética",
+        texto:
+          "Actuamos con profesionalismo, rigor, disciplina, honestidad intelectual y respeto a la propiedad intelectual.",
+      },
+    ],
   },
 ];
 

@@ -45,7 +45,24 @@ const LINEAS = [
 ];
 
 // `claveLinea` no es una columna: se resuelve al id real de la linea antes de
-// insertar (ver `main`).
+// insertar (ver `main`). Las descripciones cortas transcriben las piezas de
+// diseno del PO (una frase por titulo).
+const DESCRIPCIONES_PRIMARIA = [
+  "Descubro y expreso mis emociones, construyendo vínculos positivos.",
+  "Me conozco, me relaciono y participo con empatía.",
+  "Fortalezco mi autonomía y tomo decisiones responsables.",
+  "Convivimos con respeto y resolvemos conflictos de manera positiva.",
+  "Desarrollo habilidades para mi bienestar y el de mi comunidad.",
+  "Lidero, colaboro y construyo proyectos con propósito.",
+];
+const DESCRIPCIONES_SECUNDARIA = [
+  "Me conozco, me relaciono y desarrollo mis habilidades socioemocionales.",
+  "Fortalezco mi identidad, comprendo mis emociones y construyo relaciones positivas.",
+  "Tomo decisiones responsables y contribuyo a una convivencia sana.",
+  "Gestiono mis emociones, resuelvo conflictos y construyo mi proyecto de vida.",
+  "Lidero con empatía, me comprometo con mi entorno y proyecto mi futuro.",
+];
+
 const LIBROS = [1, 2, 3, 4, 5, 6].map((n) => ({
   titulo: `Tutoría SMART ${n}`,
   subtitulo: "Tutoría, Orientación Educativa y Convivencia Escolar",
@@ -53,22 +70,41 @@ const LIBROS = [1, 2, 3, 4, 5, 6].map((n) => ({
   grado: `${n}.° de Primaria`,
   nivel: "Primaria",
   sinopsis: `Programa de tutoría y convivencia escolar para ${n}.° de Primaria. Fortalece las habilidades socioemocionales, el liderazgo y el proyecto de vida de cada estudiante.`,
+  descripcionCorta: DESCRIPCIONES_PRIMARIA[n - 1],
   portadaUrl: `/covers/smart-${n}.jpg`,
   orden: n,
   destacado: true,
 }));
 
+LIBROS.push(
+  ...[1, 2, 3, 4, 5].map((n) => ({
+    titulo: `Tutoría SMART ${n}`,
+    subtitulo: "Tutoría, Orientación Educativa y Convivencia Escolar",
+    claveLinea: "secundaria",
+    grado: `${n}.° de Secundaria`,
+    nivel: "Secundaria",
+    sinopsis: `Programa de tutoría y convivencia escolar para ${n}.° de Secundaria. Propuesta orientada a fortalecer la formación integral de los estudiantes, contribuyendo a su desarrollo personal, social y académico.`,
+    descripcionCorta: DESCRIPCIONES_SECUNDARIA[n - 1],
+    portadaUrl: `/covers/smart-sec-${n}.jpg`,
+    orden: n,
+    destacado: true,
+  })),
+);
+
+// Autora, ilustradora y sinopsis segun la tapa de la pieza de diseno del PO.
 LIBROS.push({
   titulo: "Llévenme a mi casa",
   subtitulo: "Por favor… llévenme a mi casa",
   claveLinea: "lector",
   grado: null,
   nivel: "Plan Lector",
-  autor: "Miguel Ángel Aguilar",
-  ilustrador: "Fiorella Alegría Córdova",
+  autor: "Neydal Argel Aguilar",
+  ilustrador: "Kamila Zúñiga Orricco",
   anio: 2026,
   sinopsis:
-    "A sus 86 años, Chachita lucha contra los hilos sueltos de la memoria. Una historia sobre el amor, la vejez y la fragilidad del recuerdo.",
+    "A través de la historia de Chashka, una mujer que enfrenta la enfermedad del Alzheimer, los lectores descubrirán el valor de la empatía, la paciencia y el amor familiar. Una obra que invita a reflexionar sobre la importancia de acompañar y comprender a quienes más lo necesitan.",
+  descripcionCorta:
+    "Un conmovedor cuento dirigido a estudiantes de 5.° y 6.° de primaria y 1.° de secundaria.",
   portadaUrl: "/covers/llevenme-a-mi-casa.jpg",
   orden: 7,
   destacado: true,
@@ -91,7 +127,7 @@ const PREGUNTAS = [
   {
     pregunta: "¿Para qué grados está disponible la colección?",
     respuesta:
-      "Tutoría SMART reúne 6 títulos, uno por grado: de 1.° de Primaria a 6.° de Primaria. " +
+      "Tutoría SMART reúne 11 títulos, uno por grado: de 1.° de Primaria a 5.° de Secundaria. " +
       "Además contamos con una línea de Plan Lector.",
     orden: 1,
   },
