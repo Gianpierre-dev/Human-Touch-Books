@@ -46,6 +46,10 @@ const CLAVES_ETIQUETAS = [
   "pie_explora",
   "pie_contacto",
   "pie_preguntas",
+  // El parrafo del pie viaja aqui por la misma razon que las etiquetas: solo
+  // la landing se acordaba de pasarlo y las demas paginas mostraban el texto
+  // por defecto aunque el panel lo hubiera editado.
+  "pie_descripcion",
 ] as const satisfies readonly ClaveTexto[];
 
 export type ClaveEtiquetaNavegacion = (typeof CLAVES_ETIQUETAS)[number];

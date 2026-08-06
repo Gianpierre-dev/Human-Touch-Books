@@ -14,6 +14,8 @@ const error = Astro.url.searchParams.get("error");
 const MENSAJES_ERROR: Record<string, string> = {
   largo: `Revisa los textos: el subtítulo admite hasta ${LIMITES.subtituloHero} caracteres y el párrafo de Nosotros hasta ${LIMITES.textoNosotros}.`,
   redlargo: `Las direcciones de redes sociales admiten hasta ${LARGO_MAXIMO_RED} caracteres.`,
+  whatsapp:
+    "Revisa el número de WhatsApp: escríbelo solo con dígitos y con el código de país al inicio. Ejemplo: 51982953436.",
   // Un mensaje por red: decir «la dirección no es válida» sin nombrarla obliga
   // a revisar los cuatro campos a mano.
   ...Object.fromEntries(

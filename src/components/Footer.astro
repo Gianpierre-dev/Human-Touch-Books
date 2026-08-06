@@ -7,7 +7,6 @@
 // dos partes leen `src/lib/navegacion.ts`, asi que publicar una pagina en el
 // panel la deja enlazada en los dos sitios sin tocar codigo.
 import { NAVEGACION_VACIA, type EnlaceMenu, type Navegacion } from "../lib/navegacion";
-import { defectoFijo } from "../lib/textos";
 import { listarRedes, type RedesSociales } from "../lib/redes";
 
 interface Props {
@@ -21,8 +20,6 @@ interface Props {
   redes?: RedesSociales;
   /** Páginas institucionales y líneas activas, las mismas de la cabecera. */
   navegacion?: Navegacion;
-  /** Párrafo bajo el logotipo. Administrable desde /admin/textos. */
-  descripcion?: string;
   /**
    * Prefijo de los enlaces de ancla. Vacío en la landing; "/" en el resto de
    * páginas, para que el ancla lleve a la landing y no a la nada.
@@ -30,23 +27,20 @@ interface Props {
   base?: string;
 }
 
-// El texto del catálogo es la única fuente del valor por defecto: así el pie no
-// se desincroniza del placeholder que ve el panel.
-const DESCRIPCION_POR_DEFECTO = defectoFijo("pie_descripcion");
-
-// Los títulos de las dos columnas y el enlace a preguntas frecuentes viajan en
-// la misma prop `navegacion`: son administrables y llegan ya resueltos.
+// Los títulos de las columnas, el enlace a preguntas y el párrafo bajo el
+// logotipo viajan en la misma prop `navegacion`: son administrables y llegan
+// ya resueltos, sin que cada página tenga que acordarse de leerlos.
 const {
   whatsapp = "51982953436",
   correoContacto = "informes@humantouchbooks.pe",
   ubicacion = "La Molina, Lima — Perú",
   redes = {},
   navegacion = NAVEGACION_VACIA,
-  descripcion = DESCRIPCION_POR_DEFECTO,
   base = "",
 } = Astro.props;
 
 const { etiquetas } = navegacion;
+const descripcion = etiquetas.pie_descripcion;
 
 // Glifos de marca dibujados a mano (fill-current, un solo path), como el resto
 // de los iconos del proyecto: no se agrega una libreria de iconos por cuatro

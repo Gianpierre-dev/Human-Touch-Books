@@ -1,5 +1,9 @@
 ---
 import "../styles/global.css";
+// `?url` resuelve a la MISMA ruta con hash que emite el CSS: si el precargado
+// apuntara a otra URL, el navegador descargaria la fuente dos veces.
+import urlFuenteSans from "../fonts/hanken-grotesk-variable-latin.woff2?url";
+import urlFuenteSerif from "../fonts/fraunces-variable-latin.woff2?url";
 
 interface Props {
   title?: string;
@@ -85,20 +89,8 @@ const hayMedidasSociales = social.ancho !== undefined && social.alto !== undefin
       archivo DOS veces.
     */
     }
-    <link
-      rel="preload"
-      as="font"
-      type="font/woff2"
-      href="/fonts/hanken-grotesk-variable-latin.woff2"
-      crossorigin
-    />
-    <link
-      rel="preload"
-      as="font"
-      type="font/woff2"
-      href="/fonts/fraunces-variable-latin.woff2"
-      crossorigin
-    />
+    <link rel="preload" as="font" type="font/woff2" href={urlFuenteSans} crossorigin />
+    <link rel="preload" as="font" type="font/woff2" href={urlFuenteSerif} crossorigin />
 
     <meta property="og:title" content={title} />
     <meta property="og:description" content={description} />

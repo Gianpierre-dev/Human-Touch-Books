@@ -32,6 +32,22 @@ export const POST: APIRoute = async ({ request, redirect }) => {
     }
   }
 
+  // El numero de WhatsApp se guarda solo con digitos y CON codigo de pais: la
+  // web lo formatea asumiendo que los dos primeros digitos son el pais, y
+  // wa.me no funciona sin el. Un 9 peruano suelto (9 digitos) se rechaza con
+  // instruccion, no se adivina.
+  if (formulario.has("whatsapp")) {
+    const whatsapp = String(formulario.get("whatsapp") ?? "")
+      .trim()
+      .replace(/[\s()+-]/g, "");
+    if (whatsapp !== "") {
+      if (!/^\d{10,15}$/.test(whatsapp)) {
+        return redirect("/admin/ajustes?error=whatsapp", 303);
+      }
+      formulario.set("whatsapp", whatsapp);
+    }
+  }
+
   // Las redes se validan ANTES de escribir nada: media tanda guardada y media
   // rechazada dejaria el pie mostrando un estado que nadie pidio.
   for (const red of REDES) {
