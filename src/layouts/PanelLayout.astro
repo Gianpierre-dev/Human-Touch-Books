@@ -210,6 +210,40 @@ const rutaActual = Astro.url.pathname.replace(/\/$/, "") || "/admin";
 
   <script is:inline>
     (() => {
+      // El panel navega con recargas completas y la barra lateral renace con el
+      // scroll arriba: estando en un modulo del fondo, el item activo quedaba
+      // fuera de la vista. Se restaura la posicion anterior (sessionStorage,
+      // muere al cerrar la pestana) y, como garantia, si el item activo quedo
+      // fuera del area visible se desplaza lo minimo para verlo.
+      const zona = document.querySelector(".panel-desplazable");
+      if (!zona) return;
+      const CLAVE = "panel-scroll-navegacion";
+      try {
+        const guardado = sessionStorage.getItem(CLAVE);
+        if (guardado !== null) zona.scrollTop = Number(guardado);
+      } catch {
+        /* sin sessionStorage (modo privado estricto) simplemente no se restaura */
+      }
+      const activo = zona.querySelector('[aria-current="page"]');
+      if (activo) {
+        const marcoZona = zona.getBoundingClientRect();
+        const marcoActivo = activo.getBoundingClientRect();
+        if (marcoActivo.top < marcoZona.top || marcoActivo.bottom > marcoZona.bottom) {
+          activo.scrollIntoView({ block: "nearest" });
+        }
+      }
+      addEventListener("pagehide", () => {
+        try {
+          sessionStorage.setItem(CLAVE, String(zona.scrollTop));
+        } catch {
+          /* nada que guardar si no hay almacenamiento */
+        }
+      });
+    })();
+  </script>
+
+  <script is:inline>
+    (() => {
       const menu = document.getElementById("menu-panel");
       if (!menu) return;
       // Al elegir una seccion el cajon se cierra solo; en un enlace que navega
