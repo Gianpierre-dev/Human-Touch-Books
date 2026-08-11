@@ -136,6 +136,78 @@ const rutaActual = Astro.url.pathname.replace(/\/$/, "") || "/admin";
     </div>
   </div>
 
+  {
+    /* Modal de confirmacion compartido por todo el panel. Reemplaza al
+      confirm() nativo del navegador: mismo mensaje, pero con la marca, foco
+      atrapado y Escape gratis (elemento <dialog>). Los formularios se acogen
+      con data-confirmar="mensaje"; Cancelar va primero en el DOM para que
+      reciba el foco inicial — en una accion destructiva, el valor por defecto
+      seguro es NO hacerla. */
+  }
+  <dialog
+    id="dialogo-confirmar"
+    class="m-auto w-[min(26rem,calc(100vw-2rem))] rounded-xl border border-line bg-surface p-6 shadow-2xl backdrop:bg-grafito/55"
+    aria-labelledby="dialogo-confirmar-titulo"
+  >
+    <h2 id="dialogo-confirmar-titulo" class="text-lg font-bold text-ink">¿Estás seguro?</h2>
+    <p id="dialogo-confirmar-mensaje" class="mt-2 text-sm leading-relaxed text-ink/75"></p>
+    <div class="mt-6 flex flex-wrap justify-end gap-2.5">
+      <form method="dialog">
+        <button
+          class="foco-marca inline-flex min-h-[44px] items-center rounded-full border border-line bg-surface px-5 text-sm font-bold text-ink transition-colors hover:bg-surface-2"
+        >
+          Cancelar
+        </button>
+      </form>
+      <button
+        type="button"
+        id="dialogo-confirmar-boton"
+        class="foco-marca inline-flex min-h-[44px] items-center rounded-full bg-accent-deep px-5 text-sm font-bold text-white transition-colors hover:bg-accent"
+      >
+        Sí, continuar
+      </button>
+    </div>
+  </dialog>
+
+  <script is:inline>
+    (() => {
+      const dialogo = document.getElementById("dialogo-confirmar");
+      const mensaje = document.getElementById("dialogo-confirmar-mensaje");
+      const botonConfirmar = document.getElementById("dialogo-confirmar-boton");
+      if (!(dialogo instanceof HTMLDialogElement) || !mensaje || !botonConfirmar) return;
+
+      let formularioPendiente = null;
+
+      // Delegado en el documento: sirve a todos los formularios de la pagina,
+      // incluidos los que esten dentro de tablas largas.
+      document.addEventListener("submit", (evento) => {
+        const formulario = evento.target;
+        if (!(formulario instanceof HTMLFormElement) || !formulario.dataset.confirmar) return;
+        evento.preventDefault();
+        formularioPendiente = formulario;
+        mensaje.textContent = formulario.dataset.confirmar;
+        dialogo.showModal();
+      });
+
+      botonConfirmar.addEventListener("click", () => {
+        const formulario = formularioPendiente;
+        formularioPendiente = null;
+        dialogo.close();
+        // submit() directo: no re-dispara el evento submit y no vuelve a abrir
+        // el modal. Son formularios de accion (campos ocultos), sin validacion.
+        if (formulario) formulario.submit();
+      });
+
+      // Cancelar, Escape o clic fuera: se olvida el formulario pendiente.
+      dialogo.addEventListener("close", () => {
+        formularioPendiente = null;
+      });
+      dialogo.addEventListener("click", (evento) => {
+        if (evento.target === dialogo) dialogo.close();
+      });
+    })();
+  </script>
+
   <script is:inline>
     (() => {
       const menu = document.getElementById("menu-panel");

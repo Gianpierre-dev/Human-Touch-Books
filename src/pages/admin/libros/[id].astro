@@ -26,7 +26,7 @@ const error = Astro.url.searchParams.get("error");
     <form
       method="post"
       action={`/api/admin/libros/${libro.id}`}
-      onsubmit="return confirm('¿Eliminar este libro? Esta acción no se puede deshacer.')"
+      data-confirmar="¿Eliminar este libro? Esta acción no se puede deshacer."
     >
       <input type="hidden" name="_accion" value="eliminar" />
       <button

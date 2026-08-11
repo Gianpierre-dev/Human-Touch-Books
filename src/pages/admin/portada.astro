@@ -183,7 +183,7 @@ const clasesBotonPeligro =
                       <form
                         method="post"
                         action={`/api/admin/portada/${imagen.id}`}
-                        onsubmit="return confirm('¿Eliminar esta imagen de la portada? No se puede deshacer.')"
+                        data-confirmar="¿Eliminar esta imagen de la portada? No se puede deshacer."
                       >
                         <input type="hidden" name="_accion" value="eliminar" />
                         <button

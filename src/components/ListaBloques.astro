@@ -286,7 +286,7 @@ const clasesBotonPrincipal =
           <form
             method="post"
             action={`${rutaApi}/${elemento.id}`}
-            onsubmit={`return confirm('¿Eliminar ${demostrativo} ${singular}? No se puede deshacer.')`}
+            data-confirmar={`¿Eliminar ${demostrativo} ${singular}? No se puede deshacer.`}
           >
             <input type="hidden" name="_accion" value="eliminar" />
             <button

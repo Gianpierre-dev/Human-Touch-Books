@@ -160,7 +160,7 @@ const clasesBotonPrincipal =
                       <form
                         method="post"
                         action={`/api/admin/usuarios/${cuenta.id}`}
-                        onsubmit="return confirm('¿Eliminar esta cuenta? La persona pierde el acceso al panel de inmediato. No se puede deshacer.')"
+                        data-confirmar="¿Eliminar esta cuenta? La persona pierde el acceso al panel de inmediato. No se puede deshacer."
                       >
                         <input type="hidden" name="_accion" value="eliminar" />
                         <button

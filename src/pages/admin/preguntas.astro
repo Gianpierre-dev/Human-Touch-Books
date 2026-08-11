@@ -152,7 +152,7 @@ const clasesBotonPeligro =
             <form
               method="post"
               action={`/api/admin/preguntas/${pregunta.id}`}
-              onsubmit="return confirm('¿Eliminar esta pregunta? No se puede deshacer.')"
+              data-confirmar="¿Eliminar esta pregunta? No se puede deshacer."
             >
               <input type="hidden" name="_accion" value="eliminar" />
               <button
