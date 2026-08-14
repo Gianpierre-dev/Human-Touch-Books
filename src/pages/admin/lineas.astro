@@ -443,16 +443,17 @@ const defectosPorLinea = new Map(lineas.map((linea) => [linea.id, defectosConten
                 <span class="text-sm font-semibold text-ink">
                   Descripción <span class="text-accent-deep">*</span>
                 </span>
-                {/* Sin saltos de línea alrededor: el contenido del textarea ES su valor. */}
+                {/* `set:text` y NO el valor entre las etiquetas: escrito como hijo, el
+                  formateador lo rodea de saltos e indentacion, y ese relleno ES parte
+                  del valor. Sin hijos que reformatear no puede volver a pasar. */}
                 <textarea
                   name="descripcion"
                   rows="3"
                   required
                   maxlength={LIMITES_LINEA.descripcion}
                   class={clasesCampo}
-                >
-                  {linea.descripcion}
-                </textarea>
+                  set:text={linea.descripcion}
+                />
               </label>
               <p id={`ayuda-color-${linea.id}`} class="text-xs text-ink/70 sm:col-span-2">
                 {AYUDA_COLOR}
@@ -492,7 +493,8 @@ const defectosPorLinea = new Map(lineas.map((linea) => [linea.id, defectosConten
                   <label class:list={["block", campo.ancho === "completo" && "sm:col-span-2"]}>
                     <span class="text-sm font-semibold text-ink">{campo.etiqueta}</span>
                     {campo.filas ? (
-                      // Sin saltos de línea alrededor: el contenido del textarea ES su valor.
+                      // `set:text`: el relleno que el formateador metia entre las
+                      // etiquetas era parte del valor y tapaba el placeholder.
                       <textarea
                         name={campo.campo}
                         rows={campo.filas}
@@ -500,9 +502,8 @@ const defectosPorLinea = new Map(lineas.map((linea) => [linea.id, defectosConten
                         placeholder={sugerencia}
                         aria-describedby={idAyuda}
                         class={clasesCampo}
-                      >
-                        {valor}
-                      </textarea>
+                        set:text={valor}
+                      />
                     ) : (
                       <input
                         type="text"

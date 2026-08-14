@@ -396,16 +396,16 @@ const CAMPOS_CONTENIDO: readonly CampoContenido[] = [
                   <label class:list={["block", campo.ancho === "completo" && "sm:col-span-2"]}>
                     <span class="text-sm font-semibold text-ink">{campo.etiqueta}</span>
                     {campo.filas ? (
-                      // Sin saltos de línea alrededor: el contenido del textarea ES su valor.
+                      // `set:text`: el relleno que el formateador metia entre las
+                      // etiquetas era parte del valor y consumia el maxlength.
                       <textarea
                         name={campo.campo}
                         rows={campo.filas}
                         maxlength={LIMITES_CONTENIDO_PAGINA[campo.clave]}
                         aria-describedby={idAyuda}
                         class={clasesCampo}
-                      >
-                        {valor}
-                      </textarea>
+                        set:text={valor}
+                      />
                     ) : (
                       <input
                         type="text"

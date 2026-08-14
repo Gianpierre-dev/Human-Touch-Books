@@ -129,15 +129,19 @@ const clasesCampo =
 
     <label class="mt-4 block">
       <span class="text-sm font-semibold text-ink">Texto de la sección Nosotros</span>
-      {/* Sin saltos de línea alrededor: el contenido del textarea ES su valor. */}
+      {
+        /* `set:text` y NO el valor entre las etiquetas: escrito como hijo, el
+        formateador lo rodea de saltos e indentacion, y ese relleno ES parte del valor. */
+      }
       <textarea
         name="nosotros_texto"
         rows="4"
         maxlength={LIMITES.textoNosotros}
         placeholder={textoNosotrosPorDefecto(ubicacion)}
         aria-describedby="ayuda-nosotros-texto"
-        class={clasesCampo}>{ajustes.nosotros_texto ?? ""}</textarea
-      >
+        class={clasesCampo}
+        set:text={ajustes.nosotros_texto ?? ""}
+      />
     </label>
     <p id="ayuda-nosotros-texto" class="mt-1.5 text-xs text-ink/70">
       Párrafo de presentación de la editorial. Hasta {LIMITES.textoNosotros} caracteres. Déjalo vacío

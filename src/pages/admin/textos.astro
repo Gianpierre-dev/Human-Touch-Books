@@ -137,7 +137,11 @@ const clasesCampo =
                         )}
                       </span>
                       {campo.multilinea ? (
-                        // Sin saltos de línea alrededor: el contenido del textarea ES su valor.
+                        // `set:text` y NO {valor} entre las etiquetas: el contenido de un
+                        // textarea ES su valor, y escrito como hijo el formateador lo
+                        // rodea de saltos e indentacion. Ese relleno hacia que el campo
+                        // nunca estuviera vacio (adios al placeholder) y consumia el
+                        // maxlength. Sin hijos que reformatear, no puede volver a pasar.
                         <textarea
                           name={campo.clave}
                           rows="3"
@@ -145,9 +149,8 @@ const clasesCampo =
                           placeholder={defecto}
                           aria-describedby={idAyuda}
                           class={clasesCampo}
-                        >
-                          {valor}
-                        </textarea>
+                          set:text={valor}
+                        />
                       ) : (
                         <input
                           type="text"

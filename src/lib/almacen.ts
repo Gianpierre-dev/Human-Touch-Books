@@ -6,6 +6,7 @@ import {
 } from "@aws-sdk/client-s3";
 import { extname } from "node:path";
 import sharp from "sharp";
+import { ENTORNO } from "./entorno";
 
 // Almacenamiento de portadas en Wasabi (S3 compatible). El bucket es privado:
 // las imagenes se sirven a traves del endpoint /uploads/[...ruta].ts, por lo
@@ -21,7 +22,10 @@ const TIPOS_MIME: Record<string, string> = {
   ".webp": "image/webp",
 };
 
-const BUCKET = process.env.WASABI_BUCKET_NAME ?? "";
+// Validadas al arrancar (ver src/lib/entorno.ts). Antes se leian con `?? ""`,
+// asi que unas credenciales ausentes no rompian nada al iniciar y aparecian
+// mucho despues como «tu imagen no es valida» en la cara de quien administra.
+const BUCKET = ENTORNO.wasabi.bucket;
 
 // Las portadas se muestran como maximo a ~450 px de ancho; 1200 cubre pantallas
 // de alta densidad sin arrastrar los 3 MB que suele pesar el archivo original.
@@ -35,13 +39,18 @@ export const ANCHO_IMAGEN_SITIO = 1600;
 // lleguen blandas a un monitor grande. Solo afecta a subidas nuevas.
 export const ANCHO_IMAGEN_HERO = 1920;
 
+// Con timeouts explicitos: sin ellos, un bucket que no responde (colgado, no
+// caido) deja cada peticion de imagen esperando indefinidamente, y /uploads
+// esta en la ruta caliente de todas las paginas publicas.
 const cliente = new S3Client({
-  region: process.env.WASABI_REGION,
-  endpoint: process.env.WASABI_ENDPOINT,
+  region: ENTORNO.wasabi.region,
+  endpoint: ENTORNO.wasabi.endpoint,
   credentials: {
-    accessKeyId: process.env.WASABI_ACCESS_KEY ?? "",
-    secretAccessKey: process.env.WASABI_SECRET_KEY ?? "",
+    accessKeyId: ENTORNO.wasabi.accessKey,
+    secretAccessKey: ENTORNO.wasabi.secretKey,
   },
+  requestHandler: { connectionTimeout: 3_000, requestTimeout: 15_000 },
+  maxAttempts: 3,
 });
 
 export function esPortadaValida(archivo: File): string | null {

@@ -1,4 +1,5 @@
 import jwt from "jsonwebtoken";
+import { ENTORNO } from "./entorno";
 
 export const COOKIE_SESION = "sesion_htb";
 const DURACION_SEGUNDOS = 60 * 60 * 8; // 8 horas
@@ -23,22 +24,20 @@ export function versionClave(claveActualizadaEn: Date): number {
   return Math.floor(claveActualizadaEn.getTime() / 1000);
 }
 
-function secreto(): string {
-  const valor = process.env.JWT_SECRET;
-  if (!valor) {
-    throw new Error("Falta la variable de entorno JWT_SECRET");
-  }
-  return valor;
-}
+// El secreto se resuelve al importar (ver src/lib/entorno.ts) y NO dentro del
+// `try` de abajo: alli su error quedaba indistinguible de un token falsificado,
+// asi que una variable faltante se manifestaba como un bucle de login sin un
+// solo rastro en los registros.
+const SECRETO = ENTORNO.jwtSecreto;
 
 export function crearToken(carga: CargaSesion): string {
-  return jwt.sign(carga, secreto(), { expiresIn: DURACION_SEGUNDOS });
+  return jwt.sign(carga, SECRETO, { expiresIn: DURACION_SEGUNDOS });
 }
 
 export function verificarToken(token: string | undefined): CargaSesion | null {
   if (!token) return null;
   try {
-    const carga = jwt.verify(token, secreto()) as Partial<CargaSesion>;
+    const carga = jwt.verify(token, SECRETO) as Partial<CargaSesion>;
     // Los tokens emitidos antes del versionado no traen la marca: sin ella no
     // hay forma de saber si la contrasena cambio, asi que no se aceptan.
     if (typeof carga.claveActualizadaEn !== "number") return null;

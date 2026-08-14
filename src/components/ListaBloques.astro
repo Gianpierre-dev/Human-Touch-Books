@@ -322,16 +322,17 @@ const clasesBotonPrincipal =
               <span class="text-sm font-semibold text-ink">
                 Texto <span class="text-accent-deep">*</span>
               </span>
-              {/* Sin saltos de línea alrededor: el contenido del textarea ES su valor. */}
+              {/* `set:text` y NO el valor entre las etiquetas: escrito como hijo, el
+                formateador lo rodea de saltos e indentacion, y ese relleno ES parte del
+                valor del textarea. Sin hijos que reformatear no puede volver a pasar. */}
               <textarea
                 name="texto"
                 rows={filasTexto}
                 required
                 maxlength={limites.texto}
                 class={clasesCampo}
-              >
-                {elemento.texto ?? ""}
-              </textarea>
+                set:text={elemento.texto ?? ""}
+              />
             </label>
           )}
           {campoOpcional && (
@@ -342,9 +343,8 @@ const clasesBotonPrincipal =
                 rows={campoOpcional.filas ?? 2}
                 maxlength={campoOpcional.limite}
                 class={clasesCampo}
-              >
-                {elemento.valorOpcional ?? ""}
-              </textarea>
+                set:text={elemento.valorOpcional ?? ""}
+              />
               <span class="mt-1.5 block text-xs text-ink/70">
                 {campoOpcional.ayuda} Puede quedar vacío. Hasta {campoOpcional.limite} caracteres.
               </span>

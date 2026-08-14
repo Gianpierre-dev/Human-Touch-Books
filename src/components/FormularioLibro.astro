@@ -124,9 +124,17 @@ const clasesCampo =
 
     <label class="block sm:col-span-2">
       <span class="text-sm font-semibold text-ink">Sinopsis *</span>
-      <textarea name="sinopsis" rows="4" required class={clasesCampo}
-        >{libro?.sinopsis ?? ""}</textarea
-      >
+      {
+        /* `set:text`: el valor de un textarea es su contenido, y como hijo el
+        formateador lo rodea de relleno que pasa a formar parte del valor. */
+      }
+      <textarea
+        name="sinopsis"
+        rows="4"
+        required
+        class={clasesCampo}
+        set:text={libro?.sinopsis ?? ""}
+      />
     </label>
 
     <div class="sm:col-span-2">
