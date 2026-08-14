@@ -7,6 +7,7 @@ import {
 import { extname } from "node:path";
 import sharp from "sharp";
 import { ENTORNO } from "./entorno";
+import { registrarFallo } from "./registro";
 
 // Almacenamiento de portadas en Wasabi (S3 compatible). El bucket es privado:
 // las imagenes se sirven a traves del endpoint /uploads/[...ruta].ts, por lo
@@ -68,6 +69,30 @@ function esNombreSeguro(nombre: string): boolean {
   return !nombre.includes("/") && !nombre.includes("\\") && !nombre.includes("..");
 }
 
+/**
+ * El archivo no es una imagen que sepamos procesar. Es culpa del archivo, se le
+ * puede decir a quien lo subio y NO se registra: no es un incidente.
+ */
+export class ErrorImagenInvalida extends Error {
+  constructor(causa: unknown) {
+    super("La imagen no se pudo procesar", { cause: causa });
+    this.name = "ErrorImagenInvalida";
+  }
+}
+
+/**
+ * El almacenamiento fallo: credenciales, red, permisos del bucket. NO es culpa
+ * de quien subio el archivo, asi que decirle «verifica que sea un JPG valido»
+ * lo manda a reexportar su foto una y otra vez mientras el problema real queda
+ * invisible. Se registra siempre.
+ */
+export class ErrorAlmacenamiento extends Error {
+  constructor(operacion: string, causa: unknown) {
+    super(`Fallo el almacenamiento al ${operacion}`, { cause: causa });
+    this.name = "ErrorAlmacenamiento";
+  }
+}
+
 interface ImagenOptimizada {
   datos: Buffer;
   ancho: number;
@@ -127,19 +152,35 @@ export async function guardarImagen(
 ): Promise<ImagenGuardada> {
   const ext = extname(archivo.name).toLowerCase();
   const nombre = `${aRanura(nombreBase) || "imagen"}-${Date.now()}${ext}`;
-  const imagen = await optimizarImagen(
-    Buffer.from(await archivo.arrayBuffer()),
-    ext,
-    opciones.anchoMaximo ?? ANCHO_MAXIMO,
-  );
-  await cliente.send(
-    new PutObjectCommand({
-      Bucket: BUCKET,
-      Key: `${PREFIJO}${nombre}`,
-      Body: imagen.datos,
-      ContentType: TIPOS_MIME[ext] ?? "application/octet-stream",
-    }),
-  );
+
+  // Las dos etapas se distinguen a proposito: procesar es culpa del archivo,
+  // subir es culpa nuestra. Antes compartian un unico catch y cualquier fallo
+  // del bucket se le mostraba a quien administra como «imagen invalida».
+  let imagen: ImagenOptimizada;
+  try {
+    imagen = await optimizarImagen(
+      Buffer.from(await archivo.arrayBuffer()),
+      ext,
+      opciones.anchoMaximo ?? ANCHO_MAXIMO,
+    );
+  } catch (fallo) {
+    throw new ErrorImagenInvalida(fallo);
+  }
+
+  try {
+    await cliente.send(
+      new PutObjectCommand({
+        Bucket: BUCKET,
+        Key: `${PREFIJO}${nombre}`,
+        Body: imagen.datos,
+        ContentType: TIPOS_MIME[ext] ?? "application/octet-stream",
+      }),
+    );
+  } catch (fallo) {
+    registrarFallo(`guardar «${nombre}» en el bucket`, fallo);
+    throw new ErrorAlmacenamiento("guardar la imagen", fallo);
+  }
+
   return { url: `/uploads/${nombre}`, ancho: imagen.ancho, alto: imagen.alto };
 }
 
@@ -158,6 +199,24 @@ export async function eliminarPortada(url: string): Promise<void> {
   await cliente.send(new DeleteObjectCommand({ Bucket: BUCKET, Key: `${PREFIJO}${nombre}` }));
 }
 
+/**
+ * Borra el archivo del bucket sin dejar que su fallo tumbe la operacion.
+ *
+ * La fila de la base ya se guardo o se borro cuando esto corre: propagar el
+ * error dejaria a quien administra viendo un 500 sobre un cambio que SI se
+ * hizo, y al reintentar recibiria «no existe». Un objeto huerfano cuesta
+ * centavos; un cambio consumado que se reporta como error cuesta confianza.
+ * Se registra para que la fuga no quede invisible.
+ */
+export async function borrarDelBucket(url: string | null | undefined): Promise<void> {
+  if (!url) return;
+  try {
+    await eliminarPortada(url);
+  } catch (fallo) {
+    registrarFallo(`borrar «${url}» del bucket`, fallo);
+  }
+}
+
 export async function obtenerPortada(
   nombre: string,
 ): Promise<{ cuerpo: Uint8Array; tipo: string } | null> {
@@ -171,7 +230,15 @@ export async function obtenerPortada(
       cuerpo: await respuesta.Body.transformToByteArray(),
       tipo: TIPOS_MIME[extname(nombre).toLowerCase()] ?? "application/octet-stream",
     };
-  } catch {
-    return null; // objeto inexistente o error de acceso
+  } catch (fallo) {
+    // Un objeto que no existe es normal (una fila vieja apuntando a un archivo
+    // ya borrado) y no se registra. Cualquier otro fallo —firma invalida,
+    // permisos, red— SI: sin esa linea, unas credenciales vencidas dejan todas
+    // las imagenes del sitio en 404 y nada lo explica.
+    const nombreFallo = fallo instanceof Error ? fallo.name : "";
+    if (nombreFallo !== "NoSuchKey" && nombreFallo !== "NotFound") {
+      registrarFallo(`leer «${nombre}» del bucket`, fallo);
+    }
+    return null;
   }
 }

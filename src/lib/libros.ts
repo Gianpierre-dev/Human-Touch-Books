@@ -1,4 +1,4 @@
-import { esPortadaValida, guardarPortada } from "./almacen";
+import { ErrorImagenInvalida, esPortadaValida, guardarPortada } from "./almacen";
 import { bd } from "./bd";
 
 /** Limite de la frase breve que acompana al libro en la pagina de su linea. */
@@ -91,8 +91,18 @@ export async function procesarPortada(
   if (invalida) return { error: invalida };
   try {
     return { url: await guardarPortada(archivo, titulo) };
-  } catch {
-    // sharp lanza si el archivo no es una imagen real, aunque la extension lo parezca
-    return { error: "No pudimos procesar la imagen. Verifica que sea un JPG, PNG o WebP válido." };
+  } catch (fallo) {
+    // Culpar al archivo solo cuando el archivo tiene la culpa: si el que fallo
+    // fue el almacenamiento, decirle «verifica que sea un JPG valido» manda a
+    // reexportar la foto una y otra vez mientras el problema real sigue ahi.
+    if (fallo instanceof ErrorImagenInvalida) {
+      return {
+        error: "No pudimos procesar la imagen. Verifica que sea un JPG, PNG o WebP válido.",
+      };
+    }
+    return {
+      error:
+        "No pudimos guardar la imagen por un problema del servidor. Vuelve a intentarlo en unos minutos; si persiste, avisa al equipo.",
+    };
   }
 }

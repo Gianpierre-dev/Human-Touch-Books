@@ -2,7 +2,8 @@ import type { APIRoute } from "astro";
 import { bd } from "../../../lib/bd";
 import {
   ANCHO_IMAGEN_SITIO,
-  eliminarPortada,
+  borrarDelBucket,
+  ErrorImagenInvalida,
   esPortadaValida,
   guardarImagen,
 } from "../../../lib/almacen";
@@ -43,9 +44,12 @@ export const POST: APIRoute = async ({ request, redirect }) => {
   let guardada: Awaited<ReturnType<typeof guardarImagen>>;
   try {
     guardada = await guardarImagen(archivo, clave, { anchoMaximo: ANCHO_IMAGEN_SITIO });
-  } catch {
-    // sharp lanza si el archivo no es una imagen real, aunque la extension lo parezca
-    return redirect(`${DESTINO}?error=procesar`, 303);
+  } catch (fallo) {
+    // «procesar» culpa al archivo; «almacen» dice que el fallo es nuestro. La
+    // distincion importa: con el mensaje equivocado, quien administra reexporta
+    // su foto una y otra vez sin que nada cambie.
+    const codigo = fallo instanceof ErrorImagenInvalida ? "procesar" : "almacen";
+    return redirect(`${DESTINO}?error=${codigo}`, 303);
   }
 
   // Las medidas reales viajan a la base para que la landing reserve el espacio
@@ -67,16 +71,3 @@ export const POST: APIRoute = async ({ request, redirect }) => {
 
   return redirect(`${DESTINO}?ok=guardada`, 303);
 };
-
-/**
- * Borra el objeto anterior una vez que la base ya no lo referencia. Si el bucket
- * falla queda un objeto huerfano (inofensivo) en vez de un error para quien
- * opera. `eliminarPortada` ya ignora por si sola las rutas del repositorio.
- */
-async function borrarDelBucket(url: string): Promise<void> {
-  try {
-    await eliminarPortada(url);
-  } catch {
-    /* objeto huerfano aceptable */
-  }
-}

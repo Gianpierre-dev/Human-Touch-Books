@@ -57,6 +57,8 @@ const MENSAJES_ERROR: Record<string, string> = {
   sinalt: "El texto alternativo de la imagen es obligatorio.",
   altlargo: `El texto alternativo admite hasta ${LIMITE_IMAGEN_ALT} caracteres.`,
   procesar: "No pudimos procesar la imagen. Verifica que sea un JPG, PNG o WebP válido.",
+  almacen:
+    "No pudimos guardar la imagen por un problema del servidor, no por el archivo. Vuelve a intentarlo en unos minutos; si persiste, avisa al equipo.",
 };
 
 const textoError = error ? (MENSAJES_ERROR[error] ?? error) : null;

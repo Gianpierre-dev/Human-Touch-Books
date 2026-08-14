@@ -1,6 +1,9 @@
 import type { APIRoute } from "astro";
 import { bd } from "../../../../lib/bd";
-import { eliminarPortada } from "../../../../lib/almacen";
+// `borrarDelBucket` y no `eliminarPortada` a secas: la fila ya se guardo o se
+// borro cuando esto corre, asi que un fallo del bucket dejaria a quien opera
+// viendo un 500 sobre un cambio que SI se hizo (y al reintentar, «no existe»).
+import { borrarDelBucket } from "../../../../lib/almacen";
 import { leerDatosLibro, procesarPortada, verificarLinea } from "../../../../lib/libros";
 import { calcularReordenamiento, type Direccion } from "../../../../lib/orden";
 
@@ -18,7 +21,7 @@ export const POST: APIRoute = async ({ params, request, redirect }) => {
 
   if (accion === "eliminar") {
     await bd.libro.delete({ where: { id } });
-    await eliminarPortada(libro.portadaUrl);
+    await borrarDelBucket(libro.portadaUrl);
     return redirect("/admin?ok=eliminado", 303);
   }
 
@@ -67,7 +70,7 @@ export const POST: APIRoute = async ({ params, request, redirect }) => {
     data: { ...datos, ...(portada.url ? { portadaUrl: portada.url } : {}) },
   });
   if (portada.url) {
-    await eliminarPortada(libro.portadaUrl);
+    await borrarDelBucket(libro.portadaUrl);
   }
   return redirect("/admin?ok=guardado", 303);
 };

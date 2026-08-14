@@ -1,6 +1,6 @@
 import type { APIRoute } from "astro";
 import { bd } from "../../../../lib/bd";
-import { eliminarPortada } from "../../../../lib/almacen";
+import { borrarDelBucket } from "../../../../lib/almacen";
 import { calcularReordenamiento, type Direccion } from "../../../../lib/orden";
 
 export const prerender = false;
@@ -20,11 +20,7 @@ export const POST: APIRoute = async ({ params, request, redirect }) => {
     await bd.imagenHero.delete({ where: { id } });
     // La fila ya no existe: si el borrado en el bucket falla, queda un objeto
     // huerfano (inofensivo, nada lo referencia) y no un error para quien opera.
-    try {
-      await eliminarPortada(imagen.imagenUrl);
-    } catch {
-      /* objeto huerfano aceptable */
-    }
+    await borrarDelBucket(imagen.imagenUrl);
     return redirect(`${DESTINO}?ok=eliminada`, 303);
   }
 

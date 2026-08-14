@@ -1,6 +1,7 @@
 import type { APIRoute } from "astro";
 import { bd } from "../../lib/bd";
 import { ipDelCliente } from "../../lib/limite-intentos";
+import { registrarFallo } from "../../lib/registro";
 
 export const prerender = false;
 
@@ -114,7 +115,12 @@ export const POST: APIRoute = async ({ request, redirect, clientAddress }) => {
     // El cupo se gasta solo cuando el mensaje entra de verdad.
     registrarEnvio(ip);
     return redirect(DESTINO_OK, 303);
-  } catch {
+  } catch (fallo) {
+    // Este es el UNICO canal de captacion del sitio: si la base no responde,
+    // el colegio ve un aviso generico, se va, y sin esta linea nadie se entera
+    // de que hubo consultas perdidas. El visitante recibe el mismo mensaje de
+    // siempre; la diferencia es que el incidente queda registrado.
+    registrarFallo("registrar mensaje de contacto", fallo);
     return redirect(destinoError(), 303);
   }
 };
