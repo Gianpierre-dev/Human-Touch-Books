@@ -117,6 +117,26 @@ const ocultos = Object.entries(camposOcultos);
 
 const activos = elementos.filter((elemento) => elemento.activa).length;
 
+// El estilo (color e icono) que la web le da a cada elemento depende de su
+// posicion ENTRE LOS VISIBLES, porque la pagina publica consulta solo los
+// activos. Contar aqui sobre la lista completa hacia que al ocultar el primero
+// la vista previa siguiera mostrando el estilo viejo de los demas, justo lo
+// contrario de lo que promete el texto de esta pantalla. Los ocultos no
+// reciben estilo: en la web no aparecen.
+const estiloPorElemento = new Map<string, EstiloPrevio | undefined>();
+let visiblesContados = 0;
+for (const elemento of elementos) {
+  if (!elemento.activa) {
+    estiloPorElemento.set(elemento.id, undefined);
+    continue;
+  }
+  estiloPorElemento.set(
+    elemento.id,
+    estilos.length > 0 ? estilos[visiblesContados % estilos.length] : undefined,
+  );
+  visiblesContados++;
+}
+
 // Concuerda el demostrativo con el género del nombre: "este bloque", "esta tarjeta".
 const demostrativo = articulo === "la" ? "esta" : "este";
 
@@ -219,14 +239,14 @@ const clasesBotonPrincipal =
             {/* Vista previa del estilo fijo que la web le da a esta posición: el
                 icono y el color no se editan, pero conviene verlos aquí para
                 entender qué cambia al reordenar. Decorativa. */}
-            {estilos.length > 0 && (
+            {estiloPorElemento.get(elemento.id) && (
               <span
                 class="grid h-9 w-9 shrink-0 place-items-center rounded-full"
-                style={`background-color:${estilos[posicion % estilos.length]?.color}`}
+                style={`background-color:${estiloPorElemento.get(elemento.id)?.color}`}
                 aria-hidden="true"
               >
                 <svg viewBox="0 0 24 24" class="h-5 w-5 fill-white">
-                  <path d={estilos[posicion % estilos.length]?.icono} />
+                  <path d={estiloPorElemento.get(elemento.id)?.icono} />
                 </svg>
               </span>
             )}

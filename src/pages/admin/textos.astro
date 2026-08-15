@@ -1,6 +1,7 @@
 ---
 import PanelLayout from "../../layouts/PanelLayout.astro";
 import { bd } from "../../lib/bd";
+import { cargarCatalogoEscolar } from "../../lib/libros";
 import {
   CAMPOS_TEXTO,
   GRUPOS_TEXTO,
@@ -15,12 +16,10 @@ export const prerender = false;
 const filas = await bd.textoSitio.findMany();
 const propios = new Map(filas.map((fila) => [fila.clave, fila.valor]));
 
-// La descripción de la colección se calcula con el catálogo de libros, igual
-// que en la web: así el placeholder muestra el texto real que se está viendo.
-const escolares = await bd.libro.findMany({
-  where: { destacado: true, lineaRel: { tipo: "escolar" } },
-  orderBy: { orden: "asc" },
-});
+// La descripción de la colección se calcula con LA MISMA consulta que la web
+// (src/lib/libros.ts): escritas por separado se desincronizaron y este
+// placeholder llegó a sugerir un rango de grados que la web no mostraba.
+const escolares = await cargarCatalogoEscolar();
 const grados = escolares
   .map((libro) => libro.grado)
   .filter((grado): grado is string => Boolean(grado));

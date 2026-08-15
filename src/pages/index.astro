@@ -13,6 +13,7 @@ import {
   type EspacioImagen,
 } from "../lib/contenido";
 import { descripcionColeccionPorDefecto, resolverTextos } from "../lib/textos";
+import { cargarCatalogoEscolar } from "../lib/libros";
 import { cargarNavegacion } from "../lib/navegacion";
 import { listarRedes, resolverRedes } from "../lib/redes";
 import { serializarJsonLd } from "../lib/json-ld";
@@ -29,9 +30,19 @@ export const prerender = false;
 // Catalogo y ajustes administrados desde el panel (/admin). La clasificacion la
 // aporta la linea a la que pertenece cada libro: su `tipo` decide la seccion y
 // su clave/etiqueta arman los subgrupos de la coleccion escolar.
+// `activa: true`: una linea desactivada responde 404 en su pagina, sale del
+// menu y del mapa del sitio; sus titulos tampoco pueden seguir en la portada
+// bajo un encabezado cuyo enlace «Ver todo» lleva justamente a ese 404.
 const libros = await bd.libro.findMany({
-  where: { destacado: true },
-  orderBy: [{ lineaRel: { orden: "asc" } }, { orden: "asc" }, { creadoEn: "asc" }],
+  where: { destacado: true, lineaRel: { activa: true } },
+  // Desempate por la fecha de la linea: `Linea.orden` no es unico, y sin el dos
+  // lineas empatadas intercalan sus titulos y parten los grupos de la coleccion.
+  orderBy: [
+    { lineaRel: { orden: "asc" } },
+    { lineaRel: { creadoEn: "asc" } },
+    { orden: "asc" },
+    { creadoEn: "asc" },
+  ],
   include: { lineaRel: { select: { tipo: true, clave: true, etiquetaCorta: true } } },
 });
 
@@ -59,30 +70,35 @@ interface GrupoEscolar {
   etiqueta: string;
   libros: typeof escolares;
 }
+// Se agrupa por clave y no comparando con el ultimo grupo: asi el resultado no
+// depende de que la consulta devuelva cada linea de corrido. Si dos lineas
+// llegaran intercaladas, la version anterior repetia el encabezado y su enlace
+// «Ver todo» una vez por cada corte.
 const gruposEscolares: GrupoEscolar[] = [];
+const grupoPorClave = new Map<string, GrupoEscolar>();
 for (const libro of escolares) {
   if (!libro.lineaRel) continue;
-  const ultimo = gruposEscolares.at(-1);
-  if (ultimo?.clave === libro.lineaRel.clave) ultimo.libros.push(libro);
-  else
-    gruposEscolares.push({
-      clave: libro.lineaRel.clave,
-      etiqueta: libro.lineaRel.etiquetaCorta,
-      libros: [libro],
-    });
+  const existente = grupoPorClave.get(libro.lineaRel.clave);
+  if (existente) {
+    existente.libros.push(libro);
+    continue;
+  }
+  const grupo: GrupoEscolar = {
+    clave: libro.lineaRel.clave,
+    etiqueta: libro.lineaRel.etiquetaCorta,
+    libros: [libro],
+  };
+  grupoPorClave.set(grupo.clave, grupo);
+  gruposEscolares.push(grupo);
 }
 // Con subgrupos, el titulo del libro baja un nivel (h2 seccion > h3 grupo > h4
 // libro); sin ellos se queda en h3 para no saltar de h2 a h4.
 const EtiquetaLibro = gruposEscolares.length > 1 ? "h4" : "h3";
 
-// Los textos que hablan del catalogo ("reune N titulos, de X a Y") se calculan
-// sobre el catalogo escolar COMPLETO, no sobre los destacados: destacar 3 de 12
-// titulos no puede hacer que la web diga que la coleccion "reune 3 titulos".
-const catalogoEscolar = await bd.libro.findMany({
-  where: { lineaRel: { tipo: "escolar" } },
-  orderBy: [{ lineaRel: { orden: "asc" } }, { orden: "asc" }, { creadoEn: "asc" }],
-  select: { grado: true, subtitulo: true },
-});
+// Los textos que hablan del catalogo ("reune N titulos, de X a Y") salen de una
+// consulta compartida con /admin/textos: escritas por separado se
+// desincronizaron y el panel sugeria un rango de grados que la web no mostraba.
+const catalogoEscolar = await cargarCatalogoEscolar();
 const gradosEscolares = catalogoEscolar.map((l) => l.grado).filter((g): g is string => Boolean(g));
 const primerGrado = gradosEscolares.at(0);
 const ultimoGrado = gradosEscolares.at(-1);

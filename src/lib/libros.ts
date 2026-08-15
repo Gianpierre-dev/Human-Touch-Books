@@ -71,6 +71,40 @@ export function leerDatosLibro(datos: FormData): { datos?: DatosLibro; error?: s
 }
 
 /**
+ * Catalogo escolar tal como lo ve el publico: de aqui salen los textos que
+ * hablan de la coleccion («reune N titulos, de X a Y») y el subtitulo comun de
+ * la serie.
+ *
+ * POR QUE ESTA CONSULTA VIVE AQUI Y NO EN CADA PAGINA
+ * La escribian por separado la portada y /admin/textos, y se desincronizaron:
+ * el panel filtraba por `destacado` y ordenaba solo por el orden del libro, asi
+ * que mostraba como sugerencia «de 1.° de Primaria a 6.° de Primaria» mientras
+ * la web publicaba «de 1.° de Primaria a 5.° de Secundaria». Quien administra
+ * veia un texto que no existia en ningun sitio y al «corregirlo» habria
+ * congelado el defecto correcto. Con una sola consulta eso no puede repetirse.
+ *
+ * NO filtra por `destacado`: destacar 3 de 12 titulos no puede hacer que la web
+ * diga que la coleccion reune 3. SI filtra por linea activa: una linea
+ * desactivada no existe para el publico, y sus titulos tampoco.
+ */
+export async function cargarCatalogoEscolar(): Promise<
+  { grado: string | null; subtitulo: string | null }[]
+> {
+  return bd.libro.findMany({
+    where: { lineaRel: { tipo: "escolar", activa: true } },
+    // El desempate por la fecha de la linea evita que dos lineas con el mismo
+    // `orden` (no es unico) intercalen sus titulos.
+    orderBy: [
+      { lineaRel: { orden: "asc" } },
+      { lineaRel: { creadoEn: "asc" } },
+      { orden: "asc" },
+      { creadoEn: "asc" },
+    ],
+    select: { grado: true, subtitulo: true },
+  });
+}
+
+/**
  * Comprueba que la linea elegida exista. El `<select>` solo ofrece lineas
  * reales, pero el formulario se puede enviar a mano y sin esta comprobacion la
  * clave foranea reventaria con un error 500 en vez de un mensaje entendible.
