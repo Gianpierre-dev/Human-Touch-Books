@@ -1,6 +1,6 @@
 import type { APIRoute } from "astro";
 import { bd } from "../../lib/bd";
-import { ipDelCliente } from "../../lib/limite-intentos";
+import { crearLimitadorIntentos, ipDelCliente } from "../../lib/limite-intentos";
 import { registrarFallo } from "../../lib/registro";
 import { ErrorCuerpoExcedido, leerFormulario } from "../../lib/cuerpo";
 
@@ -24,8 +24,7 @@ const TAMANO_MAXIMO_CUERPO = 100_000; // bytes
 // Limite de envios por IP: 3 cada 10 minutos, en memoria del proceso.
 const VENTANA_MS = 10 * 60 * 1000;
 const ENVIOS_MAXIMOS = 3;
-const IPS_MAXIMAS = 10_000;
-const enviosPorIp = new Map<string, number[]>();
+const limitador = crearLimitadorIntentos(ENVIOS_MAXIMOS, VENTANA_MS);
 
 const LIMITES = {
   nombre: 120,
@@ -41,32 +40,6 @@ interface DatosMensaje {
   telefono: string;
   asunto: string;
   mensaje: string;
-}
-
-// Consultar y registrar van separados a proposito: si el registro ocurriera en
-// la consulta, un formulario mal llenado (o un bot mandando basura) gastaria el
-// cupo de una persona que todavia no logro enviar nada.
-function superaLimite(ip: string): boolean {
-  return vigentes(ip).length >= ENVIOS_MAXIMOS;
-}
-
-function registrarEnvio(ip: string): void {
-  const marcas = vigentes(ip);
-  // Techo de claves: descarta la mas antigua (Map itera por orden de insercion).
-  if (!enviosPorIp.has(ip) && enviosPorIp.size >= IPS_MAXIMAS) {
-    const masAntigua = enviosPorIp.keys().next().value;
-    if (masAntigua !== undefined) enviosPorIp.delete(masAntigua);
-  }
-  enviosPorIp.set(ip, [...marcas, Date.now()]);
-}
-
-// Purga perezosa: solo la IP consultada, no el Map entero en cada peticion.
-function vigentes(ip: string): number[] {
-  const ahora = Date.now();
-  const marcas = (enviosPorIp.get(ip) ?? []).filter((marca) => ahora - marca < VENTANA_MS);
-  if (marcas.length === 0) enviosPorIp.delete(ip);
-  else enviosPorIp.set(ip, marcas);
-  return marcas;
 }
 
 function texto(formulario: FormData, clave: string): string {
@@ -95,7 +68,7 @@ function leerDatosMensaje(formulario: FormData): { datos?: DatosMensaje; campo?:
 export const POST: APIRoute = async ({ request, redirect, clientAddress }) => {
   try {
     const ip = ipDelCliente(request, clientAddress);
-    if (superaLimite(ip)) {
+    if (limitador.superaLimite(ip)) {
       return redirect(destinoError("limite"), 303);
     }
 
@@ -118,8 +91,10 @@ export const POST: APIRoute = async ({ request, redirect, clientAddress }) => {
     if (!datos) return redirect(destinoError(campo), 303);
 
     await bd.mensaje.create({ data: datos });
-    // El cupo se gasta solo cuando el mensaje entra de verdad.
-    registrarEnvio(ip);
+    // El cupo se gasta solo cuando el mensaje entra de verdad: si se anotara al
+    // comprobarlo, un formulario mal llenado (o un bot mandando basura) dejaria
+    // sin cupo a una persona que todavia no logro enviar nada.
+    limitador.registrarIntento(ip);
     return redirect(DESTINO_OK, 303);
   } catch (fallo) {
     // Este es el UNICO canal de captacion del sitio: si la base no responde,

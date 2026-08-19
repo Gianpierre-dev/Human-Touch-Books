@@ -141,7 +141,10 @@ const listaLibros =
 >
   <Header whatsapp={whatsapp} base="/" navegacion={navegacion} />
 
-  {listaLibros && <script type="application/ld+json" is:inline set:html={listaLibros} />}
+  {
+    /* eslint-disable-next-line astro/no-set-html-directive -- Unica forma de escribir JSON-LD en Astro, y el contenido ya viene escapado por serializarJsonLd(). */
+    listaLibros && <script type="application/ld+json" is:inline set:html={listaLibros} />
+  }
 
   {
     /*

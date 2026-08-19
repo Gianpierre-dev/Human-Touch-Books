@@ -74,7 +74,69 @@ const MENSAJES_ERROR: Record<string, string> = {
     "No pudimos guardar la imagen por un problema del servidor, no por el archivo. Vuelve a intentarlo en unos minutos; si persiste, avisa al equipo.",
 };
 
+const textoOk = ok ? (MENSAJES_OK[ok] ?? "Listo.") : null;
 const textoError = error ? (MENSAJES_ERROR[error] ?? error) : null;
+
+// El navegador salta al fragmento pero NUNCA se lo envia al servidor, asi que
+// el elemento tocado viaja ademas como parametro «zona-id». Con el, el aviso se
+// pinta dentro de la tarjeta a la que salta la pantalla en lugar de quedar en un
+// banner a varias pantallas de distancia. El id puede llevar guiones: se corta
+// por el primero y el resto es el id completo.
+const foco = Astro.url.searchParams.get("foco") ?? "";
+const corte = foco.indexOf("-");
+const zonaFoco = corte > 0 ? foco.slice(0, corte) : "";
+const idFoco = corte > 0 ? foco.slice(corte + 1) : "";
+
+// Sin fila a la que llevarlo (altas, borrados, avisos de otros formularios que
+// no mandan `foco`, o una linea que ya no existe) el banner de arriba sigue
+// siendo el unico lugar posible.
+const avisoEnFila = (textoOk ?? textoError) !== null && lineas.some((linea) => linea.id === idFoco);
+
+// Las zonas distintas de «linea» viven dentro del <details>, que nace cerrado
+// en cada recarga: sin abrirlo, el fragmento apunta a algo que no se ve.
+const desplegarContenido = (id: string): boolean => id === idFoco && zonaFoco !== "linea";
+
+const clasesAvisoOk = "rounded-lg bg-wa/10 px-4 py-2.5 text-sm font-semibold text-wa-deep";
+const clasesAvisoError =
+  "rounded-lg bg-accent/10 px-4 py-2.5 text-sm font-semibold text-accent-deep";
+
+// Lo enviado en un formulario rechazado vuelve en una cookie de un solo uso
+// (la escriben los endpoints de /api/admin/lineas). Se lee y se borra en el
+// mismo render: una recarga posterior debe mostrar de nuevo lo que hay en la
+// base, no valores viejos.
+interface BorradorPanel {
+  id: string;
+  campos: Record<string, string>;
+}
+
+const COOKIE_BORRADOR = "borrador_lineas";
+
+function interpretarBorrador(crudo: string | undefined): BorradorPanel | null {
+  if (!crudo) return null;
+  let dato: unknown;
+  try {
+    dato = JSON.parse(crudo);
+  } catch {
+    return null;
+  }
+  if (typeof dato !== "object" || dato === null) return null;
+  const { id, campos } = dato as { id?: unknown; campos?: unknown };
+  if (typeof id !== "string" || typeof campos !== "object" || campos === null) return null;
+
+  const limpios: Record<string, string> = {};
+  for (const [nombre, valor] of Object.entries(campos as Record<string, unknown>)) {
+    if (typeof valor === "string") limpios[nombre] = valor;
+  }
+  return { id, campos: limpios };
+}
+
+const borrador = interpretarBorrador(Astro.cookies.get(COOKIE_BORRADOR)?.value);
+Astro.cookies.delete(COOKIE_BORRADOR, { path: "/admin/lineas" });
+
+// El borrador lleva el id de su fila: asi lo escrito en una linea no se filtra a
+// las demas, que se siguen pintando con lo que hay en la base.
+const enviado = (id: string, campo: string): string | undefined =>
+  borrador && borrador.id === id ? borrador.campos[campo] : undefined;
 
 const clasesCampo =
   "mt-1.5 min-h-[44px] w-full rounded-lg border border-line bg-paper px-3.5 py-2.5 text-sm outline-none focus-visible:border-brand focus-visible:ring-2 focus-visible:ring-brand/30";
@@ -186,20 +248,8 @@ const defectosPorLinea = new Map(lineas.map((linea) => [linea.id, defectosConten
     presenta.
   </p>
 
-  {
-    ok && (
-      <p class="mt-4 rounded-lg bg-wa/10 px-4 py-2.5 text-sm font-semibold text-wa-deep">
-        {MENSAJES_OK[ok] ?? "Listo."}
-      </p>
-    )
-  }
-  {
-    textoError && (
-      <p class="mt-4 rounded-lg bg-accent/10 px-4 py-2.5 text-sm font-semibold text-accent-deep">
-        {textoError}
-      </p>
-    )
-  }
+  {!avisoEnFila && textoOk && <p class:list={[clasesAvisoOk, "mt-4"]}>{textoOk}</p>}
+  {!avisoEnFila && textoError && <p class:list={[clasesAvisoError, "mt-4"]}>{textoError}</p>}
 
   {
     lineas.length === 0 && (
@@ -226,6 +276,11 @@ const defectosPorLinea = new Map(lineas.map((linea) => [linea.id, defectosConten
           class="rounded-xl border border-line bg-surface p-6 shadow-sm"
           aria-labelledby={`titulo-${linea.id}`}
         >
+          {linea.id === idFoco && textoOk && <p class:list={[clasesAvisoOk, "mb-4"]}>{textoOk}</p>}
+          {linea.id === idFoco && textoError && (
+            <p class:list={[clasesAvisoError, "mb-4"]}>{textoError}</p>
+          )}
+
           <div class="flex flex-wrap items-start justify-between gap-3">
             <div class="flex items-center gap-3">
               {/* El color es dato del cliente, no marcado: va como estilo de una
@@ -378,7 +433,7 @@ const defectosPorLinea = new Map(lineas.map((linea) => [linea.id, defectosConten
                   name="nombre"
                   required
                   maxlength={LIMITES_LINEA.nombre}
-                  value={linea.nombre}
+                  value={enviado(linea.id, "nombre") ?? linea.nombre}
                   class={clasesCampo}
                 />
               </label>
@@ -391,7 +446,7 @@ const defectosPorLinea = new Map(lineas.map((linea) => [linea.id, defectosConten
                   name="etiqueta_corta"
                   required
                   maxlength={LIMITES_LINEA.etiquetaCorta}
-                  value={linea.etiquetaCorta}
+                  value={enviado(linea.id, "etiqueta_corta") ?? linea.etiquetaCorta}
                   class={clasesCampo}
                 />
               </label>
@@ -405,7 +460,7 @@ const defectosPorLinea = new Map(lineas.map((linea) => [linea.id, defectosConten
                   required
                   maxlength={LIMITES_LINEA.clave}
                   pattern="[a-z0-9]+(-[a-z0-9]+)*"
-                  value={linea.clave}
+                  value={enviado(linea.id, "clave") ?? linea.clave}
                   aria-describedby={`ayuda-clave-${linea.id}`}
                   class={clasesCampo}
                 />
@@ -419,7 +474,7 @@ const defectosPorLinea = new Map(lineas.map((linea) => [linea.id, defectosConten
                   <input
                     type="color"
                     name="color_hex"
-                    value={linea.colorHex}
+                    value={enviado(linea.id, "color_hex") ?? linea.colorHex}
                     aria-label={`Color de identidad de ${linea.nombre}`}
                     aria-describedby={`ayuda-color-${linea.id}`}
                     class="mt-1.5 h-[44px] w-full cursor-pointer rounded-lg border border-line bg-paper px-1.5 py-1"
@@ -427,14 +482,22 @@ const defectosPorLinea = new Map(lineas.map((linea) => [linea.id, defectosConten
                 </label>
                 <label class="block">
                   <span class="text-sm font-semibold text-ink">Orden</span>
-                  <input type="number" name="orden" value={linea.orden} class={clasesCampo} />
+                  <input
+                    type="number"
+                    name="orden"
+                    value={enviado(linea.id, "orden") ?? linea.orden}
+                    class={clasesCampo}
+                  />
                 </label>
               </div>
               <label class="block">
                 <span class="text-sm font-semibold text-ink">Tipo</span>
                 <select name="tipo" class={clasesCampo} aria-describedby={`ayuda-tipo-${linea.id}`}>
                   {Object.entries(ETIQUETA_TIPO_LINEA).map(([valor, etiqueta]) => (
-                    <option value={valor} selected={linea.tipo === valor}>
+                    <option
+                      value={valor}
+                      selected={(enviado(linea.id, "tipo") ?? linea.tipo) === valor}
+                    >
                       {etiqueta}
                     </option>
                   ))}
@@ -456,7 +519,7 @@ const defectosPorLinea = new Map(lineas.map((linea) => [linea.id, defectosConten
                   required
                   maxlength={LIMITES_LINEA.descripcion}
                   class={clasesCampo}
-                  set:text={linea.descripcion}
+                  set:text={enviado(linea.id, "descripcion") ?? linea.descripcion}
                 />
               </label>
               <p id={`ayuda-color-${linea.id}`} class="text-xs text-ink/70 sm:col-span-2">
@@ -470,8 +533,14 @@ const defectosPorLinea = new Map(lineas.map((linea) => [linea.id, defectosConten
 
           {/* El contenido de la página pública va plegado: son doce campos más y
               desplegados dejaban la lista de líneas imposible de recorrer.
-              <details> funciona con teclado y sin JavaScript. */}
-          <details id={`contenido-${linea.id}`} class="mt-5 border-t border-line pt-5">
+              <details> funciona con teclado y sin JavaScript. Se abre solo
+              cuando el aviso viene de un formulario de aquí dentro: si no, lo
+              recién guardado (o lo rechazado) quedaría fuera de la vista. */}
+          <details
+            id={`contenido-${linea.id}`}
+            open={desplegarContenido(linea.id)}
+            class="mt-5 border-t border-line pt-5"
+          >
             <summary class="foco-marca inline-flex min-h-[44px] cursor-pointer list-none items-center gap-2 text-sm font-bold text-brand [&::-webkit-details-marker]:hidden">
               <svg viewBox="0 0 24 24" class="h-4 w-4 fill-current" aria-hidden="true">
                 <path d="M7 10l5 5 5-5H7Z" />
@@ -490,7 +559,7 @@ const defectosPorLinea = new Map(lineas.map((linea) => [linea.id, defectosConten
               class="mt-5 grid gap-4 sm:grid-cols-2"
             >
               {CAMPOS_CONTENIDO.map((campo) => {
-                const valor = linea[campo.clave] ?? "";
+                const valor = enviado(linea.id, campo.campo) ?? linea[campo.clave] ?? "";
                 const idAyuda = `ayuda-${campo.campo}-${linea.id}`;
                 const sugerencia = defectosPorLinea.get(linea.id)?.[campo.clave] ?? "";
                 return (

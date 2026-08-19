@@ -148,6 +148,7 @@ const rutaActual = Astro.url.pathname.replace(/\/$/, "") || "/admin";
     id="dialogo-confirmar"
     class="m-auto w-[min(26rem,calc(100vw-2rem))] rounded-xl border border-line bg-surface p-6 shadow-2xl backdrop:bg-grafito/55"
     aria-labelledby="dialogo-confirmar-titulo"
+    aria-describedby="dialogo-confirmar-mensaje"
   >
     <h2 id="dialogo-confirmar-titulo" class="text-lg font-bold text-ink">¿Estás seguro?</h2>
     <p id="dialogo-confirmar-mensaje" class="mt-2 text-sm leading-relaxed text-ink/75"></p>
@@ -204,6 +205,62 @@ const rutaActual = Astro.url.pathname.replace(/\/$/, "") || "/admin";
       });
       dialogo.addEventListener("click", (evento) => {
         if (evento.target === dialogo) dialogo.close();
+      });
+    })();
+  </script>
+
+  <script is:inline>
+    (() => {
+      // Guardar dispara una recarga completa que puede tardar (subidas de
+      // imagen sobre todo): sin freno, un segundo clic crea la fila dos veces.
+      const ETIQUETA = "Guardando…";
+      // Contenido previo de cada boton bloqueado. Vive en memoria, que
+      // sobrevive al bfcache igual que el DOM que este restaura.
+      const originales = new Map();
+
+      // En captura, para adelantarse a cualquier manejador de la pagina que
+      // detuviera la propagacion del submit.
+      document.addEventListener(
+        "submit",
+        (evento) => {
+          const formulario = evento.target;
+          if (!(formulario instanceof HTMLFormElement)) return;
+
+          // `method="dialog"` NO navega: solo cierra el <dialog>. Bloquear su
+          // boton lo dejaria inservible para siempre, porque no hay recarga que
+          // lo restaure. Es el caso del «Cancelar» del modal de confirmacion, y
+          // ademas de no poder cancelarse, al perder el foco inicial este
+          // pasaria al boton rojo: un Enter reflejo borraria la fila.
+          if (formulario.getAttribute("method")?.toLowerCase() === "dialog") return;
+
+          const boton =
+            evento.submitter ??
+            formulario.querySelector("button[type='submit'], button:not([type])");
+          if (!(boton instanceof HTMLButtonElement) || boton.disabled) return;
+
+          // Se aplaza al final del ciclo por dos razones: un boton deshabilitado
+          // no aporta su propio name/value al envio, y aqui todavia no se sabe
+          // si el modal de confirmacion (escucha en burbuja) cancelara el submit.
+          setTimeout(() => {
+            if (evento.defaultPrevented || boton.disabled) return;
+            originales.set(boton, boton.innerHTML);
+            boton.textContent = ETIQUETA;
+            boton.disabled = true;
+          }, 0);
+        },
+        true,
+      );
+
+      // Volver con el historial reusa el DOM tal como quedo: el boton seguiria
+      // bloqueado y diciendo «Guardando…» sobre un formulario que si se puede
+      // reenviar.
+      addEventListener("pageshow", (evento) => {
+        if (!evento.persisted) return;
+        originales.forEach((contenido, boton) => {
+          boton.innerHTML = contenido;
+          boton.disabled = false;
+        });
+        originales.clear();
       });
     })();
   </script>

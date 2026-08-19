@@ -17,46 +17,47 @@
 //
 // NO se valida DATABASE_URL: la lee Prisma y su fallo ya es ruidoso y claro.
 
-/** Faltantes de UNA pasada: la lista completa evita descubrirlas de a una. */
-function exigir(nombres: readonly string[]): Record<string, string> {
-  const valores: Record<string, string> = {};
-  const faltantes: string[] = [];
+// Antes esto pasaba por un `Record<string, string>` intermedio, y ese tipo
+// mentia dos veces: prometia `string` para CUALQUIER clave —incluida una mal
+// escrita— y obligaba a mantener la lista de nombres en dos sitios (el arreglo
+// que se validaba y el objeto que se exponia). Anadir una variable al objeto y
+// olvidarla en la lista compilaba sin una queja y llegaba a produccion como
+// `undefined`. Leyendo cada nombre UNA sola vez, en el mismo lugar donde se
+// expone, esa clase de fallo deja de existir.
 
-  for (const nombre of nombres) {
-    const valor = process.env[nombre]?.trim();
-    if (!valor) faltantes.push(nombre);
-    else valores[nombre] = valor;
-  }
+const faltantes: string[] = [];
 
-  if (faltantes.length > 0) {
-    throw new Error(
-      `Faltan variables de entorno obligatorias: ${faltantes.join(", ")}. ` +
-        "El proceso no arranca sin ellas: revisa el .env local o las variables del servicio.",
-    );
-  }
-  return valores;
+/**
+ * Lee una variable obligatoria.
+ *
+ * Devuelve "" cuando falta en lugar de lanzar en el acto para poder reunir
+ * TODAS las que faltan y nombrarlas juntas: descubrirlas de a una son cuatro
+ * despliegues rojos seguidos. Ese "" no llega a nadie — el `throw` de abajo
+ * corre antes de que el modulo termine de evaluarse.
+ */
+function leer(nombre: string): string {
+  const valor = process.env[nombre]?.trim();
+  if (valor) return valor;
+  faltantes.push(nombre);
+  return "";
 }
-
-const VARIABLES = [
-  "JWT_SECRET",
-  "WASABI_ACCESS_KEY",
-  "WASABI_SECRET_KEY",
-  "WASABI_BUCKET_NAME",
-  "WASABI_REGION",
-  "WASABI_ENDPOINT",
-] as const;
-
-const valores = exigir(VARIABLES);
 
 // Se exponen ya validadas y como `string` (no `string | undefined`): quien las
 // consume no tiene que volver a preguntarse si existen.
 export const ENTORNO = {
-  jwtSecreto: valores.JWT_SECRET,
+  jwtSecreto: leer("JWT_SECRET"),
   wasabi: {
-    accessKey: valores.WASABI_ACCESS_KEY,
-    secretKey: valores.WASABI_SECRET_KEY,
-    bucket: valores.WASABI_BUCKET_NAME,
-    region: valores.WASABI_REGION,
-    endpoint: valores.WASABI_ENDPOINT,
+    accessKey: leer("WASABI_ACCESS_KEY"),
+    secretKey: leer("WASABI_SECRET_KEY"),
+    bucket: leer("WASABI_BUCKET_NAME"),
+    region: leer("WASABI_REGION"),
+    endpoint: leer("WASABI_ENDPOINT"),
   },
 } as const;
+
+if (faltantes.length > 0) {
+  throw new Error(
+    `Faltan variables de entorno obligatorias: ${faltantes.join(", ")}. ` +
+      "El proceso no arranca sin ellas: revisa el .env local o las variables del servicio.",
+  );
+}

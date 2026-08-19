@@ -65,7 +65,7 @@ const clasesBoton =
     </div>
     <a
       href="/admin/libros/nuevo"
-      class="rounded-full bg-brand px-6 py-2.5 text-sm font-bold text-white transition-colors hover:bg-brand-deep"
+      class="foco-marca inline-flex min-h-[44px] items-center rounded-full bg-brand px-6 text-sm font-bold text-white transition-colors hover:bg-brand-deep"
     >
       + Agregar libro
     </a>
@@ -97,106 +97,126 @@ const clasesBoton =
     )
   }
 
-  <div class="mt-6 overflow-x-auto rounded-xl border border-line bg-surface shadow-sm">
-    <table class="w-full text-sm">
-      <thead>
-        <tr
-          class="border-b border-line text-left text-xs font-bold tracking-wide text-ink/60 uppercase"
-        >
-          <th class="px-4 py-3">Portada</th>
-          <th class="px-4 py-3">Título</th>
-          <th class="px-4 py-3">Línea</th>
-          <th class="px-4 py-3">Grado / Nivel</th>
-          <th class="px-4 py-3">Orden</th>
-          <th class="px-4 py-3 text-right">Acciones</th>
-        </tr>
-      </thead>
-      <tbody>
-        {
-          libros.map((libro) => {
-            // Los botones de orden mueven el libro dentro de SU linea: un libro
-            // huerfano no esta en ninguna lista y no los muestra.
-            const posicion = posicionEnLinea.get(libro.id);
-            const total = libro.lineaId ? (totalPorLinea.get(libro.lineaId) ?? 0) : 0;
-            return (
-              <tr class="border-b border-line/60 last:border-0">
-                <td class="px-4 py-3">
-                  <img
-                    src={libro.portadaUrl}
-                    alt=""
-                    class="h-16 w-12 rounded object-cover ring-1 ring-line"
-                    loading="lazy"
-                  />
-                </td>
-                <td class="px-4 py-3 font-semibold text-ink">{libro.titulo}</td>
-                {/* El huerfano se marca, no se disimula con un guion: un libro
+  {
+    libros.length === 0 ? (
+      <p class="mt-6 rounded-xl border border-line bg-surface px-6 py-10 text-center text-sm text-ink/70">
+        Todavía no hay libros en el catálogo. Agrega el primero con el botón «Agregar libro»:
+        mientras la lista esté vacía, la web no muestra la colección escolar ni el plan lector.
+      </p>
+    ) : (
+      <div class="mt-6 overflow-x-auto rounded-xl border border-line bg-surface shadow-sm">
+        <table class="w-full text-sm">
+          <caption class="sr-only">
+            Libros del catálogo, agrupados por línea y en el orden en que se muestran en la web
+          </caption>
+          <thead>
+            <tr class="border-b border-line text-left text-xs font-bold tracking-wide text-ink/60 uppercase">
+              <th scope="col" class="px-4 py-3">
+                Portada
+              </th>
+              <th scope="col" class="px-4 py-3">
+                Título
+              </th>
+              <th scope="col" class="px-4 py-3">
+                Línea
+              </th>
+              <th scope="col" class="px-4 py-3">
+                Grado / Nivel
+              </th>
+              <th scope="col" class="px-4 py-3">
+                Orden
+              </th>
+              <th scope="col" class="px-4 py-3 text-right">
+                Acciones
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            {libros.map((libro) => {
+              // Los botones de orden mueven el libro dentro de SU linea: un libro
+              // huerfano no esta en ninguna lista y no los muestra.
+              const posicion = posicionEnLinea.get(libro.id);
+              const total = libro.lineaId ? (totalPorLinea.get(libro.lineaId) ?? 0) : 0;
+              return (
+                <tr class="border-b border-line/60 last:border-0">
+                  <td class="px-4 py-3">
+                    <img
+                      src={libro.portadaUrl}
+                      alt=""
+                      class="h-16 w-12 rounded object-cover ring-1 ring-line"
+                      loading="lazy"
+                    />
+                  </td>
+                  <td class="px-4 py-3 font-semibold text-ink">{libro.titulo}</td>
+                  {/* El huerfano se marca, no se disimula con un guion: un libro
                   sin linea desaparecio de la web y eso hay que verlo. */}
-                <td class="px-4 py-3">
-                  {libro.lineaRel ? (
-                    <span class="text-ink/70">{libro.lineaRel.etiquetaCorta}</span>
-                  ) : (
-                    <span class="rounded-full bg-accent/10 px-2.5 py-0.5 text-[0.7rem] font-bold text-accent-deep">
-                      Sin línea
-                    </span>
-                  )}
-                </td>
-                <td class="px-4 py-3 text-ink/70">{libro.grado ?? libro.nivel ?? "—"}</td>
-                <td class="px-4 py-3 text-ink/70">{libro.orden}</td>
-                <td class="px-4 py-3">
-                  <div class="flex flex-wrap items-center justify-end gap-2">
-                    {posicion !== undefined && (
-                      <>
-                        <form method="post" action={`/api/admin/libros/${libro.id}`}>
-                          <input type="hidden" name="_accion" value="subir" />
-                          <button
-                            type="submit"
-                            class={clasesBoton}
-                            disabled={posicion === 1}
-                            aria-label={`Subir «${libro.titulo}» una posición dentro de su línea`}
-                          >
-                            <svg
-                              viewBox="0 0 24 24"
-                              class="h-4 w-4 fill-current"
-                              aria-hidden="true"
-                            >
-                              <path d="M12 6l6 6h-4v6h-4v-6H6l6-6Z" />
-                            </svg>
-                            Subir
-                          </button>
-                        </form>
-                        <form method="post" action={`/api/admin/libros/${libro.id}`}>
-                          <input type="hidden" name="_accion" value="bajar" />
-                          <button
-                            type="submit"
-                            class={clasesBoton}
-                            disabled={posicion === total}
-                            aria-label={`Bajar «${libro.titulo}» una posición dentro de su línea`}
-                          >
-                            <svg
-                              viewBox="0 0 24 24"
-                              class="h-4 w-4 fill-current"
-                              aria-hidden="true"
-                            >
-                              <path d="M12 18l-6-6h4V6h4v6h4l-6 6Z" />
-                            </svg>
-                            Bajar
-                          </button>
-                        </form>
-                      </>
+                  <td class="px-4 py-3">
+                    {libro.lineaRel ? (
+                      <span class="text-ink/70">{libro.lineaRel.etiquetaCorta}</span>
+                    ) : (
+                      <span class="rounded-full bg-accent/10 px-2.5 py-0.5 text-[0.7rem] font-bold text-accent-deep">
+                        Sin línea
+                      </span>
                     )}
-                    <a
-                      href={`/admin/libros/${libro.id}`}
-                      class="foco-marca inline-flex min-h-[44px] items-center px-2 font-semibold text-brand hover:text-brand-deep"
-                    >
-                      Editar<span class="sr-only"> «{libro.titulo}»</span>
-                    </a>
-                  </div>
-                </td>
-              </tr>
-            );
-          })
-        }
-      </tbody>
-    </table>
-  </div>
+                  </td>
+                  <td class="px-4 py-3 text-ink/70">{libro.grado ?? libro.nivel ?? "—"}</td>
+                  <td class="px-4 py-3 text-ink/70">{libro.orden}</td>
+                  <td class="px-4 py-3">
+                    <div class="flex flex-wrap items-center justify-end gap-2">
+                      {posicion !== undefined && (
+                        <>
+                          <form method="post" action={`/api/admin/libros/${libro.id}`}>
+                            <input type="hidden" name="_accion" value="subir" />
+                            <button
+                              type="submit"
+                              class={clasesBoton}
+                              disabled={posicion === 1}
+                              aria-label={`Subir «${libro.titulo}» una posición dentro de su línea`}
+                            >
+                              <svg
+                                viewBox="0 0 24 24"
+                                class="h-4 w-4 fill-current"
+                                aria-hidden="true"
+                              >
+                                <path d="M12 6l6 6h-4v6h-4v-6H6l6-6Z" />
+                              </svg>
+                              Subir
+                            </button>
+                          </form>
+                          <form method="post" action={`/api/admin/libros/${libro.id}`}>
+                            <input type="hidden" name="_accion" value="bajar" />
+                            <button
+                              type="submit"
+                              class={clasesBoton}
+                              disabled={posicion === total}
+                              aria-label={`Bajar «${libro.titulo}» una posición dentro de su línea`}
+                            >
+                              <svg
+                                viewBox="0 0 24 24"
+                                class="h-4 w-4 fill-current"
+                                aria-hidden="true"
+                              >
+                                <path d="M12 18l-6-6h4V6h4v6h4l-6 6Z" />
+                              </svg>
+                              Bajar
+                            </button>
+                          </form>
+                        </>
+                      )}
+                      <a
+                        href={`/admin/libros/${libro.id}`}
+                        class="foco-marca inline-flex min-h-[44px] items-center px-2 font-semibold text-brand hover:text-brand-deep"
+                      >
+                        Editar<span class="sr-only"> «{libro.titulo}»</span>
+                      </a>
+                    </div>
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+    )
+  }
 </PanelLayout>

@@ -5,7 +5,8 @@ import { bd } from "../../../../lib/bd";
 // viendo un 500 sobre un cambio que SI se hizo (y al reintentar, «no existe»).
 import { borrarDelBucket } from "../../../../lib/almacen";
 import { leerDatosLibro, procesarPortada, verificarLinea } from "../../../../lib/libros";
-import { calcularReordenamiento, type Direccion } from "../../../../lib/orden";
+import { moverEnLista } from "../../../../lib/orden";
+import { guardarBorrador } from "../../../../lib/borrador";
 import {
   ErrorCuerpoExcedido,
   leerFormulario,
@@ -14,9 +15,12 @@ import {
 
 export const prerender = false;
 
-const ORDEN_LISTA = [{ orden: "asc" as const }, { creadoEn: "asc" as const }];
+// La cookie cubre /admin/libros entero, asi que el borrador lleva de que ficha
+// es: el de otro libro (o el de un alta) no puede repoblar esta.
+const COOKIE_BORRADOR = "borrador_libros";
+const RUTA_BORRADOR = "/admin/libros";
 
-export const POST: APIRoute = async ({ params, request, redirect }) => {
+export const POST: APIRoute = async ({ params, request, redirect, cookies }) => {
   const id = params.id ?? "";
   const libro = await bd.libro.findUnique({ where: { id } });
   if (!libro) return redirect("/admin?error=noexiste", 303);
@@ -42,39 +46,32 @@ export const POST: APIRoute = async ({ params, request, redirect }) => {
     // ningun sitio, asi que tampoco hay una lista en la que moverlo.
     if (!libro.lineaId) return redirect("/admin?error=sinlinea", 303);
 
-    const lista = await bd.libro.findMany({
-      where: { lineaId: libro.lineaId },
-      orderBy: ORDEN_LISTA,
-      select: { id: true, orden: true },
+    const movido = await moverEnLista({
+      cliente: bd,
+      delegado: bd.libro,
+      filtro: { lineaId: libro.lineaId },
+      id,
+      direccion: accion,
     });
-    // Renumera la linea entera de forma consecutiva: si dos libros comparten
-    // el mismo `orden` (pasa con el valor que trae el formulario por defecto),
-    // intercambiar solo los dos valores no moveria nada.
-    const nuevos = calcularReordenamiento(lista, id, accion as Direccion);
-    if (!nuevos) return redirect("/admin?ok=sincambios", 303);
-
-    await bd.$transaction(
-      nuevos.map((fila) =>
-        bd.libro.update({ where: { id: fila.id }, data: { orden: fila.orden } }),
-      ),
-    );
-    return redirect("/admin?ok=reordenado", 303);
+    return redirect(`/admin?ok=${movido ? "reordenado" : "sincambios"}`, 303);
   }
+
+  // Una edicion rechazada repintaba la ficha desde la base y se llevaba por
+  // delante todo lo que se acababa de escribir. El borrador lleva el id para
+  // que no pueda repoblar la ficha de otro libro.
+  const rechazar = (mensaje: string) => {
+    guardarBorrador({ cookies, nombre: COOKIE_BORRADOR, ruta: RUTA_BORRADOR, id }, formulario);
+    return redirect(`/admin/libros/${id}?error=${encodeURIComponent(mensaje)}`, 303);
+  };
 
   const { datos, error } = leerDatosLibro(formulario);
-  if (!datos) {
-    return redirect(`/admin/libros/${id}?error=${encodeURIComponent(error ?? "")}`, 303);
-  }
+  if (!datos) return rechazar(error ?? "");
 
   const errorLinea = await verificarLinea(datos.lineaId);
-  if (errorLinea) {
-    return redirect(`/admin/libros/${id}?error=${encodeURIComponent(errorLinea)}`, 303);
-  }
+  if (errorLinea) return rechazar(errorLinea);
 
   const portada = await procesarPortada(formulario, datos.titulo);
-  if (portada.error) {
-    return redirect(`/admin/libros/${id}?error=${encodeURIComponent(portada.error)}`, 303);
-  }
+  if (portada.error) return rechazar(portada.error);
 
   await bd.libro.update({
     where: { id },

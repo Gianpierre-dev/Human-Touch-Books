@@ -1,17 +1,50 @@
 ---
 import CampoContrasena from "../../components/CampoContrasena.astro";
+import ErrorCampo from "../../components/ErrorCampo.astro";
 import ScriptOjoContrasena from "../../components/ScriptOjoContrasena.astro";
 import Layout from "../../layouts/Layout.astro";
+import { leerBorrador } from "../../lib/borrador";
 
 export const prerender = false;
 
 const error = Astro.url.searchParams.get("error");
-const mensajes: Record<string, string> = {
+
+// El intento fallido vuelve por redireccion, asi que el correo solo puede
+// regresar en la cookie de borrador que deja la API (misma mecanica que el
+// resto del panel). Sin esto hay que reescribirlo en cada intento.
+//
+// La cookie lleva UNICAMENTE el correo: una contrasena no puede viajar de
+// vuelta ni por la URL ni por una cookie, aunque dure un minuto.
+//
+// Se lee y se borra en el MISMO render: si sobreviviera, el correo del intento
+// anterior reapareceria la proxima vez que alguien entrara limpio a la pantalla
+// de acceso.
+const COOKIE_BORRADOR = "borrador_login";
+const RUTA_BORRADOR = "/admin/login";
+
+const borrador = leerBorrador(Astro.cookies, COOKIE_BORRADOR, RUTA_BORRADOR);
+const correoEnviado = borrador.correo ?? null;
+
+const MENSAJES: Record<string, string> = {
   campos: "Completa el correo y la contraseña.",
   credenciales: "Correo o contraseña incorrectos.",
   limite: "Demasiados intentos. Espera 15 minutos e inténtalo de nuevo.",
   tamano: "El envío era demasiado grande. Vuelve a intentarlo.",
 };
+
+const MENSAJE_SIN_CORREO = "Escribe tu correo electrónico.";
+
+// Con el correo de vuelta se sabe cual de los dos campos quedo vacio: si vino
+// con algo escrito, el que falta es la contrasena y no hay por que mandar a
+// revisar los dos.
+const soloFaltaClave = error === "campos" && correoEnviado !== null && correoEnviado !== "";
+const correoInvalido = error === "campos" && correoEnviado === "";
+
+const textoError = !error
+  ? null
+  : soloFaltaClave
+    ? "Escribe tu contraseña."
+    : (MENSAJES[error] ?? "No se pudo iniciar sesión.");
 ---
 
 <Layout title="Ingresar — Panel HTB" description="Acceso al panel de administración" noindex>
@@ -26,9 +59,9 @@ const mensajes: Record<string, string> = {
       <p class="mt-1 text-center text-sm text-ink/70">Acceso exclusivo para usuarios autorizados</p>
 
       {
-        error && (
+        textoError && (
           <p class="mt-4 rounded-lg bg-accent/10 px-4 py-2.5 text-sm font-semibold text-accent-deep">
-            {mensajes[error] ?? "No se pudo iniciar sesión."}
+            {textoError}
           </p>
         )
       }
@@ -40,8 +73,12 @@ const mensajes: Record<string, string> = {
           name="correo"
           required
           autocomplete="username"
-          class="mt-1.5 min-h-[44px] w-full rounded-lg border border-line bg-paper px-3.5 py-2.5 text-sm outline-none focus-visible:border-brand focus-visible:ring-2 focus-visible:ring-brand/30"
+          value={correoEnviado ?? ""}
+          aria-invalid={correoInvalido ? "true" : undefined}
+          aria-describedby={correoInvalido ? "error-correo" : undefined}
+          class="mt-1.5 min-h-[44px] w-full rounded-lg border border-line bg-paper px-3.5 py-2.5 text-sm outline-none focus-visible:border-brand focus-visible:ring-2 focus-visible:ring-brand/30 aria-[invalid]:border-accent-deep aria-[invalid]:ring-2 aria-[invalid]:ring-accent/25"
         />
+        {correoInvalido && <ErrorCampo campo="correo" mensaje={MENSAJE_SIN_CORREO} />}
       </label>
 
       <CampoContrasena
@@ -54,7 +91,7 @@ const mensajes: Record<string, string> = {
 
       <button
         type="submit"
-        class="mt-6 w-full rounded-full bg-brand py-3 text-sm font-bold text-white transition-colors hover:bg-brand-deep focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
+        class="foco-marca mt-6 inline-flex min-h-[44px] w-full items-center justify-center rounded-full bg-brand text-sm font-bold text-white transition-colors hover:bg-brand-deep"
       >
         Ingresar
       </button>

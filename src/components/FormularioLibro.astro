@@ -1,6 +1,7 @@
 ---
 import type { Libro, TipoLinea } from "@prisma/client";
-import { LIMITE_DESCRIPCION_CORTA } from "../lib/libros";
+import ErrorCampo from "./ErrorCampo.astro";
+import { ANIO_MAXIMO, ANIO_MINIMO, LIMITE_DESCRIPCION_CORTA } from "../lib/libros";
 import { ETIQUETA_TIPO_LINEA } from "../lib/lineas";
 
 /** Lo minimo que el `<select>` de linea necesita saber de cada linea. */
@@ -15,11 +16,79 @@ interface Props {
   libro?: Libro;
   error?: string | null;
   lineas: readonly OpcionLinea[];
+  /**
+   * Lo que se envio en el intento rechazado, tal cual llego. Lo rescata la
+   * pagina de la cookie de borrador; aqui solo se usa. Manda sobre lo que hay
+   * en la base: es lo ultimo que la persona escribio y no quiere reescribir.
+   */
+  borrador?: Record<string, string>;
 }
 
-const { accion, libro, error, lineas } = Astro.props;
+const { accion, libro, error, lineas, borrador = {} } = Astro.props;
+
+const hayBorrador = Object.keys(borrador).length > 0;
+
+function valorInicial(campo: string, guardado: string | number | null | undefined): string {
+  return borrador[campo] ?? (guardado === null || guardado === undefined ? "" : String(guardado));
+}
+
+const lineaElegida = borrador.linea_id ?? libro?.lineaId ?? "";
+// La casilla solo viaja si esta marcada: dentro de un borrador, su ausencia
+// significa «desmarcada» y no «no se envio nada».
+const destacado = hayBorrador ? borrador.destacado === "si" : (libro?.destacado ?? true);
+
+// Un envio con archivo se corta por tamano antes de llegar a la validacion, asi
+// que ese caso llega como codigo y no como frase ya redactada.
+const MENSAJE_TAMANO =
+  "El envío era demasiado grande. Si la portada pesa más de 5 MB, redúcela antes de volver a subirla.";
+const textoError = error === "tamano" ? MENSAJE_TAMANO : (error ?? null);
+
+// La API redirige con el TEXTO del error, no con el nombre del campo: el campo
+// culpable se deduce del mensaje. Los que llevan cifras se arman con las mismas
+// constantes que los generan; si alguna redaccion cambia en src/lib, el aviso
+// se sigue viendo arriba y lo unico que se pierde es la marca sobre el campo.
+const CAMPO_POR_ERROR = new Map<string, string>([
+  ["El título es obligatorio.", "titulo"],
+  ["La sinopsis es obligatoria.", "sinopsis"],
+  ["Selecciona la línea a la que pertenece el libro.", "linea_id"],
+  ["La línea seleccionada ya no existe.", "linea_id"],
+  ["El orden debe ser un número.", "orden"],
+  [`El año debe estar entre ${ANIO_MINIMO} y ${ANIO_MAXIMO}.`, "anio"],
+  [
+    `La descripción breve admite hasta ${LIMITE_DESCRIPCION_CORTA} caracteres.`,
+    "descripcion_corta",
+  ],
+  ["Formato no permitido. Usa JPG, PNG o WebP.", "portada"],
+  ["La imagen supera los 5 MB.", "portada"],
+  ["No pudimos procesar la imagen. Verifica que sea un JPG, PNG o WebP válido.", "portada"],
+  ["La portada es obligatoria.", "portada"],
+  [MENSAJE_TAMANO, "portada"],
+]);
+
+const campoInvalido = textoError ? (CAMPO_POR_ERROR.get(textoError) ?? null) : null;
+
+/**
+ * Atributos de validacion del campo: vacios salvo que este sea el que fallo.
+ * El tipo de retorno se declara a proposito: sin el, "true" se ensancha a
+ * `string` y deja de encajar en el `aria-invalid` que espera el HTML.
+ */
+function estadoCampo(
+  campo: string,
+  idAyuda?: string,
+): { "aria-invalid"?: "true"; "aria-describedby"?: string } {
+  const invalido = campo === campoInvalido;
+  // El error va primero: es lo que hay que oir antes que la ayuda del campo.
+  const descripciones = [invalido ? `error-${campo}` : null, idAyuda ?? null].filter(
+    (id): id is string => id !== null,
+  );
+  return {
+    ...(invalido ? { "aria-invalid": "true" as const } : {}),
+    ...(descripciones.length > 0 ? { "aria-describedby": descripciones.join(" ") } : {}),
+  };
+}
+
 const clasesCampo =
-  "mt-1.5 w-full rounded-lg border border-line bg-paper px-3.5 py-2.5 text-sm outline-none focus-visible:border-brand focus-visible:ring-2 focus-visible:ring-brand/30";
+  "mt-1.5 min-h-[44px] w-full rounded-lg border border-line bg-paper px-3.5 py-2.5 text-sm outline-none focus-visible:border-brand focus-visible:ring-2 focus-visible:ring-brand/30 aria-[invalid]:border-accent-deep aria-[invalid]:ring-2 aria-[invalid]:ring-accent/25";
 ---
 
 <form
@@ -29,22 +98,42 @@ const clasesCampo =
   class="rounded-xl border border-line bg-surface p-6 shadow-sm md:p-8"
 >
   {
-    error && (
-      <p class="mb-5 rounded-lg bg-accent/10 px-4 py-2.5 text-sm font-semibold text-accent">
-        {error}
-      </p>
+    textoError && (
+      <div class="mb-5 rounded-lg bg-accent/10 px-4 py-3 text-sm text-accent-deep">
+        <p class="font-semibold">{textoError}</p>
+        {/* El navegador no devuelve el archivo elegido y nadie lo nota hasta
+            guardar por segunda vez: hay que decirlo aqui. */}
+        <p class="mt-1.5 leading-relaxed">
+          {hayBorrador && "Conservamos el resto de los datos. "}
+          Si ya habías elegido una portada, vuelve a seleccionarla: el navegador no puede conservar
+          el archivo.
+        </p>
+      </div>
     )
   }
 
   <div class="grid gap-4 sm:grid-cols-2">
     <label class="block sm:col-span-2">
       <span class="text-sm font-semibold text-ink">Título *</span>
-      <input type="text" name="titulo" required value={libro?.titulo ?? ""} class={clasesCampo} />
+      <input
+        type="text"
+        name="titulo"
+        required
+        value={valorInicial("titulo", libro?.titulo)}
+        class={clasesCampo}
+        {...estadoCampo("titulo")}
+      />
+      {campoInvalido === "titulo" && <ErrorCampo campo="titulo" mensaje={textoError ?? ""} />}
     </label>
 
     <label class="block sm:col-span-2">
       <span class="text-sm font-semibold text-ink">Subtítulo</span>
-      <input type="text" name="subtitulo" value={libro?.subtitulo ?? ""} class={clasesCampo} />
+      <input
+        type="text"
+        name="subtitulo"
+        value={valorInicial("subtitulo", libro?.subtitulo)}
+        class={clasesCampo}
+      />
     </label>
 
     {
@@ -54,21 +143,29 @@ const clasesCampo =
     }
     <label class="block">
       <span class="text-sm font-semibold text-ink">Línea *</span>
-      <select name="linea_id" required class={clasesCampo}>
-        <option value="" disabled selected={!libro?.lineaId}>Selecciona una línea</option>
+      <select name="linea_id" required class={clasesCampo} {...estadoCampo("linea_id")}>
+        <option value="" disabled selected={!lineaElegida}>Selecciona una línea</option>
         {
           lineas.map((linea) => (
-            <option value={linea.id} selected={libro?.lineaId === linea.id}>
+            <option value={linea.id} selected={lineaElegida === linea.id}>
               {linea.nombre} ({ETIQUETA_TIPO_LINEA[linea.tipo]})
             </option>
           ))
         }
       </select>
+      {campoInvalido === "linea_id" && <ErrorCampo campo="linea_id" mensaje={textoError ?? ""} />}
     </label>
 
     <label class="block">
       <span class="text-sm font-semibold text-ink">Orden</span>
-      <input type="number" name="orden" value={libro?.orden ?? 0} class={clasesCampo} />
+      <input
+        type="number"
+        name="orden"
+        value={valorInicial("orden", libro?.orden ?? 0)}
+        class={clasesCampo}
+        {...estadoCampo("orden")}
+      />
+      {campoInvalido === "orden" && <ErrorCampo campo="orden" mensaje={textoError ?? ""} />}
     </label>
 
     <label class="block sm:col-span-2">
@@ -77,10 +174,15 @@ const clasesCampo =
         type="text"
         name="descripcion_corta"
         maxlength={LIMITE_DESCRIPCION_CORTA}
-        value={libro?.descripcionCorta ?? ""}
-        aria-describedby="ayuda-descripcion-corta"
+        value={valorInicial("descripcion_corta", libro?.descripcionCorta)}
         class={clasesCampo}
+        {...estadoCampo("descripcion_corta", "ayuda-descripcion-corta")}
       />
+      {
+        campoInvalido === "descripcion_corta" && (
+          <ErrorCampo campo="descripcion_corta" mensaje={textoError ?? ""} />
+        )
+      }
       <span id="ayuda-descripcion-corta" class="mt-1.5 block text-xs text-ink/70">
         Frase breve que acompaña al libro en la página de su línea. Hasta {LIMITE_DESCRIPCION_CORTA} caracteres.
       </span>
@@ -88,27 +190,54 @@ const clasesCampo =
 
     <label class="block">
       <span class="text-sm font-semibold text-ink">Grado (ej. 1.° de Primaria)</span>
-      <input type="text" name="grado" value={libro?.grado ?? ""} class={clasesCampo} />
+      <input
+        type="text"
+        name="grado"
+        value={valorInicial("grado", libro?.grado)}
+        class={clasesCampo}
+      />
     </label>
 
     <label class="block">
       <span class="text-sm font-semibold text-ink">Nivel (ej. Primaria, Plan Lector)</span>
-      <input type="text" name="nivel" value={libro?.nivel ?? ""} class={clasesCampo} />
+      <input
+        type="text"
+        name="nivel"
+        value={valorInicial("nivel", libro?.nivel)}
+        class={clasesCampo}
+      />
     </label>
 
     <label class="block">
       <span class="text-sm font-semibold text-ink">Autor</span>
-      <input type="text" name="autor" value={libro?.autor ?? ""} class={clasesCampo} />
+      <input
+        type="text"
+        name="autor"
+        value={valorInicial("autor", libro?.autor)}
+        class={clasesCampo}
+      />
     </label>
 
     <label class="block">
       <span class="text-sm font-semibold text-ink">Ilustrador</span>
-      <input type="text" name="ilustrador" value={libro?.ilustrador ?? ""} class={clasesCampo} />
+      <input
+        type="text"
+        name="ilustrador"
+        value={valorInicial("ilustrador", libro?.ilustrador)}
+        class={clasesCampo}
+      />
     </label>
 
     <label class="block">
       <span class="text-sm font-semibold text-ink">Año</span>
-      <input type="number" name="anio" value={libro?.anio ?? ""} class={clasesCampo} />
+      <input
+        type="number"
+        name="anio"
+        value={valorInicial("anio", libro?.anio)}
+        class={clasesCampo}
+        {...estadoCampo("anio")}
+      />
+      {campoInvalido === "anio" && <ErrorCampo campo="anio" mensaje={textoError ?? ""} />}
     </label>
 
     <label class="flex items-center gap-2.5 self-end pb-1">
@@ -116,7 +245,7 @@ const clasesCampo =
         type="checkbox"
         name="destacado"
         value="si"
-        checked={libro?.destacado ?? true}
+        checked={destacado}
         class="h-4 w-4 accent-[#1e6fd9]"
       />
       <span class="text-sm font-semibold text-ink">Mostrar en la web</span>
@@ -133,14 +262,17 @@ const clasesCampo =
         rows="4"
         required
         class={clasesCampo}
-        set:text={libro?.sinopsis ?? ""}
+        {...estadoCampo("sinopsis")}
+        set:text={valorInicial("sinopsis", libro?.sinopsis)}
       />
+      {campoInvalido === "sinopsis" && <ErrorCampo campo="sinopsis" mensaje={textoError ?? ""} />}
     </label>
 
     <div class="sm:col-span-2">
-      <span class="text-sm font-semibold text-ink">
+      {/* `for` en vez de envolver: el bloque tambien contiene la portada actual. */}
+      <label class="block text-sm font-semibold text-ink" for="portada">
         Portada {libro ? "(dejar vacío para mantener la actual)" : "*"}
-      </span>
+      </label>
       <div class="mt-2 flex items-center gap-4">
         {
           libro && (
@@ -153,22 +285,30 @@ const clasesCampo =
         }
         <input
           type="file"
+          id="portada"
           name="portada"
           accept=".jpg,.jpeg,.png,.webp"
-          class="text-sm text-ink/70 file:mr-3 file:rounded-full file:border-0 file:bg-surface-2 file:px-4 file:py-2 file:text-sm file:font-semibold file:text-brand hover:file:bg-line"
+          class="min-h-[44px] text-sm text-ink/70 file:mr-3 file:rounded-full file:border-0 file:bg-surface-2 file:px-4 file:py-3 file:text-sm file:font-semibold file:text-brand hover:file:bg-line"
+          {...estadoCampo("portada", "ayuda-portada")}
         />
       </div>
-      <p class="mt-1.5 text-xs text-ink/50">JPG, PNG o WebP. Máximo 5 MB.</p>
+      {campoInvalido === "portada" && <ErrorCampo campo="portada" mensaje={textoError ?? ""} />}
+      <p id="ayuda-portada" class="mt-1.5 text-xs text-ink/70">JPG, PNG o WebP. Máximo 5 MB.</p>
     </div>
   </div>
 
   <div class="mt-6 flex items-center gap-3">
     <button
       type="submit"
-      class="rounded-full bg-brand px-7 py-2.5 text-sm font-bold text-white transition-colors hover:bg-brand-deep"
+      class="foco-marca inline-flex min-h-[44px] items-center rounded-full bg-brand px-7 text-sm font-bold text-white transition-colors hover:bg-brand-deep"
     >
       Guardar
     </button>
-    <a href="/admin" class="text-sm font-semibold text-ink/60 hover:text-ink">Cancelar</a>
+    <a
+      href="/admin"
+      class="foco-marca inline-flex min-h-[44px] items-center rounded-full px-4 text-sm font-semibold text-ink/70 hover:text-ink"
+    >
+      Cancelar
+    </a>
   </div>
 </form>

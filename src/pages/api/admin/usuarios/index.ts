@@ -4,6 +4,7 @@ import bcrypt from "bcryptjs";
 import { bd } from "../../../../lib/bd";
 import { esCorreoValido } from "../../../../lib/correo";
 import { ErrorCuerpoExcedido, leerFormulario, TAMANO_FORMULARIO } from "../../../../lib/cuerpo";
+import { guardarBorrador } from "../../../../lib/borrador";
 import { LARGO_MAXIMO_CLAVE, LARGO_MINIMO_CLAVE } from "../../../../lib/sesion";
 
 export const prerender = false;
@@ -16,7 +17,12 @@ function destino(parametros: string): string {
   return `/admin/cuenta?${parametros}`;
 }
 
-export const POST: APIRoute = async ({ request, redirect, locals }) => {
+// Devuelve el correo escrito para no obligar a reescribirlo tras un rechazo.
+// La contrasena no viaja: el helper descarta los campos de clave.
+const COOKIE_BORRADOR = "borrador_cuenta";
+const RUTA_BORRADOR = "/admin/cuenta";
+
+export const POST: APIRoute = async ({ request, redirect, locals, cookies }) => {
   // El middleware ya bloquea /api/admin sin sesion; esto solo cierra el tipo.
   if (!locals.sesion) return redirect("/admin/login", 303);
 
@@ -34,11 +40,23 @@ export const POST: APIRoute = async ({ request, redirect, locals }) => {
     .toLowerCase();
   const clave = String(datos.get("clave") ?? "");
 
-  if (!correo || !clave) return redirect(destino("error=cuentacampos"), 303);
+  // Ante cualquier rechazo se devuelve el correo escrito: sin esto, un error de
+  // formato obliga a reescribirlo entero. La clave se vuelve a pedir siempre.
+  const recordarCorreo = () =>
+    guardarBorrador({ cookies, nombre: COOKIE_BORRADOR, ruta: RUTA_BORRADOR }, datos);
+
+  if (!correo || !clave) {
+    recordarCorreo();
+    return redirect(destino("error=cuentacampos"), 303);
+  }
 
   // El type/maxlength del navegador se puede saltar: manda esta validacion.
-  if (!esCorreoValido(correo)) return redirect(destino("error=cuentacorreo"), 303);
+  if (!esCorreoValido(correo)) {
+    recordarCorreo();
+    return redirect(destino("error=cuentacorreo"), 303);
+  }
   if (clave.length < LARGO_MINIMO_CLAVE || clave.length > LARGO_MAXIMO_CLAVE) {
+    recordarCorreo();
     return redirect(destino("error=cuentaclave"), 303);
   }
 
@@ -57,6 +75,7 @@ export const POST: APIRoute = async ({ request, redirect, locals }) => {
     // Solo el choque contra el indice unico del correo se traduce a un mensaje;
     // el resto de los fallos no se disfrazan.
     if (fallo instanceof Prisma.PrismaClientKnownRequestError && fallo.code === "P2002") {
+      recordarCorreo();
       return redirect(destino("error=cuentarepetida"), 303);
     }
     throw fallo;

@@ -17,7 +17,15 @@ const CLAVES_MAXIMAS = 10_000;
 export interface LimitadorIntentos {
   /** Verdadero cuando la clave ya agoto sus intentos dentro de la ventana. */
   superaLimite(clave: string): boolean;
-  /** Anota un intento fallido. Los intentos correctos no se anotan nunca. */
+  /** Anota un intento contra el cupo de la clave. */
+  registrarIntento(clave: string): void;
+  /*
+    Alias de `registrarIntento`. No todos los flujos gastan cupo por lo mismo:
+    en los de credenciales lo consume el intento fallido, y en el formulario
+    publico lo consume el envio que llega a guardarse. El nombre neutro describe
+    la operacion real; este se conserva porque en login y cambio de contrasena
+    deja a la vista que lo que se esta contando son fallos.
+  */
   registrarFallo(clave: string): void;
   /** Borra el historial de la clave (se llama tras un intento correcto). */
   reiniciar(clave: string): void;
@@ -27,36 +35,39 @@ export function crearLimitadorIntentos(
   intentosMaximos: number,
   ventanaMs: number,
 ): LimitadorIntentos {
-  const fallosPorClave = new Map<string, number[]>();
+  const intentosPorClave = new Map<string, number[]>();
 
   // Devuelve las marcas todavia vigentes de UNA clave y deja el Map al dia.
   function vigentes(clave: string): number[] {
     const ahora = Date.now();
-    const marcas = (fallosPorClave.get(clave) ?? []).filter((marca) => ahora - marca < ventanaMs);
-    if (marcas.length === 0) fallosPorClave.delete(clave);
-    else fallosPorClave.set(clave, marcas);
+    const marcas = (intentosPorClave.get(clave) ?? []).filter((marca) => ahora - marca < ventanaMs);
+    if (marcas.length === 0) intentosPorClave.delete(clave);
+    else intentosPorClave.set(clave, marcas);
     return marcas;
   }
 
   // Al desbordar se descarta la entrada mas antigua: un Map itera en orden de
   // insercion, asi que la primera clave es la que lleva mas tiempo dentro.
   function hacerSitio(clave: string): void {
-    if (fallosPorClave.has(clave) || fallosPorClave.size < CLAVES_MAXIMAS) return;
-    const masAntigua = fallosPorClave.keys().next().value;
-    if (masAntigua !== undefined) fallosPorClave.delete(masAntigua);
+    if (intentosPorClave.has(clave) || intentosPorClave.size < CLAVES_MAXIMAS) return;
+    const masAntigua = intentosPorClave.keys().next().value;
+    if (masAntigua !== undefined) intentosPorClave.delete(masAntigua);
+  }
+
+  function registrarIntento(clave: string): void {
+    const marcas = vigentes(clave);
+    hacerSitio(clave);
+    intentosPorClave.set(clave, [...marcas, Date.now()]);
   }
 
   return {
     superaLimite(clave) {
       return vigentes(clave).length >= intentosMaximos;
     },
-    registrarFallo(clave) {
-      const marcas = vigentes(clave);
-      hacerSitio(clave);
-      fallosPorClave.set(clave, [...marcas, Date.now()]);
-    },
+    registrarIntento,
+    registrarFallo: registrarIntento,
     reiniciar(clave) {
-      fallosPorClave.delete(clave);
+      intentosPorClave.delete(clave);
     },
   };
 }

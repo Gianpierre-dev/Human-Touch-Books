@@ -16,13 +16,34 @@ export interface BloqueVista {
 export const LIMITES_BLOQUE = { titulo: 60, texto: 220 } as const;
 export const LIMITES_CHIP = { titulo: 40, texto: 140 } as const;
 
+/**
+ * Lista cuyo tipo garantiza al menos un elemento.
+ *
+ * Es lo que hace segura la lectura en ciclo de mas abajo: con `readonly T[]`
+ * el compilador tiene que admitir la lista vacia, y `lista[i % lista.length]`
+ * pasa a ser `T | undefined` — que fue exactamente el fallo que dejaba
+ * `<path d={undefined}>` en la portada sin que nada avisara.
+ */
+type ListaNoVacia<T> = readonly [T, ...T[]];
+
+/**
+ * Elemento que le toca a `posicion`, recorriendo la lista en ciclo.
+ *
+ * Devuelve `T` y no `T | undefined`: el resto siempre cae dentro del rango y
+ * `lista[0]` existe por el tipo, asi que el respaldo del `??` es inalcanzable
+ * — esta ahi para que la garantia la compruebe el compilador y no un comentario.
+ */
+export function enCiclo<T>(lista: ListaNoVacia<T>, posicion: number): T {
+  return lista[posicion % lista.length] ?? lista[0];
+}
+
 // LOS ICONOS NO SON EDITABLES.
 // Son trazos SVG: pedirlos por formulario sería pedirle código al cliente y
 // abriría una vía de inyección de marcado. Cada bloque conserva el icono que le
 // toca POR POSICIÓN: el primero de la lista usa el primer icono, el segundo el
 // segundo, etc. Si se cargan más elementos que iconos, la lista se recorre en
 // ciclo (elemento 5 → primer icono) para que ninguna tarjeta quede sin símbolo.
-export const ICONOS_VALOR: readonly string[] = [
+export const ICONOS_VALOR: ListaNoVacia<string> = [
   "M12 3 2 8l10 5 8-4v5h2V8L12 3Zm-6 9v4c0 1.7 2.7 3 6 3s6-1.3 6-3v-4l-6 3-6-3Z",
   "M16 11c1.7 0 3-1.3 3-3s-1.3-3-3-3-3 1.3-3 3 1.3 3 3 3Zm-8 0c1.7 0 3-1.3 3-3S9.7 5 8 5 5 6.3 5 8s1.3 3 3 3Zm0 2c-2.3 0-7 1.2-7 3.5V19h14v-2.5c0-2.3-4.7-3.5-7-3.5Zm8 0c-.3 0-.6 0-1 .1 1.2.8 2 2 2 3.4V19h6v-2.5c0-2.3-4.7-3.5-7-3.5Z",
   "M12 2 4.5 20.3l.7.7L12 18l6.8 3 .7-.7L12 2Z",
@@ -60,7 +81,7 @@ export interface EstiloChip {
   icono: string;
 }
 
-export const ESTILOS_CHIP: readonly EstiloChip[] = [
+export const ESTILOS_CHIP: ListaNoVacia<EstiloChip> = [
   {
     color: "#124a99",
     bg: "#e8f1fd",

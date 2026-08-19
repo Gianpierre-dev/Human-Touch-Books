@@ -3,6 +3,8 @@ import bcrypt from "bcryptjs";
 import { bd } from "../../../lib/bd";
 import { crearLimitadorIntentos, ipDelCliente } from "../../../lib/limite-intentos";
 import { ErrorCuerpoExcedido, leerFormulario, TAMANO_FORMULARIO } from "../../../lib/cuerpo";
+import { guardarBorrador } from "../../../lib/borrador";
+import type { AstroCookies } from "astro";
 import { cabeceraCookieSesion, crearToken, versionClave } from "../../../lib/sesion";
 
 export const prerender = false;
@@ -24,7 +26,19 @@ const VENTANA_CORREO_MS = 60 * 60 * 1000;
 const INTENTOS_CORREO_MAXIMOS = 20;
 const limitadorCorreo = crearLimitadorIntentos(INTENTOS_CORREO_MAXIMOS, VENTANA_CORREO_MS);
 
-export const POST: APIRoute = async ({ request, redirect, clientAddress }) => {
+// Devuelve el correo escrito para no obligar a reescribirlo tras un fallo. La
+// CONTRASENA no viaja aqui jamas: solo se guarda este unico campo, y ademas el
+// helper descarta por su cuenta cualquier campo de clave.
+const COOKIE_BORRADOR = "borrador_login";
+const RUTA_BORRADOR = "/admin/login";
+
+function recordarCorreo(cookies: AstroCookies, correo: string): void {
+  const soloCorreo = new FormData();
+  soloCorreo.set("correo", correo);
+  guardarBorrador({ cookies, nombre: COOKIE_BORRADOR, ruta: RUTA_BORRADOR }, soloCorreo);
+}
+
+export const POST: APIRoute = async ({ request, redirect, clientAddress, cookies }) => {
   // Este endpoint esta exento de sesion (ver src/middleware.ts): es el unico
   // sitio del panel al que se puede enviar un cuerpo sin credenciales, asi que
   // acotarlo ANTES de materializarlo no es una precaucion teorica.
@@ -43,6 +57,7 @@ export const POST: APIRoute = async ({ request, redirect, clientAddress }) => {
   const clave = String(datos.get("clave") ?? "");
 
   if (!correo || !clave) {
+    recordarCorreo(cookies, correo);
     return redirect("/admin/login?error=campos", 303);
   }
 
@@ -63,6 +78,7 @@ export const POST: APIRoute = async ({ request, redirect, clientAddress }) => {
   if (!usuario || !coincide) {
     limitador.registrarFallo(claveLimite);
     limitadorCorreo.registrarFallo(correo);
+    recordarCorreo(cookies, correo);
     return redirect("/admin/login?error=credenciales", 303);
   }
 

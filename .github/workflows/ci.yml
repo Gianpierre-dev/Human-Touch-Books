@@ -90,6 +90,11 @@ jobs:
         run: pnpm check
 
       - name: Comprobar formato
+        run: pnpm formato
+
+      - name: Pasar el linter
+        # Va DESPUES del formato: si el archivo esta mal formateado, los avisos
+        # del linter apuntan a lineas que el formateador va a mover igual.
         run: pnpm lint
 
       - name: Aplicar migraciones
@@ -133,7 +138,7 @@ jobs:
           echo "El servidor no respondio en 30s."
           exit 1
 
-      - name: Pruebas de humo
+      - name: Pruebas unitarias y de humo
         run: pnpm test
 
       - name: Mostrar el log del servidor si algo fallo

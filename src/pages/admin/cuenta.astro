@@ -1,9 +1,11 @@
 ---
 import CampoContrasena from "../../components/CampoContrasena.astro";
+import ErrorCampo from "../../components/ErrorCampo.astro";
 import ScriptOjoContrasena from "../../components/ScriptOjoContrasena.astro";
 import PanelLayout from "../../layouts/PanelLayout.astro";
 import { bd } from "../../lib/bd";
 import { LARGO_MAXIMO_CLAVE, LARGO_MINIMO_CLAVE } from "../../lib/sesion";
+import { leerBorrador } from "../../lib/borrador";
 
 export const prerender = false;
 
@@ -40,10 +42,40 @@ const MENSAJES_ERROR: Record<string, string> = {
   cuentaaccion: "No reconocimos la acción solicitada.",
 };
 
+// De los tres formularios de esta pantalla, el alta de cuenta es el unico con
+// algo que repoblar: el resto son contrasenas, y una contrasena no puede volver
+// ni por la URL ni por una cookie, aunque dure un minuto. Por eso el borrador
+// que deja la API (misma mecanica que el resto del panel) lleva unicamente el
+// correo.
+//
+// Se lee y se borra en el MISMO render: si sobreviviera, el correo del intento
+// anterior reapareceria en el alta la proxima vez que se entrara limpio.
+const COOKIE_BORRADOR = "borrador_cuenta";
+const RUTA_BORRADOR = "/admin/cuenta";
+
+const borrador = leerBorrador(Astro.cookies, COOKIE_BORRADOR, RUTA_BORRADOR);
+const correoEnviado = borrador.correo ?? null;
+
+// Con el correo de vuelta se sabe cual de los dos campos quedo vacio.
+const soloFaltaClave = error === "cuentacampos" && correoEnviado !== null && correoEnviado !== "";
+const correoInvalido =
+  error === "cuentacorreo" ||
+  error === "cuentarepetida" ||
+  (error === "cuentacampos" && correoEnviado === "");
+
+const textoError = !error
+  ? null
+  : soloFaltaClave
+    ? "Escribe la contraseña inicial de la cuenta nueva."
+    : (MENSAJES_ERROR[error] ?? "No pudimos guardar los cambios.");
+
+const mensajeCorreo =
+  error === "cuentacampos" ? "Escribe el correo de la cuenta nueva." : (textoError ?? "");
+
 const FECHA = new Intl.DateTimeFormat("es-PE", { dateStyle: "medium" });
 
 const clasesCampo =
-  "mt-1.5 min-h-[44px] w-full rounded-lg border border-line bg-paper px-3.5 py-2.5 text-sm outline-none focus-visible:border-brand focus-visible:ring-2 focus-visible:ring-brand/30";
+  "mt-1.5 min-h-[44px] w-full rounded-lg border border-line bg-paper px-3.5 py-2.5 text-sm outline-none focus-visible:border-brand focus-visible:ring-2 focus-visible:ring-brand/30 aria-[invalid]:border-accent-deep aria-[invalid]:ring-2 aria-[invalid]:ring-accent/25";
 const clasesBotonPeligro =
   "foco-marca inline-flex min-h-[44px] items-center justify-center rounded-full border border-accent/40 bg-surface px-4 text-xs font-bold text-accent-deep transition-colors hover:bg-accent/10";
 const clasesBotonPrincipal =
@@ -62,9 +94,9 @@ const clasesBotonPrincipal =
     )
   }
   {
-    error && (
+    textoError && (
       <p class="mb-5 rounded-lg bg-accent/10 px-4 py-2.5 text-sm font-semibold text-accent-deep">
-        {MENSAJES_ERROR[error] ?? "No pudimos guardar los cambios."}
+        {textoError}
       </p>
     )
   }
@@ -196,8 +228,12 @@ const clasesBotonPrincipal =
           autocomplete="off"
           spellcheck="false"
           placeholder="persona@humantouchbooks.pe"
+          value={correoEnviado ?? ""}
+          aria-invalid={correoInvalido ? "true" : undefined}
+          aria-describedby={correoInvalido ? "error-correo" : undefined}
           class={clasesCampo}
         />
+        {correoInvalido && <ErrorCampo campo="correo" mensaje={mensajeCorreo} />}
       </label>
 
       <CampoContrasena

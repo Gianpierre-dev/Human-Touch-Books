@@ -1,7 +1,7 @@
 import type { APIRoute } from "astro";
 import { bd } from "../../../../lib/bd";
 import { leerDatosValor } from "../../../../lib/paginas";
-import { calcularReordenamiento, type Direccion } from "../../../../lib/orden";
+import { moverEnLista } from "../../../../lib/orden";
 import {
   ErrorCuerpoExcedido,
   leerFormulario,
@@ -42,20 +42,14 @@ export const POST: APIRoute = async ({ params, request, redirect }) => {
   }
 
   if (accion === "subir" || accion === "bajar") {
-    const lista = await bd.bloquePagina.findMany({
-      where: { paginaId },
-      orderBy: [{ orden: "asc" }, { creadoEn: "asc" }],
-      select: { id: true, orden: true },
+    const movido = await moverEnLista({
+      cliente: bd,
+      delegado: bd.bloquePagina,
+      filtro: { paginaId },
+      id,
+      direccion: accion,
     });
-    const nuevos = calcularReordenamiento(lista, id, accion as Direccion);
-    if (!nuevos) return redirect(`${destino}?ok=sincambios${ancla}`, 303);
-
-    await bd.$transaction(
-      nuevos.map((fila) =>
-        bd.bloquePagina.update({ where: { id: fila.id }, data: { orden: fila.orden } }),
-      ),
-    );
-    return redirect(`${destino}?ok=reordenado${ancla}`, 303);
+    return redirect(`${destino}?ok=${movido ? "reordenado" : "sincambios"}${ancla}`, 303);
   }
 
   // Sin `_accion` el formulario es el de edicion; con una desconocida, no.

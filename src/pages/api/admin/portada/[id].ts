@@ -1,7 +1,7 @@
 import type { APIRoute } from "astro";
 import { bd } from "../../../../lib/bd";
 import { borrarDelBucket } from "../../../../lib/almacen";
-import { calcularReordenamiento, type Direccion } from "../../../../lib/orden";
+import { moverEnLista } from "../../../../lib/orden";
 import {
   ErrorCuerpoExcedido,
   leerFormulario,
@@ -12,7 +12,6 @@ import {
 export const prerender = false;
 
 const DESTINO = "/admin/portada";
-const ORDEN_LISTA = [{ orden: "asc" as const }, { creadoEn: "asc" as const }];
 
 export const POST: APIRoute = async ({ params, request, redirect }) => {
   const id = params.id ?? "";
@@ -42,19 +41,14 @@ export const POST: APIRoute = async ({ params, request, redirect }) => {
   }
 
   if (accion === "subir" || accion === "bajar") {
-    const lista = await bd.imagenHero.findMany({
-      orderBy: ORDEN_LISTA,
-      select: { id: true, orden: true },
+    const movida = await moverEnLista({
+      cliente: bd,
+      delegado: bd.imagenHero,
+      filtro: {},
+      id,
+      direccion: accion,
     });
-    const nuevos = calcularReordenamiento(lista, id, accion as Direccion);
-    if (!nuevos) return redirect(`${DESTINO}?ok=sincambios`, 303);
-
-    await bd.$transaction(
-      nuevos.map((fila) =>
-        bd.imagenHero.update({ where: { id: fila.id }, data: { orden: fila.orden } }),
-      ),
-    );
-    return redirect(`${DESTINO}?ok=reordenada`, 303);
+    return redirect(`${DESTINO}?ok=${movida ? "reordenada" : "sincambios"}`, 303);
   }
 
   return redirect(`${DESTINO}?error=accion`, 303);

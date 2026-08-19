@@ -22,6 +22,7 @@ import {
   CHIPS_PLATAFORMA_POR_DEFECTO,
   ESTILOS_CHIP,
   ICONOS_VALOR,
+  enCiclo,
   resolverColeccion,
 } from "../lib/bloques";
 
@@ -283,7 +284,7 @@ const valores = resolverColeccion(
   bloquesTodos.length,
 ).map((bloque, posicion) => ({
   ...bloque,
-  icono: ICONOS_VALOR[posicion % ICONOS_VALOR.length],
+  icono: enCiclo(ICONOS_VALOR, posicion),
 }));
 
 const chipsPlataforma = resolverColeccion(
@@ -292,7 +293,7 @@ const chipsPlataforma = resolverColeccion(
   chipsTodos.length,
 ).map((chip, posicion) => ({
   ...chip,
-  estilo: ESTILOS_CHIP[posicion % ESTILOS_CHIP.length],
+  estilo: enCiclo(ESTILOS_CHIP, posicion),
 }));
 
 // Preguntas frecuentes: se administran desde el panel. Mientras la tabla este
@@ -381,7 +382,12 @@ const fichaOrganizacion = serializarJsonLd({
 <Layout title={textos.meta_titulo} description={textos.meta_descripcion} anclaContenido="#inicio">
   <Header whatsapp={whatsapp} navegacion={navegacion} />
 
-  <script type="application/ld+json" is:inline set:html={fichaOrganizacion} />
+  {
+    (
+      /* eslint-disable-next-line astro/no-set-html-directive -- Unica forma de escribir JSON-LD en Astro, y el contenido ya viene escapado por serializarJsonLd(). */
+      <script type="application/ld+json" is:inline set:html={fichaOrganizacion} />
+    )
+  }
 
   <main id="inicio" tabindex="-1">
     <!-- HERO -->

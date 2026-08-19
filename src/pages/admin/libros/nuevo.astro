@@ -2,6 +2,7 @@
 import PanelLayout from "../../../layouts/PanelLayout.astro";
 import FormularioLibro from "../../../components/FormularioLibro.astro";
 import { bd } from "../../../lib/bd";
+import { leerBorrador } from "../../../lib/borrador";
 
 export const prerender = false;
 
@@ -11,6 +12,19 @@ const lineas = await bd.linea.findMany({
 });
 
 const error = Astro.url.searchParams.get("error");
+
+// Borrador del intento rechazado. La API lo deja en una cookie de un solo uso
+// (misma mecanica que el resto del panel) porque por la URL viajarian miles de
+// caracteres de sinopsis, a la vista en la barra de direcciones y en el
+// historial. Se lee y se borra en el MISMO render: si sobreviviera, pisaria el
+// formulario la proxima vez que se entrara limpio.
+//
+// La cookie cubre /admin/libros entero, asi que el borrador dice de que libro
+// es: el de un alta («») no puede repoblar la ficha de otro.
+const COOKIE_BORRADOR = "borrador_libros";
+const RUTA_BORRADOR = "/admin/libros";
+
+const borrador = leerBorrador(Astro.cookies, COOKIE_BORRADOR, RUTA_BORRADOR);
 ---
 
 <PanelLayout titulo="Nuevo libro" correo={Astro.locals.sesion?.correo}>
@@ -26,7 +40,12 @@ const error = Astro.url.searchParams.get("error");
         y vuelve aquí.
       </p>
     ) : (
-      <FormularioLibro accion="/api/admin/libros" error={error} lineas={lineas} />
+      <FormularioLibro
+        accion="/api/admin/libros"
+        error={error}
+        lineas={lineas}
+        borrador={borrador}
+      />
     )
   }
 </PanelLayout>

@@ -1,6 +1,6 @@
 import type { APIRoute } from "astro";
 import { bd } from "../../../../lib/bd";
-import { calcularReordenamiento, type Direccion } from "../../../../lib/orden";
+import { moverEnLista } from "../../../../lib/orden";
 import { leerDatosPregunta } from "../../../../lib/preguntas";
 import {
   ErrorCuerpoExcedido,
@@ -12,7 +12,6 @@ import {
 export const prerender = false;
 
 const DESTINO = "/admin/preguntas";
-const ORDEN_LISTA = [{ orden: "asc" as const }, { creadoEn: "asc" as const }];
 
 export const POST: APIRoute = async ({ params, request, redirect }) => {
   const id = params.id ?? "";
@@ -39,19 +38,14 @@ export const POST: APIRoute = async ({ params, request, redirect }) => {
   }
 
   if (accion === "subir" || accion === "bajar") {
-    const lista = await bd.pregunta.findMany({
-      orderBy: ORDEN_LISTA,
-      select: { id: true, orden: true },
+    const movida = await moverEnLista({
+      cliente: bd,
+      delegado: bd.pregunta,
+      filtro: {},
+      id,
+      direccion: accion,
     });
-    const nuevos = calcularReordenamiento(lista, id, accion as Direccion);
-    if (!nuevos) return redirect(`${DESTINO}?ok=sincambios`, 303);
-
-    await bd.$transaction(
-      nuevos.map((fila) =>
-        bd.pregunta.update({ where: { id: fila.id }, data: { orden: fila.orden } }),
-      ),
-    );
-    return redirect(`${DESTINO}?ok=reordenada`, 303);
+    return redirect(`${DESTINO}?ok=${movida ? "reordenada" : "sincambios"}`, 303);
   }
 
   // Sin `_accion` el formulario es el de edicion; con una desconocida, no.

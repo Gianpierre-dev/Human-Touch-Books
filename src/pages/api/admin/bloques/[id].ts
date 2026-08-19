@@ -1,7 +1,7 @@
 import type { APIRoute } from "astro";
 import { bd } from "../../../../lib/bd";
 import { LIMITES_BLOQUE, leerDatosBloque } from "../../../../lib/bloques";
-import { calcularReordenamiento, type Direccion } from "../../../../lib/orden";
+import { moverEnLista } from "../../../../lib/orden";
 import {
   ErrorCuerpoExcedido,
   leerFormulario,
@@ -12,7 +12,6 @@ import {
 export const prerender = false;
 
 const DESTINO = "/admin/bloques";
-const ORDEN_LISTA = [{ orden: "asc" as const }, { creadoEn: "asc" as const }];
 
 export const POST: APIRoute = async ({ params, request, redirect }) => {
   const id = params.id ?? "";
@@ -39,19 +38,14 @@ export const POST: APIRoute = async ({ params, request, redirect }) => {
   }
 
   if (accion === "subir" || accion === "bajar") {
-    const lista = await bd.bloqueValor.findMany({
-      orderBy: ORDEN_LISTA,
-      select: { id: true, orden: true },
+    const movido = await moverEnLista({
+      cliente: bd,
+      delegado: bd.bloqueValor,
+      filtro: {},
+      id,
+      direccion: accion,
     });
-    const nuevos = calcularReordenamiento(lista, id, accion as Direccion);
-    if (!nuevos) return redirect(`${DESTINO}?ok=sincambios`, 303);
-
-    await bd.$transaction(
-      nuevos.map((fila) =>
-        bd.bloqueValor.update({ where: { id: fila.id }, data: { orden: fila.orden } }),
-      ),
-    );
-    return redirect(`${DESTINO}?ok=reordenado`, 303);
+    return redirect(`${DESTINO}?ok=${movido ? "reordenado" : "sincambios"}`, 303);
   }
 
   // Sin `_accion` el formulario es el de edicion; con una desconocida, no.

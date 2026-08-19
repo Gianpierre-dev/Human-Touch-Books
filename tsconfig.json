@@ -1,5 +1,17 @@
 {
   "extends": "astro/tsconfigs/strict",
   "include": [".astro/types.d.ts", "**/*"],
-  "exclude": ["dist"]
+  "exclude": ["dist"],
+  "compilerOptions": {
+    // POR QUE NO BASTA CON `strict`
+    // Sin esta opcion, leer por indice miente: `Object.fromEntries(...)` tipa
+    // TODA propiedad como `string` aunque la fila no exista en la base, y un
+    // mapa `MENSAJES[clave]` devuelve el tipo del valor aunque la clave no este.
+    // El compilador daba por buenos los dos casos y el fallo salia en
+    // produccion — una clave renombrada sin migrar dejaba el texto en blanco y
+    // una pantalla nueva pintaba «undefined» en pantalla.
+    // Con esto activo, cada lectura por indice es `T | undefined` y hay que
+    // decidir el respaldo en el momento de leer.
+    "noUncheckedIndexedAccess": true
+  }
 }
