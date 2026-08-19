@@ -25,6 +25,8 @@ const MENSAJES_OK: Record<string, string> = {
 // Los códigos cubren la validación propia; si llega el texto de otro validador
 // (formato o peso del archivo) se muestra tal cual, que ya viene redactado.
 const MENSAJES_ERROR: Record<string, string> = {
+  tamano:
+    "El envío era demasiado grande. Si estás subiendo una imagen, comprueba que pese menos de 5 MB.",
   sinimagen: "Selecciona una imagen para agregarla.",
   sinalt: "El texto alternativo es obligatorio.",
   altlargo: `El texto alternativo admite hasta ${LIMITES.altTexto} caracteres.`,

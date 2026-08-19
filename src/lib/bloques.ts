@@ -6,6 +6,8 @@
 // Con la tabla vacía la web muestra los arreglos de este archivo, igual que
 // hace el FAQ con sus preguntas: producción nunca queda sin contenido.
 
+import { leerOrden } from "./orden";
+
 export interface BloqueVista {
   titulo: string;
   texto: string;
@@ -133,9 +135,8 @@ export function leerDatosBloque(
   if (!texto) return { error: "sintexto" };
   if (texto.length > limites.texto) return { error: "textolargo" };
 
-  const ordenTexto = String(datos.get("orden") ?? "0").trim();
-  const orden = Number.parseInt(ordenTexto === "" ? "0" : ordenTexto, 10);
-  if (Number.isNaN(orden)) return { error: "orden" };
+  const orden = leerOrden(datos);
+  if (orden === null) return { error: "orden" };
 
   return { datos: { titulo, texto, orden } };
 }

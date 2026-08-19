@@ -2,6 +2,12 @@ import type { APIRoute } from "astro";
 import { bd } from "../../../../lib/bd";
 import { leerDatosBloqueLinea } from "../../../../lib/bloques-linea";
 import { calcularReordenamiento, type Direccion } from "../../../../lib/orden";
+import {
+  ErrorCuerpoExcedido,
+  leerFormulario,
+  respuestaCuerpoExcedido,
+  TAMANO_FORMULARIO,
+} from "../../../../lib/cuerpo";
 
 export const prerender = false;
 
@@ -16,7 +22,13 @@ export const POST: APIRoute = async ({ params, request, redirect }) => {
   const destino = `/admin/lineas/${lineaId}/bloques`;
   const ancla = `&tipo=${tipo}#lista-${tipo}`;
 
-  const formulario = await request.formData();
+  let formulario: FormData;
+  try {
+    formulario = await leerFormulario(request, TAMANO_FORMULARIO);
+  } catch (fallo) {
+    if (fallo instanceof ErrorCuerpoExcedido) return respuestaCuerpoExcedido();
+    throw fallo;
+  }
   const accion = String(formulario.get("_accion") ?? "");
 
   if (accion === "eliminar") {

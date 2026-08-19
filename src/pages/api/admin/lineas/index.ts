@@ -2,13 +2,25 @@ import type { APIRoute } from "astro";
 import { Prisma } from "@prisma/client";
 import { bd } from "../../../../lib/bd";
 import { leerDatosLinea } from "../../../../lib/lineas";
+import {
+  ErrorCuerpoExcedido,
+  leerFormulario,
+  respuestaCuerpoExcedido,
+  TAMANO_FORMULARIO,
+} from "../../../../lib/cuerpo";
 
 export const prerender = false;
 
 const DESTINO = "/admin/lineas";
 
 export const POST: APIRoute = async ({ request, redirect }) => {
-  const formulario = await request.formData();
+  let formulario: FormData;
+  try {
+    formulario = await leerFormulario(request, TAMANO_FORMULARIO);
+  } catch (fallo) {
+    if (fallo instanceof ErrorCuerpoExcedido) return respuestaCuerpoExcedido();
+    throw fallo;
+  }
   const { datos, error } = leerDatosLinea(formulario);
   if (!datos) return redirect(`${DESTINO}?error=${error}`, 303);
 

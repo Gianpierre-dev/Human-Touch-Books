@@ -1,11 +1,23 @@
 import type { APIRoute } from "astro";
 import { bd } from "../../../../lib/bd";
 import { leerDatosLibro, procesarPortada, verificarLinea } from "../../../../lib/libros";
+import {
+  ErrorCuerpoExcedido,
+  leerFormulario,
+  TAMANO_FORMULARIO_CON_ARCHIVO,
+} from "../../../../lib/cuerpo";
 
 export const prerender = false;
 
 export const POST: APIRoute = async ({ request, redirect }) => {
-  const formulario = await request.formData();
+  let formulario: FormData;
+  try {
+    formulario = await leerFormulario(request, TAMANO_FORMULARIO_CON_ARCHIVO);
+  } catch (fallo) {
+    if (fallo instanceof ErrorCuerpoExcedido)
+      return redirect("/admin/libros/nuevo?error=tamano", 303);
+    throw fallo;
+  }
   const { datos, error } = leerDatosLibro(formulario);
   if (!datos) {
     return redirect(`/admin/libros/nuevo?error=${encodeURIComponent(error ?? "")}`, 303);

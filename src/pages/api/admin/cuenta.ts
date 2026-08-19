@@ -9,6 +9,12 @@ import {
   LARGO_MINIMO_CLAVE,
   versionClave,
 } from "../../../lib/sesion";
+import {
+  ErrorCuerpoExcedido,
+  leerFormulario,
+  respuestaCuerpoExcedido,
+  TAMANO_FORMULARIO,
+} from "../../../lib/cuerpo";
 
 export const prerender = false;
 
@@ -31,7 +37,13 @@ export const POST: APIRoute = async ({ request, redirect, locals }) => {
   // El middleware ya bloquea /api/admin sin sesion; esto solo cierra el tipo.
   if (!sesion) return redirect("/admin/login", 303);
 
-  const datos = await request.formData();
+  let datos: FormData;
+  try {
+    datos = await leerFormulario(request, TAMANO_FORMULARIO);
+  } catch (fallo) {
+    if (fallo instanceof ErrorCuerpoExcedido) return respuestaCuerpoExcedido();
+    throw fallo;
+  }
   const actual = String(datos.get("actual") ?? "");
   const nueva = String(datos.get("nueva") ?? "");
   const confirmacion = String(datos.get("confirmacion") ?? "");

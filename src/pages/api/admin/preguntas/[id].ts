@@ -2,6 +2,12 @@ import type { APIRoute } from "astro";
 import { bd } from "../../../../lib/bd";
 import { calcularReordenamiento, type Direccion } from "../../../../lib/orden";
 import { leerDatosPregunta } from "../../../../lib/preguntas";
+import {
+  ErrorCuerpoExcedido,
+  leerFormulario,
+  respuestaCuerpoExcedido,
+  TAMANO_FORMULARIO,
+} from "../../../../lib/cuerpo";
 
 export const prerender = false;
 
@@ -13,7 +19,13 @@ export const POST: APIRoute = async ({ params, request, redirect }) => {
   const pregunta = await bd.pregunta.findUnique({ where: { id } });
   if (!pregunta) return redirect(`${DESTINO}?error=noexiste`, 303);
 
-  const formulario = await request.formData();
+  let formulario: FormData;
+  try {
+    formulario = await leerFormulario(request, TAMANO_FORMULARIO);
+  } catch (fallo) {
+    if (fallo instanceof ErrorCuerpoExcedido) return respuestaCuerpoExcedido();
+    throw fallo;
+  }
   const accion = String(formulario.get("_accion") ?? "");
 
   if (accion === "eliminar") {

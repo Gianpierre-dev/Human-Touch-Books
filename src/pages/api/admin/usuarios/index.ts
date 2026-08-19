@@ -2,6 +2,8 @@ import type { APIRoute } from "astro";
 import { Prisma } from "@prisma/client";
 import bcrypt from "bcryptjs";
 import { bd } from "../../../../lib/bd";
+import { esCorreoValido } from "../../../../lib/correo";
+import { ErrorCuerpoExcedido, leerFormulario, TAMANO_FORMULARIO } from "../../../../lib/cuerpo";
 import { LARGO_MAXIMO_CLAVE, LARGO_MINIMO_CLAVE } from "../../../../lib/sesion";
 
 export const prerender = false;
@@ -9,9 +11,6 @@ export const prerender = false;
 // El mismo costo con el que se siembra la cuenta inicial (prisma/seed.mjs) y
 // con el que se rehashea al cambiar la contrasena (api/admin/cuenta.ts).
 const COSTO_BCRYPT = 12;
-
-const LARGO_MAXIMO_CORREO = 160;
-const CORREO = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 
 function destino(parametros: string): string {
   return `/admin/cuenta?${parametros}`;
@@ -21,7 +20,13 @@ export const POST: APIRoute = async ({ request, redirect, locals }) => {
   // El middleware ya bloquea /api/admin sin sesion; esto solo cierra el tipo.
   if (!locals.sesion) return redirect("/admin/login", 303);
 
-  const datos = await request.formData();
+  let datos: FormData;
+  try {
+    datos = await leerFormulario(request, TAMANO_FORMULARIO);
+  } catch (fallo) {
+    if (fallo instanceof ErrorCuerpoExcedido) return redirect(destino("error=tamano"), 303);
+    throw fallo;
+  }
   // El correo se guarda en minusculas: es la clave con la que se entra al panel
   // y «Ana@htb.pe» y «ana@htb.pe» tienen que ser la misma cuenta.
   const correo = String(datos.get("correo") ?? "")
@@ -32,9 +37,7 @@ export const POST: APIRoute = async ({ request, redirect, locals }) => {
   if (!correo || !clave) return redirect(destino("error=cuentacampos"), 303);
 
   // El type/maxlength del navegador se puede saltar: manda esta validacion.
-  if (correo.length > LARGO_MAXIMO_CORREO || !CORREO.test(correo)) {
-    return redirect(destino("error=cuentacorreo"), 303);
-  }
+  if (!esCorreoValido(correo)) return redirect(destino("error=cuentacorreo"), 303);
   if (clave.length < LARGO_MINIMO_CLAVE || clave.length > LARGO_MAXIMO_CLAVE) {
     return redirect(destino("error=cuentaclave"), 303);
   }

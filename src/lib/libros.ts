@@ -1,8 +1,16 @@
 import { ErrorImagenInvalida, esPortadaValida, guardarPortada } from "./almacen";
 import { bd } from "./bd";
+import { leerEnteroAcotado, leerOrden } from "./orden";
 
 /** Limite de la frase breve que acompana al libro en la pagina de su linea. */
 export const LIMITE_DESCRIPCION_CORTA = 160;
+
+/**
+ * Rango del ano de edicion. No es el rango de un `Int` porque el dato tampoco lo
+ * es: un catalogo de libros escolares no tiene ediciones del ano 40.000.
+ */
+export const ANIO_MINIMO = 1900;
+export const ANIO_MAXIMO = 2100;
 
 export interface DatosLibro {
   titulo: string;
@@ -39,12 +47,13 @@ export function leerDatosLibro(datos: FormData): { datos?: DatosLibro; error?: s
   if (!lineaId) return { error: "Selecciona la línea a la que pertenece el libro." };
 
   const anioTexto = textoONulo(datos, "anio");
-  const anio = anioTexto === null ? null : Number.parseInt(anioTexto, 10);
-  if (anio !== null && Number.isNaN(anio)) return { error: "El año no es válido." };
+  const anio = anioTexto === null ? null : leerEnteroAcotado(anioTexto, ANIO_MINIMO, ANIO_MAXIMO);
+  if (anioTexto !== null && anio === null) {
+    return { error: `El año debe estar entre ${ANIO_MINIMO} y ${ANIO_MAXIMO}.` };
+  }
 
-  const ordenTexto = String(datos.get("orden") ?? "0").trim();
-  const orden = Number.parseInt(ordenTexto === "" ? "0" : ordenTexto, 10);
-  if (Number.isNaN(orden)) return { error: "El orden debe ser un número." };
+  const orden = leerOrden(datos);
+  if (orden === null) return { error: "El orden debe ser un número." };
 
   // El `maxlength` del navegador se puede saltar: el limite se comprueba aqui.
   const descripcionCorta = textoONulo(datos, "descripcion_corta");

@@ -76,4 +76,6 @@ export const LIMITES = {
   respuesta: 600,
   subtituloHero: 120,
   textoNosotros: 500,
+  horario: 120,
+  ubicacion: 120,
 } as const;

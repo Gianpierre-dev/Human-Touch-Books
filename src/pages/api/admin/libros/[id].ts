@@ -6,6 +6,11 @@ import { bd } from "../../../../lib/bd";
 import { borrarDelBucket } from "../../../../lib/almacen";
 import { leerDatosLibro, procesarPortada, verificarLinea } from "../../../../lib/libros";
 import { calcularReordenamiento, type Direccion } from "../../../../lib/orden";
+import {
+  ErrorCuerpoExcedido,
+  leerFormulario,
+  TAMANO_FORMULARIO_CON_ARCHIVO,
+} from "../../../../lib/cuerpo";
 
 export const prerender = false;
 
@@ -16,7 +21,13 @@ export const POST: APIRoute = async ({ params, request, redirect }) => {
   const libro = await bd.libro.findUnique({ where: { id } });
   if (!libro) return redirect("/admin?error=noexiste", 303);
 
-  const formulario = await request.formData();
+  let formulario: FormData;
+  try {
+    formulario = await leerFormulario(request, TAMANO_FORMULARIO_CON_ARCHIVO);
+  } catch (fallo) {
+    if (fallo instanceof ErrorCuerpoExcedido) return redirect("/admin?error=tamano", 303);
+    throw fallo;
+  }
   const accion = String(formulario.get("_accion") ?? "");
 
   if (accion === "eliminar") {

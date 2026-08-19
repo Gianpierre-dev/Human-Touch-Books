@@ -3,6 +3,12 @@ import { Prisma } from "@prisma/client";
 import { bd } from "../../../../lib/bd";
 import { calcularReordenamiento, type Direccion } from "../../../../lib/orden";
 import { leerDatosPagina } from "../../../../lib/paginas";
+import {
+  ErrorCuerpoExcedido,
+  leerFormulario,
+  respuestaCuerpoExcedido,
+  TAMANO_FORMULARIO,
+} from "../../../../lib/cuerpo";
 
 export const prerender = false;
 
@@ -14,7 +20,13 @@ export const POST: APIRoute = async ({ params, request, redirect }) => {
   const pagina = await bd.paginaInstitucional.findUnique({ where: { id } });
   if (!pagina) return redirect(`${DESTINO}?error=noexiste`, 303);
 
-  const formulario = await request.formData();
+  let formulario: FormData;
+  try {
+    formulario = await leerFormulario(request, TAMANO_FORMULARIO);
+  } catch (fallo) {
+    if (fallo instanceof ErrorCuerpoExcedido) return respuestaCuerpoExcedido();
+    throw fallo;
+  }
   const accion = String(formulario.get("_accion") ?? "");
 
   if (accion === "eliminar") {

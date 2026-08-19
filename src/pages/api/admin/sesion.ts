@@ -2,6 +2,7 @@ import type { APIRoute } from "astro";
 import bcrypt from "bcryptjs";
 import { bd } from "../../../lib/bd";
 import { crearLimitadorIntentos, ipDelCliente } from "../../../lib/limite-intentos";
+import { ErrorCuerpoExcedido, leerFormulario, TAMANO_FORMULARIO } from "../../../lib/cuerpo";
 import { cabeceraCookieSesion, crearToken, versionClave } from "../../../lib/sesion";
 
 export const prerender = false;
@@ -24,7 +25,18 @@ const INTENTOS_CORREO_MAXIMOS = 20;
 const limitadorCorreo = crearLimitadorIntentos(INTENTOS_CORREO_MAXIMOS, VENTANA_CORREO_MS);
 
 export const POST: APIRoute = async ({ request, redirect, clientAddress }) => {
-  const datos = await request.formData();
+  // Este endpoint esta exento de sesion (ver src/middleware.ts): es el unico
+  // sitio del panel al que se puede enviar un cuerpo sin credenciales, asi que
+  // acotarlo ANTES de materializarlo no es una precaucion teorica.
+  let datos: FormData;
+  try {
+    datos = await leerFormulario(request, TAMANO_FORMULARIO);
+  } catch (fallo) {
+    if (fallo instanceof ErrorCuerpoExcedido) {
+      return redirect("/admin/login?error=tamano", 303);
+    }
+    throw fallo;
+  }
   const correo = String(datos.get("correo") ?? "")
     .trim()
     .toLowerCase();

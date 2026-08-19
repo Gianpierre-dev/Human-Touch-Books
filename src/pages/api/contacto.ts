@@ -2,6 +2,7 @@ import type { APIRoute } from "astro";
 import { bd } from "../../lib/bd";
 import { ipDelCliente } from "../../lib/limite-intentos";
 import { registrarFallo } from "../../lib/registro";
+import { ErrorCuerpoExcedido, leerFormulario } from "../../lib/cuerpo";
 
 export const prerender = false;
 
@@ -93,16 +94,21 @@ function leerDatosMensaje(formulario: FormData): { datos?: DatosMensaje; campo?:
 
 export const POST: APIRoute = async ({ request, redirect, clientAddress }) => {
   try {
-    // Corta cuerpos desproporcionados antes de materializar el formulario.
-    const tamano = Number(request.headers.get("content-length") ?? "0");
-    if (tamano > TAMANO_MAXIMO_CUERPO) return redirect(destinoError("tamano"), 303);
-
     const ip = ipDelCliente(request, clientAddress);
     if (superaLimite(ip)) {
       return redirect(destinoError("limite"), 303);
     }
 
-    const formulario = await request.formData();
+    // El tope se aplica contando los bytes que llegan, no leyendo
+    // Content-Length: esa cabecera puede faltar (Transfer-Encoding: chunked) o
+    // no ser un numero, y en los dos casos el cuerpo entraba entero.
+    let formulario: FormData;
+    try {
+      formulario = await leerFormulario(request, TAMANO_MAXIMO_CUERPO);
+    } catch (fallo) {
+      if (fallo instanceof ErrorCuerpoExcedido) return redirect(destinoError("tamano"), 303);
+      throw fallo;
+    }
 
     // Trampa antispam: un bot rellena todos los campos, una persona no ve este.
     // Se responde como exito para no darle pistas al bot.

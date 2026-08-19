@@ -105,12 +105,21 @@ function esInterna(ip: string): boolean {
 }
 
 export function ipDelCliente(request: Request, direccionCliente: string): string {
-  // X-Real-IP la escribe el proxy con la IP real del cliente y no es una cadena.
-  const real = request.headers.get("x-real-ip");
-  if (real?.trim()) return normalizar(real);
-
+  // X-Forwarded-For PRIMERO, no X-Real-IP.
+  //
+  // Las dos cabeceras las puede escribir quien llama. La diferencia esta en que
+  // nuestro proxy APENDA su valor al final de X-Forwarded-For, asi que el ultimo
+  // salto publico de esa cadena lo puso el, no el cliente; X-Real-IP, en cambio,
+  // es un valor suelto: si el proxy no lo sobrescribiera, bastaria con mandar
+  // «X-Real-IP: <aleatoria>» en cada peticion para estrenar cupo y dejar el
+  // limite del formulario publico en nada. Leerla primero era confiar en el
+  // dato mas facil de falsificar, justo lo que el comentario de arriba explica
+  // que no hay que hacer. Queda como ultimo recurso, antes de `clientAddress`.
   const cadena = request.headers.get("x-forwarded-for");
-  if (!cadena) return direccionCliente;
+  if (!cadena) {
+    const real = request.headers.get("x-real-ip");
+    return real?.trim() ? normalizar(real) : direccionCliente;
+  }
 
   const saltos = cadena.split(",").map(normalizar).filter(Boolean);
   if (saltos.length === 0) return direccionCliente;

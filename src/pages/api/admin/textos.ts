@@ -1,6 +1,12 @@
 import type { APIRoute } from "astro";
 import { bd } from "../../../lib/bd";
 import { CAMPOS_TEXTO, GRUPOS_TEXTO } from "../../../lib/textos";
+import {
+  ErrorCuerpoExcedido,
+  leerFormulario,
+  respuestaCuerpoExcedido,
+  TAMANO_FORMULARIO,
+} from "../../../lib/cuerpo";
 
 export const prerender = false;
 
@@ -15,7 +21,13 @@ function anclaGrupo(formulario: FormData): string {
 }
 
 export const POST: APIRoute = async ({ request, redirect }) => {
-  const formulario = await request.formData();
+  let formulario: FormData;
+  try {
+    formulario = await leerFormulario(request, TAMANO_FORMULARIO);
+  } catch (fallo) {
+    if (fallo instanceof ErrorCuerpoExcedido) return respuestaCuerpoExcedido();
+    throw fallo;
+  }
   const ancla = anclaGrupo(formulario);
 
   // Solo se miran las claves del catalogo: cualquier campo inventado que llegue

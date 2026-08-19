@@ -8,6 +8,11 @@ import {
   guardarImagen,
 } from "../../../../../lib/almacen";
 import { LIMITES_CONTENIDO_LINEA } from "../../../../../lib/lineas";
+import {
+  ErrorCuerpoExcedido,
+  leerFormulario,
+  TAMANO_FORMULARIO_CON_ARCHIVO,
+} from "../../../../../lib/cuerpo";
 
 export const prerender = false;
 
@@ -25,7 +30,14 @@ export const POST: APIRoute = async ({ params, request, redirect }) => {
   if (!linea) return redirect(`${DESTINO}?error=noexiste`, 303);
 
   const ancla = `#hero-${id}`;
-  const formulario = await request.formData();
+  let formulario: FormData;
+  try {
+    formulario = await leerFormulario(request, TAMANO_FORMULARIO_CON_ARCHIVO);
+  } catch (fallo) {
+    if (fallo instanceof ErrorCuerpoExcedido)
+      return redirect(`${DESTINO}?error=tamano${ancla}`, 303);
+    throw fallo;
+  }
 
   // Restaurar deja la linea sin foto: el hero se dibuja igual, a una columna.
   if (String(formulario.get("_accion") ?? "") === "restaurar") {

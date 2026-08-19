@@ -15,6 +15,8 @@
 // de estos arreglos llegan al menos a 4,5:1 contra blanco, que es lo que
 // necesitan los circulos con icono blanco encima.
 
+import { leerOrden } from "./orden";
+
 export interface EstiloBloqueLinea {
   color: string;
   icono: string;
@@ -120,11 +122,8 @@ export function leerDatosBloqueLinea(
     if (texto.length > limites.texto) return { error: "textolargo" };
   }
 
-  const ordenTexto = String(datos.get("orden") ?? "0").trim();
-  const orden = Number.parseInt(ordenTexto === "" ? "0" : ordenTexto, 10);
-  // Acotado al rango de un entero de la base: sin tope, un numero enorme pasa
-  // esta validacion y revienta recien al escribir.
-  if (!Number.isSafeInteger(orden) || orden < 0 || orden > 9999) return { error: "orden" };
+  const orden = leerOrden(datos);
+  if (orden === null) return { error: "orden" };
 
   return { datos: { titulo, texto, orden } };
 }

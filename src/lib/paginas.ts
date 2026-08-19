@@ -7,6 +7,8 @@
 // seccion de la plantilla publica se omite cuando no tiene contenido, y una
 // pagina con solo titular y parrafos tiene que verse digna por si sola.
 
+import { leerOrden } from "./orden";
+
 export interface DatosPagina {
   clave: string;
   titulo: string;
@@ -46,11 +48,8 @@ export function leerDatosPagina(datos: FormData): { datos?: DatosPagina; error?:
   if (clave.length > LIMITES_PAGINA.clave) return { error: "clavelarga" };
   if (!PATRON_CLAVE.test(clave)) return { error: "claveformato" };
 
-  const ordenTexto = String(datos.get("orden") ?? "0").trim();
-  const orden = Number.parseInt(ordenTexto === "" ? "0" : ordenTexto, 10);
-  // Acotado al rango de un entero de la base: sin tope, un numero enorme pasa
-  // esta validacion y revienta recien al escribir.
-  if (!Number.isSafeInteger(orden) || orden < 0 || orden > 9999) return { error: "orden" };
+  const orden = leerOrden(datos);
+  if (orden === null) return { error: "orden" };
 
   return { datos: { clave, titulo, orden } };
 }
@@ -157,13 +156,6 @@ export interface DatosValor {
 
 export type ErrorSeccion =
   "sintitulo" | "titulolargo" | "sintexto" | "textolargo" | "destacadolargo" | "orden";
-
-function leerOrden(datos: FormData): number | null {
-  const ordenTexto = String(datos.get("orden") ?? "0").trim();
-  const orden = Number.parseInt(ordenTexto === "" ? "0" : ordenTexto, 10);
-  if (!Number.isSafeInteger(orden) || orden < 0 || orden > 9999) return null;
-  return orden;
-}
 
 // El textarea llega con CRLF; se normaliza igual que el contenido de la pagina
 // porque estos textos tambien separan parrafos con una linea en blanco.

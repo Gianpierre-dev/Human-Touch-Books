@@ -2,13 +2,24 @@ import type { APIRoute } from "astro";
 import { bd } from "../../../../lib/bd";
 import { ANCHO_IMAGEN_HERO, esPortadaValida, guardarImagen } from "../../../../lib/almacen";
 import { LIMITES } from "../../../../lib/contenido";
+import {
+  ErrorCuerpoExcedido,
+  leerFormulario,
+  TAMANO_FORMULARIO_CON_ARCHIVO,
+} from "../../../../lib/cuerpo";
 
 export const prerender = false;
 
 const DESTINO = "/admin/portada";
 
 export const POST: APIRoute = async ({ request, redirect }) => {
-  const formulario = await request.formData();
+  let formulario: FormData;
+  try {
+    formulario = await leerFormulario(request, TAMANO_FORMULARIO_CON_ARCHIVO);
+  } catch (fallo) {
+    if (fallo instanceof ErrorCuerpoExcedido) return redirect(`${DESTINO}?error=tamano`, 303);
+    throw fallo;
+  }
 
   const archivo = formulario.get("imagen");
   if (!(archivo instanceof File) || archivo.size === 0) {

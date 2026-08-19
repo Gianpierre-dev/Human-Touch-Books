@@ -8,13 +8,24 @@ import {
   guardarImagen,
 } from "../../../lib/almacen";
 import { esClaveImagenSitio, LIMITES } from "../../../lib/contenido";
+import {
+  ErrorCuerpoExcedido,
+  leerFormulario,
+  TAMANO_FORMULARIO_CON_ARCHIVO,
+} from "../../../lib/cuerpo";
 
 export const prerender = false;
 
 const DESTINO = "/admin/imagenes";
 
 export const POST: APIRoute = async ({ request, redirect }) => {
-  const formulario = await request.formData();
+  let formulario: FormData;
+  try {
+    formulario = await leerFormulario(request, TAMANO_FORMULARIO_CON_ARCHIVO);
+  } catch (fallo) {
+    if (fallo instanceof ErrorCuerpoExcedido) return redirect(`${DESTINO}?error=tamano`, 303);
+    throw fallo;
+  }
 
   const clave = String(formulario.get("clave") ?? "");
   if (!esClaveImagenSitio(clave)) return redirect(`${DESTINO}?error=clave`, 303);

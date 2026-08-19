@@ -6,6 +6,7 @@
 
 import type { TipoLinea } from "@prisma/client";
 import { sirveConBlanco } from "./contraste";
+import { leerOrden } from "./orden";
 
 /**
  * Nombre visible del tipo de linea. Orienta a quien administra: al elegir la
@@ -99,11 +100,8 @@ export function leerDatosLinea(datos: FormData): { datos?: DatosLinea; error?: E
   // ilegible la pagina entera de esa linea. Ver src/lib/contraste.ts.
   if (!sirveConBlanco(colorHex)) return { error: "colorcontraste" };
 
-  const ordenTexto = String(datos.get("orden") ?? "0").trim();
-  const orden = Number.parseInt(ordenTexto === "" ? "0" : ordenTexto, 10);
-  // Acotado al rango de un entero de la base: sin tope, un numero enorme pasa
-  // esta validacion y revienta recien al escribir.
-  if (!Number.isSafeInteger(orden) || orden < 0 || orden > 9999) return { error: "orden" };
+  const orden = leerOrden(datos);
+  if (orden === null) return { error: "orden" };
 
   // El tipo decide en que seccion de la portada aparecen los libros de la
   // linea. Se valida contra la lista cerrada: cualquier otro valor cae al

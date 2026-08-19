@@ -1,5 +1,6 @@
 import type { APIRoute } from "astro";
 import { bd } from "../../../../lib/bd";
+import { ErrorCuerpoExcedido, leerFormulario, TAMANO_FORMULARIO } from "../../../../lib/cuerpo";
 
 export const prerender = false;
 
@@ -13,7 +14,13 @@ export const POST: APIRoute = async ({ params, request, redirect, locals }) => {
   if (!sesion) return redirect("/admin/login", 303);
 
   const id = params.id ?? "";
-  const formulario = await request.formData();
+  let formulario: FormData;
+  try {
+    formulario = await leerFormulario(request, TAMANO_FORMULARIO);
+  } catch (fallo) {
+    if (fallo instanceof ErrorCuerpoExcedido) return redirect(destino("error=tamano"), 303);
+    throw fallo;
+  }
   const accion = String(formulario.get("_accion") ?? "");
   if (accion !== "eliminar") return redirect(destino("error=cuentaaccion"), 303);
 

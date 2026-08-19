@@ -2,6 +2,12 @@ import type { APIRoute } from "astro";
 import { Prisma } from "@prisma/client";
 import { bd } from "../../../../lib/bd";
 import { leerDatosPagina } from "../../../../lib/paginas";
+import {
+  ErrorCuerpoExcedido,
+  leerFormulario,
+  respuestaCuerpoExcedido,
+  TAMANO_FORMULARIO,
+} from "../../../../lib/cuerpo";
 
 export const prerender = false;
 
@@ -11,7 +17,13 @@ const DESTINO = "/admin/paginas";
 // false en el modelo): se crea vacia, se escribe el contenido y recien despues
 // se publica. Asi un borrador nunca aparece solo en el menu.
 export const POST: APIRoute = async ({ request, redirect }) => {
-  const formulario = await request.formData();
+  let formulario: FormData;
+  try {
+    formulario = await leerFormulario(request, TAMANO_FORMULARIO);
+  } catch (fallo) {
+    if (fallo instanceof ErrorCuerpoExcedido) return respuestaCuerpoExcedido();
+    throw fallo;
+  }
   const { datos, error } = leerDatosPagina(formulario);
   if (!datos) return redirect(`${DESTINO}?error=${error}`, 303);
 

@@ -1,4 +1,5 @@
 import { LIMITES } from "./contenido";
+import { leerOrden } from "./orden";
 
 export interface DatosPregunta {
   pregunta: string;
@@ -37,9 +38,8 @@ export function leerDatosPregunta(datos: FormData): {
     if (enlaceTexto.length > LIMITES.altTexto) return { error: "enlace" };
   }
 
-  const ordenTexto = String(datos.get("orden") ?? "0").trim();
-  const orden = Number.parseInt(ordenTexto === "" ? "0" : ordenTexto, 10);
-  if (Number.isNaN(orden)) return { error: "orden" };
+  const orden = leerOrden(datos);
+  if (orden === null) return { error: "orden" };
 
   return {
     datos: {
