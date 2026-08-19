@@ -48,17 +48,22 @@ export const POST: APIRoute = async ({ request, redirect }) => {
     }
   }
 
-  for (const campo of enviados) {
+  // Las escrituras van en UNA transaccion, no en un bucle de esperas sueltas.
+  // La validacion de arriba ya evitaba guardar medio grupo por un campo
+  // invalido, pero si la conexion se caia en el campo 5 de 9 quedaban cuatro
+  // textos nuevos y cinco viejos conviviendo en la pagina, y quien administra
+  // recibia un error sin saber que mitad se habia guardado. De paso, pasa de N
+  // viajes a la base a uno solo.
+  const operaciones = enviados.map((campo) => {
     const clave = campo.clave;
     const valor = String(formulario.get(clave) ?? "").trim();
     // Vaciar el campo borra la fila: asi la web vuelve al texto por defecto del
     // codigo, que es justamente lo que el placeholder anuncia.
-    if (valor === "") {
-      await bd.textoSitio.deleteMany({ where: { clave } });
-      continue;
-    }
-    await bd.textoSitio.upsert({ where: { clave }, update: { valor }, create: { clave, valor } });
-  }
+    return valor === ""
+      ? bd.textoSitio.deleteMany({ where: { clave } })
+      : bd.textoSitio.upsert({ where: { clave }, update: { valor }, create: { clave, valor } });
+  });
+  if (operaciones.length > 0) await bd.$transaction(operaciones);
 
   if (enviados.length === 0) return redirect(`${DESTINO}?ok=sincambios${ancla}`, 303);
   return redirect(`${DESTINO}?ok=guardado${ancla}`, 303);

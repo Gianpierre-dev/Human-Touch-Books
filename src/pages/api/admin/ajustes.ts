@@ -90,34 +90,34 @@ export const POST: APIRoute = async ({ request, redirect }) => {
     return redirect(`${DESTINO}?error=ubicacionlarga`, 303);
   }
 
+  // Las escrituras se acumulan y van en UNA transaccion. En bucles sueltos, una
+  // caida de conexion a mitad dejaba el pie con el WhatsApp nuevo y el horario
+  // viejo — y el JSON-LD publicando esa mezcla— mientras quien administra veia
+  // un error sin saber que se habia guardado. Es el mismo criterio que ya se
+  // aplicaba a la validacion, ahora tambien a la escritura.
+  const operaciones = [];
+
   for (const clave of CLAVES_CONTACTO) {
     const valor = String(formulario.get(clave) ?? "").trim();
     if (valor === "") continue;
-    await bd.ajuste.upsert({ where: { clave }, update: { valor }, create: { clave, valor } });
+    operaciones.push(
+      bd.ajuste.upsert({ where: { clave }, update: { valor }, create: { clave, valor } }),
+    );
   }
 
-  for (const clave of CLAVES_TEXTO) {
+  // Los textos y las redes SI aceptan quedar vacios: sin fila, la web recalcula
+  // su texto por defecto y el icono no se pinta.
+  for (const clave of [...CLAVES_TEXTO, ...REDES.map((red) => red.clave)]) {
     if (!formulario.has(clave)) continue;
     const valor = String(formulario.get(clave) ?? "").trim();
-    if (valor === "") {
-      await bd.ajuste.deleteMany({ where: { clave } });
-      continue;
-    }
-    await bd.ajuste.upsert({ where: { clave }, update: { valor }, create: { clave, valor } });
+    operaciones.push(
+      valor === ""
+        ? bd.ajuste.deleteMany({ where: { clave } })
+        : bd.ajuste.upsert({ where: { clave }, update: { valor }, create: { clave, valor } }),
+    );
   }
 
-  // Mismo criterio que los textos: sin fila, el icono no se pinta en la web,
-  // asi que vaciar el campo es la forma de quitar la red del pie.
-  for (const red of REDES) {
-    if (!formulario.has(red.clave)) continue;
-    const clave = red.clave;
-    const valor = String(formulario.get(clave) ?? "").trim();
-    if (valor === "") {
-      await bd.ajuste.deleteMany({ where: { clave } });
-      continue;
-    }
-    await bd.ajuste.upsert({ where: { clave }, update: { valor }, create: { clave, valor } });
-  }
+  if (operaciones.length > 0) await bd.$transaction(operaciones);
 
   return redirect(`${DESTINO}?ok=guardado`, 303);
 };

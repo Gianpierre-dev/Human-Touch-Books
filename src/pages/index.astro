@@ -27,24 +27,67 @@ import {
 
 export const prerender = false;
 
-// Catalogo y ajustes administrados desde el panel (/admin). La clasificacion la
-// aporta la linea a la que pertenece cada libro: su `tipo` decide la seccion y
-// su clave/etiqueta arman los subgrupos de la coleccion escolar.
-// `activa: true`: una linea desactivada responde 404 en su pagina, sale del
-// menu y del mapa del sitio; sus titulos tampoco pueden seguir en la portada
-// bajo un encabezado cuyo enlace «Ver todo» lleva justamente a ese 404.
-const libros = await bd.libro.findMany({
-  where: { destacado: true, lineaRel: { activa: true } },
-  // Desempate por la fecha de la linea: `Linea.orden` no es unico, y sin el dos
-  // lineas empatadas intercalan sus titulos y parten los grupos de la coleccion.
-  orderBy: [
-    { lineaRel: { orden: "asc" } },
-    { lineaRel: { creadoEn: "asc" } },
-    { orden: "asc" },
-    { creadoEn: "asc" },
-  ],
-  include: { lineaRel: { select: { tipo: true, clave: true, etiquetaCorta: true } } },
-});
+// TODAS las consultas de la portada, en UNA sola tanda.
+//
+// Ninguna depende del resultado de otra: lo que depende es el PROCESADO (los
+// textos se resuelven con datos del catalogo), no la consulta. Encadenadas
+// sumaban una ida y vuelta a la base por cada una, en la pagina mas visitada
+// del sitio y en cada visita, porque se renderiza por peticion.
+//
+// `activa: true` en los libros: una linea desactivada responde 404 en su
+// pagina, sale del menu y del mapa del sitio; sus titulos tampoco pueden
+// seguir en la portada bajo un encabezado cuyo enlace «Ver todo» lleva
+// justamente a ese 404.
+//
+// De los bloques y las tarjetas se traen tambien los ocultos, para distinguir
+// «todavia no hay nada cargado» de «los cargue y los oculte a proposito»: en el
+// segundo caso la seccion no debe resucitar los textos del diseno.
+const [
+  libros,
+  catalogoEscolar,
+  navegacion,
+  filasAjustes,
+  filasTextos,
+  imagenesHero,
+  imagenesSitio,
+  bloquesTodos,
+  chipsTodos,
+  preguntasCargadas,
+] = await Promise.all([
+  bd.libro.findMany({
+    where: { destacado: true, lineaRel: { activa: true } },
+    // Desempate por la fecha de la linea: `Linea.orden` no es unico, y sin el
+    // dos lineas empatadas intercalan sus titulos y parten los grupos.
+    orderBy: [
+      { lineaRel: { orden: "asc" } },
+      { lineaRel: { creadoEn: "asc" } },
+      { orden: "asc" },
+      { creadoEn: "asc" },
+    ],
+    include: { lineaRel: { select: { tipo: true, clave: true, etiquetaCorta: true } } },
+  }),
+  cargarCatalogoEscolar(),
+  cargarNavegacion(),
+  bd.ajuste.findMany(),
+  bd.textoSitio.findMany(),
+  bd.imagenHero.findMany({
+    where: { activa: true },
+    orderBy: [{ orden: "asc" }, { creadoEn: "asc" }],
+  }),
+  bd.imagenSitio.findMany(),
+  bd.bloqueValor.findMany({
+    orderBy: [{ orden: "asc" }, { creadoEn: "asc" }],
+    select: { titulo: true, texto: true, activa: true },
+  }),
+  bd.chipPlataforma.findMany({
+    orderBy: [{ orden: "asc" }, { creadoEn: "asc" }],
+    select: { titulo: true, texto: true, activa: true },
+  }),
+  bd.pregunta.findMany({
+    where: { activa: true },
+    orderBy: [{ orden: "asc" }, { creadoEn: "asc" }],
+  }),
+]);
 
 // Cada tipo de linea se muestra en su propio bloque: mezclarlos en una sola tira
 // obligaba a la visitante a adivinar que es texto escolar y que es lectura.
@@ -96,9 +139,8 @@ for (const libro of escolares) {
 const EtiquetaLibro = gruposEscolares.length > 1 ? "h4" : "h3";
 
 // Los textos que hablan del catalogo ("reune N titulos, de X a Y") salen de una
-// consulta compartida con /admin/textos: escritas por separado se
-// desincronizaron y el panel sugeria un rango de grados que la web no mostraba.
-const catalogoEscolar = await cargarCatalogoEscolar();
+// consulta compartida con /admin/textos (ver la tanda de arriba): escritas por
+// separado se desincronizaron y el panel sugeria un rango que la web no mostraba.
 const gradosEscolares = catalogoEscolar.map((l) => l.grado).filter((g): g is string => Boolean(g));
 const primerGrado = gradosEscolares.at(0);
 const ultimoGrado = gradosEscolares.at(-1);
@@ -107,9 +149,6 @@ const subtituloSerie = catalogoEscolar.at(0)?.subtitulo ?? "";
 
 // Menu de dos niveles: paginas institucionales y lineas activas. La consulta
 // vive en src/lib/navegacion.ts y el Header solo la recibe por props.
-const navegacion = await cargarNavegacion();
-
-const filasAjustes = await bd.ajuste.findMany();
 const ajustes = Object.fromEntries(filasAjustes.map((a) => [a.clave, a.valor]));
 const whatsapp = ajustes.whatsapp ?? "51982953436";
 const correoContacto = ajustes.correo_contacto ?? "informes@humantouchbooks.pe";
@@ -123,23 +162,17 @@ const textoNosotros = ajustes.nosotros_texto ?? textoNosotrosPorDefecto(ubicacio
 // Textos comerciales administrables desde /admin/textos. Sin fila propia, cada
 // clave cae al valor por defecto del catalogo (src/lib/textos.ts): la tabla
 // vacia deja la web exactamente como fue aprobada.
-const filasTextos = await bd.textoSitio.findMany();
 const textos = resolverTextos(filasTextos, {
   descripcionColeccion: descripcionColeccionPorDefecto(subtituloSerie, primerGrado, ultimoGrado),
 });
 
 // Portada: sin imagenes cargadas se mantiene la del diseno original; con una se
 // muestra fija y con dos o mas se arma el carrusel.
-const imagenesHero = await bd.imagenHero.findMany({
-  where: { activa: true },
-  orderBy: [{ orden: "asc" }, { creadoEn: "asc" }],
-});
 const hayCarrusel = imagenesHero.length > 1;
 const totalDiapositivas = imagenesHero.length;
 
 // Imagenes de secciones fijas: cada espacio cae al archivo del repositorio
 // mientras no se cargue una imagen desde el panel.
-const imagenesSitio = await bd.imagenSitio.findMany();
 const imagenPorClave = new Map(imagenesSitio.map((imagen) => [imagen.clave, imagen]));
 
 interface ImagenResuelta {
@@ -244,20 +277,6 @@ const clasesCampo =
 // panel. Con la tabla vacia se usan los del diseno (src/lib/bloques.ts).
 // El icono (y el color, en las tarjetas) NO es editable: se asigna por posicion
 // y la lista se recorre en ciclo si hay mas elementos que iconos.
-// Se traen tambien los ocultos para poder distinguir "todavia no hay nada
-// cargado" de "los cargue y los oculte a proposito": en el segundo caso la
-// seccion no debe resucitar los textos del diseno.
-const [bloquesTodos, chipsTodos] = await Promise.all([
-  bd.bloqueValor.findMany({
-    orderBy: [{ orden: "asc" }, { creadoEn: "asc" }],
-    select: { titulo: true, texto: true, activa: true },
-  }),
-  bd.chipPlataforma.findMany({
-    orderBy: [{ orden: "asc" }, { creadoEn: "asc" }],
-    select: { titulo: true, texto: true, activa: true },
-  }),
-]);
-
 const valores = resolverColeccion(
   bloquesTodos.filter((bloque) => bloque.activa),
   BLOQUES_VALOR_POR_DEFECTO,
@@ -315,11 +334,6 @@ const preguntasPorDefecto: PreguntaVista[] = [
     enlace: { href: "#contacto", texto: "Solicitar acceso" },
   },
 ];
-
-const preguntasCargadas = await bd.pregunta.findMany({
-  where: { activa: true },
-  orderBy: [{ orden: "asc" }, { creadoEn: "asc" }],
-});
 
 const preguntas: PreguntaVista[] =
   preguntasCargadas.length > 0

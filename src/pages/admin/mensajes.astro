@@ -4,14 +4,38 @@ import { bd } from "../../lib/bd";
 
 export const prerender = false;
 
+// Los totales se cuentan en la base y NO sobre la lista de esta pagina: al
+// contarlos sobre la rebanada, con 340 mensajes la pantalla decia «200
+// recibidos» para siempre y sus pendientes discrepaban de la insignia del menu,
+// que si contaba de verdad. Un numero que miente sobre consultas comerciales
+// sin responder es peor que no mostrarlo.
+const POR_PAGINA = 50;
+const paginaPedida = Number(Astro.url.searchParams.get("pagina") ?? "1");
+const [total, pendientes] = await Promise.all([
+  bd.mensaje.count(),
+  bd.mensaje.count({ where: { atendido: false } }),
+]);
+const totalPaginas = Math.max(1, Math.ceil(total / POR_PAGINA));
+const pagina = Number.isSafeInteger(paginaPedida)
+  ? Math.min(Math.max(paginaPedida, 1), totalPaginas)
+  : 1;
+
+// El `id` desempata y con eso el orden es TOTAL. Sin el, dos mensajes con la
+// misma marca de tiempo pueden ordenarse distinto en cada consulta, y como cada
+// pagina es una consulta aparte, una fila podia salir dos veces y otra no salir
+// en ninguna: probado con 120 mensajes creados a la vez, solo 90 eran
+// alcanzables. En una bandeja de consultas comerciales eso es perder ventas.
 const mensajes = await bd.mensaje.findMany({
-  orderBy: [{ atendido: "asc" }, { creadoEn: "desc" }],
-  take: 200,
+  orderBy: [{ atendido: "asc" }, { creadoEn: "desc" }, { id: "asc" }],
+  skip: (pagina - 1) * POR_PAGINA,
+  take: POR_PAGINA,
 });
-const pendientes = mensajes.filter((m) => !m.atendido).length;
 
 const ok = Astro.url.searchParams.get("ok");
 const error = Astro.url.searchParams.get("error");
+
+const clasesPaginacion =
+  "foco-marca inline-flex min-h-[44px] items-center rounded-full border border-line bg-surface px-5 text-sm font-bold text-ink transition-colors hover:bg-surface-2";
 
 const formatoFecha = new Intl.DateTimeFormat("es-PE", {
   dateStyle: "short",
@@ -23,9 +47,8 @@ const formatoFecha = new Intl.DateTimeFormat("es-PE", {
 <PanelLayout titulo="Mensajes" correo={Astro.locals.sesion?.correo}>
   <h1 class="text-2xl font-extrabold text-ink">Mensajes de contacto</h1>
   <p class="mt-1 text-sm text-ink/70">
-    {mensajes.length} mensaje{mensajes.length === 1 ? "" : "s"} recibido{
-      mensajes.length === 1 ? "" : "s"
-    }. {pendientes} sin atender.
+    {total} mensaje{total === 1 ? "" : "s"} recibido{total === 1 ? "" : "s"}. {pendientes} sin atender.
+    {totalPaginas > 1 && ` Página ${pagina} de ${totalPaginas}.`}
   </p>
 
   {
@@ -96,11 +119,14 @@ const formatoFecha = new Intl.DateTimeFormat("es-PE", {
                   >
                     {mensaje.atendido ? "Atendido" : "Pendiente"}
                   </span>
+                  {/* Vuelve a la misma pagina: sin esto, marcar el mensaje 60
+                      devolvia a la primera y habia que volver a paginar. */}
                   <form method="post" action={`/api/admin/mensajes/${mensaje.id}`} class="mt-2">
+                    <input type="hidden" name="pagina" value={pagina} />
                     <button
                       type="submit"
                       aria-label={`${mensaje.atendido ? "Marcar pendiente" : "Marcar atendido"} el mensaje de ${mensaje.nombre}`}
-                      class="min-h-[36px] rounded-full bg-brand px-4 text-xs font-bold whitespace-nowrap text-white transition-colors hover:bg-brand-deep focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
+                      class="foco-marca min-h-[44px] rounded-full bg-brand px-4 text-xs font-bold whitespace-nowrap text-white transition-colors hover:bg-brand-deep"
                     >
                       {mensaje.atendido ? "Marcar pendiente" : "Marcar atendido"}
                     </button>
@@ -111,6 +137,30 @@ const formatoFecha = new Intl.DateTimeFormat("es-PE", {
           </tbody>
         </table>
       </div>
+    )
+  }
+
+  {
+    totalPaginas > 1 && (
+      <nav class="mt-6 flex items-center justify-between gap-3" aria-label="Paginación de mensajes">
+        {pagina > 1 ? (
+          <a href={`/admin/mensajes?pagina=${pagina - 1}`} class={clasesPaginacion}>
+            ← Anteriores
+          </a>
+        ) : (
+          <span />
+        )}
+        <p class="text-sm text-ink/70">
+          Página {pagina} de {totalPaginas}
+        </p>
+        {pagina < totalPaginas ? (
+          <a href={`/admin/mensajes?pagina=${pagina + 1}`} class={clasesPaginacion}>
+            Siguientes →
+          </a>
+        ) : (
+          <span />
+        )}
+      </nav>
     )
   }
 </PanelLayout>
