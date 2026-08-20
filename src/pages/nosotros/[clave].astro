@@ -14,7 +14,13 @@ import Footer from "../../components/Footer.astro";
 import { bd } from "../../lib/bd";
 import { cargarNavegacion } from "../../lib/navegacion";
 import { resolverRedes } from "../../lib/redes";
-import { ESTILOS_SECCION, ESTILOS_VALOR, partirEnParrafos } from "../../lib/paginas";
+import { migasDePan } from "../../lib/json-ld";
+import {
+  ESTILOS_SECCION,
+  ESTILOS_VALOR,
+  partirEnParrafos,
+  recortarDescripcion,
+} from "../../lib/paginas";
 
 export const prerender = false;
 
@@ -73,9 +79,16 @@ const enlaceWhatsapp = `https://wa.me/${whatsapp}?text=${encodeURIComponent(TEXT
 
 const navegacion = await cargarNavegacion();
 
-// La descripcion sale del primer parrafo del hero, recortada. Sin parrafos cae
-// al titular: mejor una descripcion corta que la generica del sitio.
-const descripcion = parrafos[0]?.slice(0, 160) ?? `${titular} — Human Touch Books`;
+// La descripcion se arma con el contenido REAL de la pagina, en cascada: los
+// parrafos del hero y, si se quedan cortos, el texto de la primera seccion.
+// Varias paginas abren con una frase de 60 caracteres y eso desaprovecha el
+// espacio que el buscador si muestra; con esto no se inventa nada, se usa lo
+// que la pagina ya dice. Se corta en el ultimo espacio, porque cortar por
+// caracter parte la ultima palabra a la mitad.
+const textoDescripcion = [parrafos.join(" "), secciones[0]?.texto ?? ""]
+  .filter(Boolean)
+  .join(" ");
+const descripcion = recortarDescripcion(textoDescripcion) || `${titular} — Human Touch Books`;
 const tituloPestana = `${pagina.titulo} — Human Touch Books`;
 
 // Tarjeta social propia: la imagen del hero de la pagina, con sus medidas
@@ -84,6 +97,20 @@ const tituloPestana = `${pagina.titulo} — Human Touch Books`;
 const imagenSocial = pagina.imagenUrl
   ? { url: pagina.imagenUrl, ancho: pagina.ancho ?? undefined, alto: pagina.alto ?? undefined }
   : undefined;
+
+// Migas de pan: Google pinta la ruta («… › Nosotros › Quiénes somos») en vez de
+// la URL cruda, asi que el resultado dice de un vistazo donde esta la pagina.
+// El nivel intermedio no es un enlace real —«Nosotros» es solo un desplegable
+// del menu— pero si el nombre del grupo bajo el que cuelga, que es lo que la
+// miga tiene que comunicar; apunta al inicio, que es su pagina contenedora.
+const migas = migasDePan(
+  [
+    { nombre: "Inicio", ruta: "/" },
+    { nombre: navegacion.etiquetas.nav_nosotros, ruta: "/" },
+    { nombre: pagina.titulo, ruta: `/nosotros/${pagina.clave}` },
+  ],
+  Astro.site ?? new URL(Astro.url.origin),
+);
 ---
 
 <Layout
@@ -93,6 +120,13 @@ const imagenSocial = pagina.imagenUrl
   imagenSocial={imagenSocial}
 >
   <Header whatsapp={whatsapp} base="/" navegacion={navegacion} />
+
+  {
+    (
+      /* eslint-disable-next-line astro/no-set-html-directive -- Unica forma de escribir JSON-LD en Astro, y el contenido ya viene escapado. */
+      <script type="application/ld+json" is:inline set:html={migas} />
+    )
+  }
 
   <main id="contenido" tabindex="-1">
     <!-- HERO -->

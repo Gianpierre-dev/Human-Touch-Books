@@ -14,3 +14,32 @@
 export function serializarJsonLd(datos: unknown): string {
   return JSON.stringify(datos).replace(/</g, "\\u003c");
 }
+
+/**
+ * Migas de pan para los resultados de busqueda.
+ *
+ * Google las usa para pintar la ruta («humantouchbooks.pe › Nosotros › Quiénes
+ * somos») en vez de la URL cruda, de modo que el resultado dice de un vistazo
+ * en que parte del sitio esta la pagina. Es de los pocos datos estructurados
+ * que siguen dando un resultado enriquecido real.
+ *
+ * La posicion arranca en 1 y el ultimo elemento es la pagina actual.
+ */
+export interface Miga {
+  nombre: string;
+  /** Ruta absoluta del sitio: "/nosotros/quienes-somos". */
+  ruta: string;
+}
+
+export function migasDePan(migas: readonly Miga[], base: URL): string {
+  return serializarJsonLd({
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: migas.map((miga, posicion) => ({
+      "@type": "ListItem",
+      position: posicion + 1,
+      name: miga.nombre,
+      item: new URL(miga.ruta, base).href,
+    })),
+  });
+}

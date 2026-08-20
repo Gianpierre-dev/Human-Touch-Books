@@ -26,6 +26,11 @@ interface Props {
 export interface ImagenSocial {
   /** Ruta del propio sitio ("/lineas/primaria-hero.jpg", "/uploads/…"). */
   url: string;
+  /**
+   * Descripcion de la imagen para la tarjeta social. Sin ella, quien navega
+   * con lector de pantalla en la red social solo oye el titulo del enlace.
+   */
+  alt?: string;
   /** Medidas REALES. Solo se declaran si se conocen las dos. */
   ancho?: number;
   alto?: number;
@@ -97,6 +102,7 @@ const hayMedidasSociales = social.ancho !== undefined && social.alto !== undefin
     <meta property="og:type" content="website" />
     <meta property="og:url" content={urlCanonica} />
     <meta property="og:image" content={urlImagenSocial} />
+    <meta property="og:image:alt" content={social.alt ?? title} />
     {
       hayMedidasSociales && (
         <>

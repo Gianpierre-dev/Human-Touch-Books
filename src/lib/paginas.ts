@@ -267,3 +267,20 @@ export const ESTILOS_VALOR: readonly EstiloPagina[] = [
       "M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20Zm6.9 6h-2.9a15.6 15.6 0 0 0-1.3-3.4A8 8 0 0 1 18.9 8ZM12 4.2c.7 1 1.3 2.3 1.7 3.8h-3.4c.4-1.5 1-2.8 1.7-3.8ZM4.3 14A8 8 0 0 1 4 12c0-.7.1-1.4.3-2h3.3a17 17 0 0 0 0 4H4.3Zm.8 2H8c.3 1.2.8 2.4 1.3 3.4A8 8 0 0 1 5.1 16Zm2.9-8H5.1a8 8 0 0 1 4.2-3.4C8.8 5.6 8.3 6.8 8 8Zm4 11.8c-.7-1-1.3-2.3-1.7-3.8h3.4c-.4 1.5-1 2.8-1.7 3.8ZM14.1 14H9.9a15.3 15.3 0 0 1 0-4h4.2a15.3 15.3 0 0 1 0 4Zm.5 5.4c.5-1 1-2.2 1.3-3.4h2.9a8 8 0 0 1-4.2 3.4Zm1.7-5.4a17 17 0 0 0 0-4h3.4c.2.6.3 1.3.3 2s-.1 1.4-.3 2h-3.4Z",
   },
 ];
+
+/**
+ * Recorta un texto para la meta descripcion, cortando en el ultimo espacio.
+ *
+ * Cortar por numero de caracteres parte la ultima palabra a la mitad, y eso es
+ * lo que el buscador muestra debajo del titulo. El limite por defecto son 155
+ * caracteres: por encima de eso Google recorta y agrega puntos suspensivos.
+ */
+export function recortarDescripcion(texto: string, maximo = 155): string {
+  const limpio = texto.replace(/\s+/g, " ").trim();
+  if (limpio.length <= maximo) return limpio;
+  const cortado = limpio.slice(0, maximo);
+  const ultimoEspacio = cortado.lastIndexOf(" ");
+  // Sin espacios (una sola palabra larguisima) se corta por caracter: recortar
+  // hasta la nada seria peor que cortar la palabra.
+  return (ultimoEspacio > maximo * 0.6 ? cortado.slice(0, ultimoEspacio) : cortado).trimEnd() + "…";
+}

@@ -16,7 +16,7 @@ import { ESTILOS_ARGUMENTO, ESTILOS_PILAR } from "../../lib/bloques-linea";
 import { cargarNavegacion } from "../../lib/navegacion";
 import { resolverRedes } from "../../lib/redes";
 import { defectoFijo } from "../../lib/textos";
-import { serializarJsonLd } from "../../lib/json-ld";
+import { migasDePan, serializarJsonLd } from "../../lib/json-ld";
 
 export const prerender = false;
 
@@ -118,6 +118,18 @@ const imagenSocial = linea.heroImagenUrl
 // ItemList de los titulos de la linea: solo nombre y posicion, que es lo unico
 // que la pagina publica de cada libro. Sin libros no se emite el bloque: una
 // lista vacia no aporta nada y ensucia el marcado.
+// Migas de pan: Google pinta la ruta en el resultado en vez de la URL cruda.
+// El nivel intermedio apunta a la seccion de la coleccion en la portada, que
+// es el sitio del que cuelgan las lineas en la navegacion.
+const migas = migasDePan(
+  [
+    { nombre: "Inicio", ruta: "/" },
+    { nombre: navegacion.etiquetas.nav_textos, ruta: "/#coleccion" },
+    { nombre: linea.nombre, ruta: `/lineas/${linea.clave}` },
+  ],
+  Astro.site ?? new URL(Astro.url.origin),
+);
+
 const listaLibros =
   libros.length > 0
     ? serializarJsonLd({
@@ -144,6 +156,12 @@ const listaLibros =
   {
     /* eslint-disable-next-line astro/no-set-html-directive -- Unica forma de escribir JSON-LD en Astro, y el contenido ya viene escapado por serializarJsonLd(). */
     listaLibros && <script type="application/ld+json" is:inline set:html={listaLibros} />
+  }
+  {
+    (
+      /* eslint-disable-next-line astro/no-set-html-directive -- Unica forma de escribir JSON-LD en Astro, y el contenido ya viene escapado. */
+      <script type="application/ld+json" is:inline set:html={migas} />
+    )
   }
 
   {

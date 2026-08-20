@@ -366,6 +366,9 @@ const fichaOrganizacion = serializarJsonLd({
   name: "Human Touch Books",
   url: base.href,
   logo: new URL("/brand/logo.webp", base).href,
+  // La descripcion sale del mismo texto administrable que la meta de la
+  // pagina: si el cliente lo cambia, no queda una version vieja aqui.
+  description: textos.meta_descripcion,
   email: correoContacto,
   telephone: `+${whatsapp}`,
   ...(perfilesSociales.length > 0 ? { sameAs: perfilesSociales } : {}),
