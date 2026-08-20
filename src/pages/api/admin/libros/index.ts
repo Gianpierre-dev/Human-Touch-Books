@@ -42,8 +42,17 @@ export const POST: APIRoute = async ({ request, redirect, cookies }) => {
 
   const portada = await procesarPortada(formulario, datos.titulo);
   if (portada.error) return rechazar(portada.error);
-  if (!portada.url) return rechazar("La portada es obligatoria.");
+  if (!portada.imagen) return rechazar("La portada es obligatoria.");
 
-  await bd.libro.create({ data: { ...datos, portadaUrl: portada.url } });
+  // Las medidas viajan a la base para que la pagina reserve el hueco exacto de
+  // la portada y su carga no empuje el contenido hacia abajo.
+  await bd.libro.create({
+    data: {
+      ...datos,
+      portadaUrl: portada.imagen.url,
+      ancho: portada.imagen.ancho,
+      alto: portada.imagen.alto,
+    },
+  });
   return redirect("/admin?ok=creado", 303);
 };

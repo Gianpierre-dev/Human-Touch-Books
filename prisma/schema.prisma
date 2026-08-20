@@ -105,6 +105,11 @@ model Libro {
   // Frase breve que acompana al libro en la pagina de su linea.
   descripcionCorta String?    @map("descripcion_corta")
   portadaUrl       String     @map("portada_url")
+  // Medidas reales de la portada, para que la pagina reserve su hueco exacto y
+  // la carga no empuje el contenido hacia abajo. Nullable porque las filas
+  // anteriores a esta columna no las tienen: quien las lee cae a un respaldo.
+  ancho            Int?
+  alto             Int?
   orden            Int        @default(0)
   destacado        Boolean    @default(false)
   creadoEn         DateTime   @default(now()) @map("creado_en")

@@ -365,7 +365,7 @@ const fichaOrganizacion = serializarJsonLd({
   "@type": "Organization",
   name: "Human Touch Books",
   url: base.href,
-  logo: new URL("/brand/logo.png", base).href,
+  logo: new URL("/brand/logo.webp", base).href,
   email: correoContacto,
   telephone: `+${whatsapp}`,
   ...(perfilesSociales.length > 0 ? { sameAs: perfilesSociales } : {}),
@@ -761,13 +761,24 @@ const fichaOrganizacion = serializarJsonLd({
                     {/* Sin proporcion forzada: las portadas de esta linea las carga
                         el panel y no comparten formato con la serie escolar.
                         Recortarlas a vertical mutilaria la tapa. */}
-                    {/* min-h reserva espacio mientras carga la imagen lazy (evita CLS)
-                        sin forzar una proporcion que mutile portadas apaisadas. */}
-                    <span class="block min-h-[150px] w-full max-w-[212px] rounded-lg bg-surface-2 p-2.5 ring-1 ring-line">
+                    {/* Con las medidas reales (columnas `ancho`/`alto`, que se
+                        guardan al subir la portada) el navegador deduce la
+                        proporcion y reserva el hueco EXACTO. El `min-h` es el
+                        respaldo para las filas anteriores a esas columnas: sin
+                        medidas, reservaba 150 px y una tapa de 300 empujaba el
+                        resto de la tarjeta al terminar de cargar. */}
+                    <span
+                      class:list={[
+                        "block w-full max-w-[212px] rounded-lg bg-surface-2 p-2.5 ring-1 ring-line",
+                        !(libro.ancho && libro.alto) && "min-h-[150px]",
+                      ]}
+                    >
                       <img
                         src={libro.portadaUrl}
                         alt={`Portada de ${libro.titulo}`}
                         loading="lazy"
+                        width={libro.ancho ?? undefined}
+                        height={libro.alto ?? undefined}
                         class="block h-auto w-full rounded shadow-md shadow-navy/15"
                       />
                     </span>

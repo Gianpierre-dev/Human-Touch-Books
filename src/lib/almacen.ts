@@ -28,9 +28,12 @@ const TIPOS_MIME: Record<string, string> = {
 // mucho despues como «tu imagen no es valida» en la cara de quien administra.
 const BUCKET = ENTORNO.wasabi.bucket;
 
-// Las portadas se muestran como maximo a ~450 px de ancho; 1200 cubre pantallas
-// de alta densidad sin arrastrar los 3 MB que suele pesar el archivo original.
-const ANCHO_MAXIMO = 1200;
+// Medido: la portada mas grande del sitio se pinta a ~165 px de ancho (la
+// grilla de la portada), y las demas a menos (128 px en la pagina de linea, 64
+// en el panel). 600 cubre ese hueco incluso a 3x de densidad y deja margen por
+// si algun dia se agrega una vista mayor. El 1200 anterior servia mas del doble
+// de pixeles de los que cualquier pantalla llega a usar.
+const ANCHO_MAXIMO = 600;
 
 // Las imagenes de secciones fijas ocupan hasta ~800 px de ancho: 1600 les da
 // el mismo margen de alta densidad que 1200 a las tapas.
@@ -184,12 +187,13 @@ export async function guardarImagen(
   return { url: `/uploads/${nombre}`, ancho: imagen.ancho, alto: imagen.alto };
 }
 
-export async function guardarPortada(archivo: File, titulo: string): Promise<string> {
+/**
+ * Devuelve tambien las medidas, no solo la URL: la pagina las necesita para
+ * reservar el hueco exacto de la portada y que su carga no empuje el contenido.
+ */
+export async function guardarPortada(archivo: File, titulo: string): Promise<ImagenGuardada> {
   // `aRanura` es idempotente: el nombre final es el mismo de siempre.
-  const { url } = await guardarImagen(archivo, aRanura(titulo) || "portada", {
-    anchoMaximo: ANCHO_MAXIMO,
-  });
-  return url;
+  return guardarImagen(archivo, aRanura(titulo) || "portada", { anchoMaximo: ANCHO_MAXIMO });
 }
 
 export async function eliminarPortada(url: string): Promise<void> {

@@ -1,4 +1,9 @@
-import { ErrorImagenInvalida, esPortadaValida, guardarPortada } from "./almacen";
+import {
+  ErrorImagenInvalida,
+  esPortadaValida,
+  guardarPortada,
+  type ImagenGuardada,
+} from "./almacen";
 import { bd } from "./bd";
 import { leerEnteroAcotado, leerOrden } from "./orden";
 
@@ -127,13 +132,13 @@ export async function verificarLinea(lineaId: string): Promise<string | null> {
 export async function procesarPortada(
   datos: FormData,
   titulo: string,
-): Promise<{ url?: string; error?: string }> {
+): Promise<{ imagen?: ImagenGuardada; error?: string }> {
   const archivo = datos.get("portada");
   if (!(archivo instanceof File) || archivo.size === 0) return {};
   const invalida = esPortadaValida(archivo);
   if (invalida) return { error: invalida };
   try {
-    return { url: await guardarPortada(archivo, titulo) };
+    return { imagen: await guardarPortada(archivo, titulo) };
   } catch (fallo) {
     // Culpar al archivo solo cuando el archivo tiene la culpa: si el que fallo
     // fue el almacenamiento, decirle «verifica que sea un JPG valido» manda a

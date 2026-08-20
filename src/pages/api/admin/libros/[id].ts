@@ -75,9 +75,20 @@ export const POST: APIRoute = async ({ params, request, redirect, cookies }) => 
 
   await bd.libro.update({
     where: { id },
-    data: { ...datos, ...(portada.url ? { portadaUrl: portada.url } : {}) },
+    data: {
+      ...datos,
+      // Las medidas se guardan junto a la URL: separarlas dejaria la pagina
+      // reservando el hueco de la portada anterior.
+      ...(portada.imagen
+        ? {
+            portadaUrl: portada.imagen.url,
+            ancho: portada.imagen.ancho,
+            alto: portada.imagen.alto,
+          }
+        : {}),
+    },
   });
-  if (portada.url) {
+  if (portada.imagen) {
     await borrarDelBucket(libro.portadaUrl);
   }
   return redirect("/admin?ok=guardado", 303);
