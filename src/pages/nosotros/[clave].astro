@@ -85,9 +85,7 @@ const navegacion = await cargarNavegacion();
 // espacio que el buscador si muestra; con esto no se inventa nada, se usa lo
 // que la pagina ya dice. Se corta en el ultimo espacio, porque cortar por
 // caracter parte la ultima palabra a la mitad.
-const textoDescripcion = [parrafos.join(" "), secciones[0]?.texto ?? ""]
-  .filter(Boolean)
-  .join(" ");
+const textoDescripcion = [parrafos.join(" "), secciones[0]?.texto ?? ""].filter(Boolean).join(" ");
 const descripcion = recortarDescripcion(textoDescripcion) || `${titular} — Human Touch Books`;
 const tituloPestana = `${pagina.titulo} — Human Touch Books`;
 

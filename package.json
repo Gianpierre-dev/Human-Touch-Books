@@ -18,7 +18,7 @@
     "lint": "eslint .",
     "formato": "prettier --check .",
     "format": "prettier --write .",
-    "test:unitarias": "node --experimental-strip-types --test \"pruebas/unitarias/*.test.mjs\"",
+    "test:unitarias": "node --experimental-strip-types --import ./pruebas/registrar-resolver.mjs --test \"pruebas/unitarias/*.test.mjs\"",
     "test:humo": "node pruebas/humo.mjs",
     "test": "pnpm test:unitarias && pnpm test:humo"
   },

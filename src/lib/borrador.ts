@@ -64,7 +64,10 @@ export function guardarBorrador(
     path: ruta,
     httpOnly: true,
     sameSite: "lax",
-    secure: import.meta.env.PROD,
+    // Encadenamiento opcional: fuera de Vite (por ejemplo en las pruebas
+    // unitarias, que corren con node --test) `import.meta.env` no existe y
+    // leer .PROD lanzaria. En produccion el valor es el mismo de siempre.
+    secure: Boolean(import.meta.env?.PROD),
     maxAge: VIDA_SEGUNDOS,
   });
 }
