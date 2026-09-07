@@ -167,6 +167,12 @@ const textos = resolverTextos(filasTextos, {
   descripcionColeccion: descripcionColeccionPorDefecto(subtituloSerie, primerGrado, ultimoGrado),
 });
 
+// Tarjeta flotante del hero: sin destino de enlace no se muestra (un enlace
+// muerto seria peor que no tener tarjeta). El destino ya llega validado desde
+// /api/admin/textos; aqui solo se decide si es externo para abrirlo aparte.
+const tarjetaHeroVisible = textos.portada_tarjeta_enlace_url !== "";
+const tarjetaHeroExterna = textos.portada_tarjeta_enlace_url.startsWith("https://");
+
 // Portada: sin imagenes cargadas se mantiene la del diseno original; con una se
 // muestra fija y con dos o mas se arma el carrusel.
 const hayCarrusel = imagenesHero.length > 1;
@@ -544,6 +550,41 @@ const fichaOrganizacion = serializarJsonLd({
             que se ve la foto de fondo con el velo mas abierto. */
         }
       </div>
+
+      {
+        /* Tarjeta flotante, administrable desde /admin/textos. Solo desde md:
+          la columna de la foto tiene alto y ancho de sobra; en movil, con el
+          hero apilado y bajo, la tarjeta chocaria con el texto o los puntos
+          del carrusel. */
+      }
+      {
+        tarjetaHeroVisible && (
+          <div class="absolute right-4 bottom-24 z-10 hidden max-w-[15.5rem] rounded-2xl bg-surface/95 p-4 shadow-[0_12px_28px_-10px_rgba(0,0,0,0.45)] backdrop-blur md:right-10 md:block">
+            <div class="flex items-start gap-3">
+              <span class="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-brand/10 text-brand">
+                <svg viewBox="0 0 24 24" class="h-5 w-5 fill-current" aria-hidden="true">
+                  <path d="M12 3 1 9l11 6 9-4.9V17h2V9L12 3Zm-7 8.18V16c0 2.21 3.13 4 7 4s7-1.79 7-4v-4.82l-7 3.82-7-3.82Z" />
+                </svg>
+              </span>
+              <div>
+                <p class="text-sm font-bold text-navy">{textos.portada_tarjeta_titulo}</p>
+                <p class="mt-0.5 text-xs leading-snug text-ink/70">{textos.portada_tarjeta_texto}</p>
+                <a
+                  href={textos.portada_tarjeta_enlace_url}
+                  target={tarjetaHeroExterna ? "_blank" : undefined}
+                  rel={tarjetaHeroExterna ? "noopener noreferrer" : undefined}
+                  class="foco-marca mt-1.5 inline-flex items-center gap-1 text-xs font-bold text-brand hover:text-brand-deep"
+                >
+                  {textos.portada_tarjeta_enlace_texto}
+                  <svg viewBox="0 0 24 24" class="h-3.5 w-3.5 fill-current" aria-hidden="true">
+                    <path d="M9 6l6 6-6 6V6Z" />
+                  </svg>
+                </a>
+              </div>
+            </div>
+          </div>
+        )
+      }
 
       {
         hayCarrusel && (

@@ -44,9 +44,11 @@ const MENSAJES_OK: Record<string, string> = {
 const textoError =
   error === "largo" && campoConError
     ? `No se guardó nada: «${campoConError.etiqueta}» admite hasta ${campoConError.limite} caracteres.`
-    : error
-      ? "No pudimos guardar los cambios."
-      : null;
+    : error === "enlace" && campoConError
+      ? `No se guardó nada: «${campoConError.etiqueta}» no es un destino válido. Usa una ruta interna (/…), un ancla (#…) o una dirección https:// completa.`
+      : error
+        ? "No pudimos guardar los cambios."
+        : null;
 
 const camposPorGrupo = new Map<string, CampoTexto[]>();
 for (const campo of CAMPOS_TEXTO) {

@@ -111,10 +111,33 @@ export interface CampoTexto {
   /** Se pinta como textarea en vez de input. */
   multilinea?: boolean;
   /**
+   * Se valida como destino de enlace (ruta interna, ancla o URL https) en vez
+   * de solo por longitud. Ver `esEnlaceSeguro`.
+   */
+  esUrl?: boolean;
+  /**
    * Texto que la web muestra mientras no haya uno propio. Es funcion cuando se
    * calcula con datos que tambien se administran (el catalogo de libros).
    */
   defecto: string | ((contexto: ContextoTextos) => string);
+}
+
+/**
+ * Valida el destino de un enlace editable desde el panel: una ruta interna
+ * (empieza con "/", nunca "//" para no escapar a otro host), un ancla de la
+ * misma pagina ("#...") o una URL externa https completa. Rechaza cualquier
+ * otro esquema (javascript:, data:, etc.), la via de inyeccion mas comun en un
+ * campo que termina en un atributo href. Se llama solo con valores no vacios:
+ * un campo `esUrl` vacio es valido y borra la fila, igual que el resto.
+ */
+export function esEnlaceSeguro(valor: string): boolean {
+  if (valor.startsWith("/") && !valor.startsWith("//")) return true;
+  if (valor.startsWith("#") && valor.length > 1) return true;
+  try {
+    return new URL(valor).protocol === "https:";
+  } catch {
+    return false;
+  }
 }
 
 // TEXTOS CON MARCADO INTERNO
@@ -261,6 +284,41 @@ export const CAMPOS_TEXTO = [
     ayuda: "Botón con borde. Lleva a la colección.",
     limite: 30,
     defecto: "Conocer la colección",
+  },
+  {
+    clave: "portada_tarjeta_titulo",
+    grupo: "portada",
+    etiqueta: "Tarjeta flotante — título",
+    ayuda:
+      "Tarjeta sobre la fotografía del hero, con un enlace propio. Deja vacío el destino del enlace para ocultarla por completo.",
+    limite: 40,
+    defecto: "Capacitaciones y Talleres",
+  },
+  {
+    clave: "portada_tarjeta_texto",
+    grupo: "portada",
+    etiqueta: "Tarjeta flotante — descripción",
+    ayuda: "Línea breve bajo el título de la tarjeta.",
+    limite: 100,
+    defecto: "Programas de formación para docentes, tutores y directivos.",
+  },
+  {
+    clave: "portada_tarjeta_enlace_texto",
+    grupo: "portada",
+    etiqueta: "Tarjeta flotante — texto del enlace",
+    ayuda: "Texto del enlace de la tarjeta, con la flecha ya incluida en el diseño.",
+    limite: 30,
+    defecto: "Ver programas",
+  },
+  {
+    clave: "portada_tarjeta_enlace_url",
+    grupo: "portada",
+    etiqueta: "Tarjeta flotante — destino del enlace",
+    ayuda:
+      "A dónde lleva el enlace: una ruta interna (/nosotros/quienes-somos), un ancla de esta misma página (#coleccion) o una dirección externa completa (https://…). Sin este campo la tarjeta no se muestra en la web.",
+    limite: 300,
+    esUrl: true,
+    defecto: "",
   },
 
   // Propuesta

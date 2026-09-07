@@ -1,6 +1,6 @@
 import type { APIRoute } from "astro";
 import { bd } from "../../../lib/bd";
-import { CAMPOS_TEXTO, GRUPOS_TEXTO } from "../../../lib/textos";
+import { CAMPOS_TEXTO, GRUPOS_TEXTO, esEnlaceSeguro, type CampoTexto } from "../../../lib/textos";
 import {
   ErrorCuerpoExcedido,
   leerFormulario,
@@ -32,7 +32,7 @@ export const POST: APIRoute = async ({ request, redirect }) => {
 
   // Solo se miran las claves del catalogo: cualquier campo inventado que llegue
   // en el formulario se ignora, nunca crea una fila.
-  const enviados = CAMPOS_TEXTO.filter((campo) => formulario.has(campo.clave));
+  const enviados: CampoTexto[] = CAMPOS_TEXTO.filter((campo) => formulario.has(campo.clave));
 
   // Primero se valida TODO y recien despues se escribe: un campo demasiado
   // largo no puede dejar el resto del grupo guardado a medias.
@@ -43,6 +43,14 @@ export const POST: APIRoute = async ({ request, redirect }) => {
       // obliga a buscar a mano el campo que fallo.
       return redirect(
         `${DESTINO}?error=largo&campo=${encodeURIComponent(campo.clave)}${ancla}`,
+        303,
+      );
+    }
+    // Un campo de enlace vacio es valido (borra la fila, como cualquier otro);
+    // solo se valida el esquema cuando trae algo escrito.
+    if (campo.esUrl && valor !== "" && !esEnlaceSeguro(valor)) {
+      return redirect(
+        `${DESTINO}?error=enlace&campo=${encodeURIComponent(campo.clave)}${ancla}`,
         303,
       );
     }
