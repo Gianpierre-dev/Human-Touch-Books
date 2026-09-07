@@ -15,10 +15,12 @@ interface Props {
   minlength?: number;
   maxlength?: number;
   ayuda?: string;
+  marcador?: string;
   clase?: string;
 }
 
-const { id, nombre, etiqueta, autocomplete, minlength, maxlength, ayuda, clase } = Astro.props;
+const { id, nombre, etiqueta, autocomplete, minlength, maxlength, ayuda, marcador, clase } =
+  Astro.props;
 const idAyuda = ayuda ? `ayuda-${id}` : undefined;
 ---
 
@@ -34,6 +36,7 @@ const idAyuda = ayuda ? `ayuda-${id}` : undefined;
       autocomplete={autocomplete}
       minlength={minlength}
       maxlength={maxlength}
+      placeholder={marcador}
       aria-describedby={idAyuda}
       autocapitalize="off"
       autocorrect="off"

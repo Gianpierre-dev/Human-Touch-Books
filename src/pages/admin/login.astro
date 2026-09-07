@@ -73,6 +73,7 @@ const textoError = !error
           name="correo"
           required
           autocomplete="username"
+          placeholder="tu@correo.com"
           value={correoEnviado ?? ""}
           aria-invalid={correoInvalido ? "true" : undefined}
           aria-describedby={correoInvalido ? "error-correo" : undefined}
@@ -86,6 +87,7 @@ const textoError = !error
         nombre="clave"
         etiqueta="Contraseña"
         autocomplete="current-password"
+        marcador="Tu contraseña"
         clase="mt-4"
       />
 
