@@ -882,11 +882,11 @@ const fichaOrganizacion = serializarJsonLd({
     <!-- PLATAFORMA -->
     <section
       id="plataforma"
-      class="border-y border-line bg-surface-2/60"
+      class="overflow-x-clip border-y border-line bg-surface-2/60"
       aria-labelledby="titulo-plataforma"
     >
       <div
-        class="mx-auto grid max-w-6xl items-center gap-10 px-4 py-16 md:px-8 md:py-24 lg:grid-cols-[0.8fr_1.2fr]"
+        class="mx-auto grid max-w-6xl items-center gap-10 px-4 py-16 md:px-8 md:py-24 lg:grid-cols-[0.9fr_1.1fr]"
       >
         <div class="reveal-scroll">
           <span
@@ -975,7 +975,18 @@ const fichaOrganizacion = serializarJsonLd({
           /* Imagen recortada: el original repetia en pixeles el titular, el parrafo
             y dos de los chips de arriba (el recorte vivio en scripts/limpiar-mocks.mjs). */
         }
-        <div class="reveal-scroll mx-auto w-full max-w-[340px] lg:max-w-none">
+        {
+          /* Sangrado a la derecha (solo desde lg): el texto queda alineado al
+            contenedor de 72rem como el resto del sitio, y la foto se extiende
+            hacia el borde de la pantalla. El margen negativo es el espacio libre
+            REAL a la derecha del contenedor menos 1rem de respiro, con piso en
+            0: por debajo de ~1180px no hay espacio que ganar y la foto vuelve a
+            quedar dentro. Asi nunca produce scroll horizontal (el overflow-x-clip
+            de la seccion es solo red de seguridad). */
+        }
+        <div
+          class="reveal-scroll mx-auto w-full max-w-[340px] lg:mr-[calc(-1*max(0px,(100vw_-_min(100vw,72rem))/2_-_1rem))] lg:ml-0 lg:w-auto lg:max-w-none"
+        >
           {
             /* Marco explicito: el recorte deja un rectangulo opaco y sin el anillo
               leia como una imagen suelta sobre el fondo de la seccion. */
