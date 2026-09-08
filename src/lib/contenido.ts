@@ -31,7 +31,8 @@ export const ESPACIO_NOSOTROS: EspacioImagen = {
 export const ESPACIO_PLATAFORMA: EspacioImagen = {
   clave: "plataforma_imagen",
   etiqueta: "Imagen — sección Plataforma",
-  ayuda: "Orientación cuadrada u horizontal. Se muestra en una tarjeta de hasta 340 px de ancho.",
+  ayuda:
+    "Horizontal, proporción 8:5 (1.6:1 de ancho por alto) — por ejemplo 1600×1000 px. Se muestra a lo ancho de media sección: con una foto más angosta que esa proporción, sobra espacio alrededor.",
   imagenUrl: "/mock/laptop-smarti-limpio.webp",
   altTexto:
     "La plataforma Tutoría SMART abierta en una laptop, con la pantalla de ingreso de Human Touch Books",
