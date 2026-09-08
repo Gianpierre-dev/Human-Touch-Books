@@ -886,7 +886,7 @@ const fichaOrganizacion = serializarJsonLd({
       aria-labelledby="titulo-plataforma"
     >
       <div
-        class="mx-auto grid max-w-6xl items-center gap-10 px-4 py-16 md:px-8 md:py-24 lg:grid-cols-[0.8fr_1.2fr]"
+        class="mx-auto grid max-w-6xl items-center gap-10 px-4 py-16 md:px-8 md:py-24 lg:grid-cols-[0.8fr_1.2fr] lg:items-stretch"
       >
         <div class="reveal-scroll">
           <span
@@ -975,17 +975,16 @@ const fichaOrganizacion = serializarJsonLd({
           /* Imagen recortada: el original repetia en pixeles el titular, el parrafo
             y dos de los chips de arriba (el recorte vivio en scripts/limpiar-mocks.mjs). */
         }
-        <div class="reveal-scroll mx-auto w-full max-w-[340px] lg:max-w-none">
+        <div class="reveal-scroll mx-auto w-full max-w-[340px] lg:h-full lg:max-w-none">
           {
             /* Marco explicito: el recorte deja un rectangulo opaco y sin el anillo
               leia como una imagen suelta sobre el fondo de la seccion. */
           }
-          <div class="overflow-hidden rounded-2xl shadow-xl ring-1 shadow-navy/15 ring-line">
+          <div class="h-full overflow-hidden rounded-2xl shadow-xl ring-1 shadow-navy/15 ring-line">
             <img
               src={imagenPlataforma.imagenUrl}
               alt={imagenPlataforma.altTexto}
-              class="block w-full object-cover"
-              style={`aspect-ratio: ${imagenPlataforma.ancho} / ${imagenPlataforma.alto};`}
+              class="block h-full w-full object-cover"
               width={imagenPlataforma.ancho}
               height={imagenPlataforma.alto}
               loading="lazy"
