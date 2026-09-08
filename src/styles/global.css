@@ -147,6 +147,32 @@ body {
   outline-color: #ffffff;
 }
 
+/*
+  Area de toque ampliada para enlaces DENTRO de un parrafo. El texto sigue
+  fluyendo en linea (nada de inline-flex, que convierte al enlace en una caja
+  indivisible y puede desbordar en pantallas angostas); un pseudo-elemento
+  invisible extiende la zona clicable 12px arriba y abajo, con lo que una
+  linea de 20px pasa a 44px de alto tocable sin mover una sola letra.
+
+  `inline-block` y no `inline`: un inline partido en dos lineas genera dos
+  fragmentos, y el bloque contenedor de su pseudo-elemento va del inicio del
+  primero al final del ultimo (que puede quedar mas a la izquierda): ancho
+  negativo, pseudo colapsado a cero. Medido en el enlace del formulario a
+  360px. Como inline-block el enlace pasa entero a la linea siguiente y el
+  pseudo tiene una caja real; si fuera mas ancho que la linea, su texto
+  sigue partiendo por dentro, sin desbordar.
+*/
+.area-toque {
+  position: relative;
+  display: inline-block;
+}
+
+.area-toque::before {
+  content: "";
+  position: absolute;
+  inset: -0.75rem 0;
+}
+
 /* Salto al contenido: fuera de pantalla hasta que recibe el foco. */
 .salto-contenido {
   position: absolute;

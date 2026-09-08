@@ -462,7 +462,13 @@ const fichaOrganizacion = serializarJsonLd({
       }
       <div class="hero-velo pointer-events-none absolute inset-0" aria-hidden="true"></div>
       <div
-        class="relative mx-auto grid max-w-6xl items-center gap-10 px-4 py-14 md:min-h-[34rem] md:grid-cols-[1.05fr_0.95fr] md:px-8 md:py-20"
+        class:list={[
+          "relative mx-auto grid max-w-6xl items-center gap-10 px-4 py-14 md:min-h-[34rem] md:grid-cols-[1.05fr_0.95fr] md:px-8 md:py-20",
+          // Con carrusel, los puntos y «Pausar» ocupan los 64px de abajo
+          // (bottom-5 + 44px de alto): sin este relleno extra se pisaban con
+          // la linea del respaldo a 360px (medido: 8px de solapamiento).
+          hayCarrusel && "pb-24 md:pb-24",
+        ]}
       >
         <div class="reveal">
           <span
@@ -573,7 +579,7 @@ const fichaOrganizacion = serializarJsonLd({
                   href={textos.portada_tarjeta_enlace_url}
                   target={tarjetaHeroExterna ? "_blank" : undefined}
                   rel={tarjetaHeroExterna ? "noopener noreferrer" : undefined}
-                  class="foco-marca mt-2 inline-flex items-center gap-1 text-sm font-bold text-brand hover:text-brand-deep"
+                  class="foco-marca mt-0.5 inline-flex min-h-[44px] items-center gap-1 text-sm font-bold text-brand hover:text-brand-deep"
                 >
                   {textos.portada_tarjeta_enlace_texto}
                   <svg viewBox="0 0 24 24" class="h-4 w-4 fill-current" aria-hidden="true">
@@ -890,7 +896,7 @@ const fichaOrganizacion = serializarJsonLd({
       >
         <div class="reveal-scroll">
           <span
-            class="inline-flex items-center gap-1.5 rounded-full bg-brand px-4 py-1.5 text-[0.68rem] font-bold tracking-[0.16em] text-white uppercase"
+            class="inline-flex items-center gap-1.5 rounded-full bg-brand px-4 py-1.5 text-xs font-bold tracking-[0.16em] text-white uppercase"
           >
             <svg viewBox="0 0 24 24" class="h-3 w-3 fill-current" aria-hidden="true">
               <path d="m12 2 2.4 7.2H22l-6 4.6 2.3 7.2-6.3-4.4-6.3 4.4L8 13.8 2 9.2h7.6L12 2Z"
@@ -1414,7 +1420,7 @@ const fichaOrganizacion = serializarJsonLd({
                   /* El cierre va pegado al enlace: un salto de línea antes de
                     `</a>` mete un espacio real y el punto queda separado. */
                 }
-                <a href="/privacidad" class="foco-marca font-semibold text-brand"
+                <a href="/privacidad" class="foco-marca area-toque font-semibold text-brand"
                   ><span class="enlace-sub">Política de privacidad</span></a
                 >.
               </span>
