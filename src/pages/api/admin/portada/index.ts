@@ -1,6 +1,11 @@
 import type { APIRoute } from "astro";
 import { bd } from "../../../../lib/bd";
-import { ANCHO_IMAGEN_HERO, esPortadaValida, guardarImagen } from "../../../../lib/almacen";
+import {
+  ANCHO_IMAGEN_HERO,
+  ErrorImagenInvalida,
+  esPortadaValida,
+  guardarImagen,
+} from "../../../../lib/almacen";
 import { LIMITES } from "../../../../lib/contenido";
 import {
   ErrorCuerpoExcedido,
@@ -42,11 +47,26 @@ export const POST: APIRoute = async ({ request, redirect }) => {
   let guardada: Awaited<ReturnType<typeof guardarImagen>>;
   try {
     guardada = await guardarImagen(archivo, "hero", { anchoMaximo: ANCHO_IMAGEN_HERO });
-  } catch {
-    // sharp lanza si el archivo no es una imagen real, aunque la extension lo parezca
-    return redirect(`${DESTINO}?error=procesar`, 303);
+  } catch (fallo) {
+    // «procesar» culpa al archivo (sharp no pudo leerlo); «almacen» dice que el
+    // fallo es nuestro (el bucket). La distincion importa mas ahora que cada
+    // subida son hasta cinco objetos: con el mensaje equivocado, quien
+    // administra reexporta su foto una y otra vez sin que nada cambie.
+    const codigo = fallo instanceof ErrorImagenInvalida ? "procesar" : "almacen";
+    return redirect(`${DESTINO}?error=${codigo}`, 303);
   }
 
-  await bd.imagenHero.create({ data: { imagenUrl: guardada.url, altTexto, orden } });
+  // Las medidas reales viajan a la base con la URL: el ANCHO es lo que le
+  // permite a la portada ofrecer las variantes ya generadas (src/lib/imagenes.ts)
+  // en vez de mandarle el hero completo a un celular.
+  await bd.imagenHero.create({
+    data: {
+      imagenUrl: guardada.url,
+      altTexto,
+      orden,
+      ancho: guardada.ancho,
+      alto: guardada.alto,
+    },
+  });
   return redirect(`${DESTINO}?ok=creada`, 303);
 };

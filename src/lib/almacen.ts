@@ -7,6 +7,7 @@ import {
 import { extname } from "node:path";
 import sharp from "sharp";
 import { ENTORNO } from "./entorno";
+import { anchosDisponibles, ANCHOS_VARIANTE, archivoVariante } from "./imagenes";
 import { registrarFallo } from "./registro";
 
 // Almacenamiento de portadas en Wasabi (S3 compatible). El bucket es privado:
@@ -126,6 +127,119 @@ async function optimizarImagen(
   return { datos: data, ancho: info.width, alto: info.height };
 }
 
+/** Calidad de las variantes WebP: la misma que ya se usa para JPEG y WebP. */
+const CALIDAD_VARIANTE = 82;
+
+/** Todas las variantes son WebP, sea cual sea el formato del original. */
+const TIPO_VARIANTE = "image/webp";
+
+interface ObjetoSubible {
+  /** Nombre dentro del prefijo del bucket, que es tambien el de la URL publica. */
+  nombre: string;
+  datos: Buffer;
+  tipo: string;
+}
+
+/**
+ * Genera en memoria las variantes mas angostas que el original.
+ *
+ * La entrada es SIEMPRE el original ya procesado por `optimizarImagen` (o el que
+ * ya esta guardado en el bucket, que salio de ahi): comparte su orientacion y su
+ * ancho real, que es justo el que el `srcset` declara. Por eso no hace falta
+ * volver a llamar a `rotate()` — el buffer procesado ya no lleva EXIF.
+ */
+async function crearVariantes(
+  bytes: Buffer,
+  anchoOriginal: number,
+  nombreArchivo: string,
+): Promise<ObjetoSubible[]> {
+  return Promise.all(
+    anchosDisponibles(anchoOriginal).map(async (ancho) => ({
+      nombre: archivoVariante(nombreArchivo, ancho),
+      datos: await sharp(bytes)
+        .resize({ width: ancho, withoutEnlargement: true })
+        .webp({ quality: CALIDAD_VARIANTE })
+        .toBuffer(),
+      tipo: TIPO_VARIANTE,
+    })),
+  );
+}
+
+async function subirObjeto(objeto: ObjetoSubible): Promise<void> {
+  await cliente.send(
+    new PutObjectCommand({
+      Bucket: BUCKET,
+      Key: `${PREFIJO}${objeto.nombre}`,
+      Body: objeto.datos,
+      ContentType: objeto.tipo,
+    }),
+  );
+}
+
+async function borrarClave(nombre: string): Promise<void> {
+  await cliente.send(new DeleteObjectCommand({ Bucket: BUCKET, Key: `${PREFIJO}${nombre}` }));
+}
+
+/**
+ * Sube el lote entero o no deja nada.
+ *
+ * POR QUE TODO O NADA
+ * Una imagen y sus variantes son un solo objeto para el navegador: el `srcset`
+ * se deduce del ancho guardado en la base y las nombra TODAS, sin preguntar
+ * cuales llegaron a subirse. Si el original entra y una variante no, la pagina
+ * no se degrada, se ROMPE — el navegador pide el archivo que le prometimos y
+ * recibe un 404, justo en el ancho de pantalla mas comun. Por eso, ante
+ * cualquier fallo, se deshace lo ya subido y se devuelve el error de
+ * almacenamiento de siempre.
+ */
+async function subirLote(objetos: ObjetoSubible[]): Promise<void> {
+  const resultados = await Promise.allSettled(objetos.map(subirObjeto));
+  const rechazado = resultados.find((r): r is PromiseRejectedResult => r.status === "rejected");
+  if (!rechazado) return;
+
+  const subidos = objetos.filter((_, posicion) => resultados[posicion]?.status === "fulfilled");
+  await Promise.all(
+    subidos.map(async (objeto) => {
+      // El deshacer no puede tapar el fallo original: se registra y se sigue.
+      try {
+        await borrarClave(objeto.nombre);
+      } catch (fallo) {
+        registrarFallo(`deshacer la subida de «${objeto.nombre}»`, fallo);
+      }
+    }),
+  );
+
+  const nombres = objetos.map((objeto) => objeto.nombre).join(", ");
+  registrarFallo(`guardar «${nombres}» en el bucket`, rechazado.reason);
+  throw new ErrorAlmacenamiento("guardar la imagen", rechazado.reason);
+}
+
+/**
+ * Genera y sube las variantes de una imagen que YA vive en el bucket.
+ *
+ * La usa scripts/generar-variantes.mts para las filas anteriores a que esto
+ * existiera. Es idempotente: volver a correrla sobrescribe cada variante con una
+ * identica. Devuelve los anchos generados.
+ *
+ * SIN deshacer, a diferencia de `guardarImagen`: aqui el original YA esta en el
+ * bucket y la fila puede traer su ancho cargado desde antes (Libro, ImagenSitio,
+ * Linea, PaginaInstitucional), asi que la pagina ya promete las variantes.
+ * Deshacer ante un fallo borraria las variantes BUENAS de una corrida anterior
+ * y dejaria esa promesa sin archivos: peor que el fallo que intentaria tapar.
+ * Lo que falle se informa y se reintenta corriendo el script de nuevo.
+ */
+export async function generarVariantes(
+  bytes: Buffer,
+  anchoOriginal: number,
+  nombreArchivo: string,
+): Promise<number[]> {
+  const anchos = anchosDisponibles(anchoOriginal);
+  if (anchos.length === 0) return [];
+  const variantes = await crearVariantes(bytes, anchoOriginal, nombreArchivo);
+  await Promise.all(variantes.map(subirObjeto));
+  return anchos;
+}
+
 /** Convierte un texto libre en un segmento de nombre de archivo seguro. */
 function aRanura(texto: string): string {
   return texto
@@ -160,29 +274,26 @@ export async function guardarImagen(
   // subir es culpa nuestra. Antes compartian un unico catch y cualquier fallo
   // del bucket se le mostraba a quien administra como «imagen invalida».
   let imagen: ImagenOptimizada;
+  let variantes: ObjetoSubible[];
   try {
     imagen = await optimizarImagen(
       Buffer.from(await archivo.arrayBuffer()),
       ext,
       opciones.anchoMaximo ?? ANCHO_MAXIMO,
     );
+    // Las variantes tambien son procesado: si sharp falla aqui, el archivo sigue
+    // siendo el culpable y el mensaje que se muestra tiene que ser el mismo.
+    variantes = await crearVariantes(imagen.datos, imagen.ancho, nombre);
   } catch (fallo) {
     throw new ErrorImagenInvalida(fallo);
   }
 
-  try {
-    await cliente.send(
-      new PutObjectCommand({
-        Bucket: BUCKET,
-        Key: `${PREFIJO}${nombre}`,
-        Body: imagen.datos,
-        ContentType: TIPOS_MIME[ext] ?? "application/octet-stream",
-      }),
-    );
-  } catch (fallo) {
-    registrarFallo(`guardar «${nombre}» en el bucket`, fallo);
-    throw new ErrorAlmacenamiento("guardar la imagen", fallo);
-  }
+  // El original y sus variantes viajan en un solo lote: o entran todos o no
+  // entra ninguno (ver `subirLote`).
+  await subirLote([
+    { nombre, datos: imagen.datos, tipo: TIPOS_MIME[ext] ?? "application/octet-stream" },
+    ...variantes,
+  ]);
 
   return { url: `/uploads/${nombre}`, ancho: imagen.ancho, alto: imagen.alto };
 }
@@ -200,7 +311,15 @@ export async function eliminarPortada(url: string): Promise<void> {
   if (!url.startsWith("/uploads/")) return; // portadas del repo no se tocan
   const nombre = url.slice("/uploads/".length);
   if (!esNombreSeguro(nombre)) return;
-  await cliente.send(new DeleteObjectCommand({ Bucket: BUCKET, Key: `${PREFIJO}${nombre}` }));
+  // Se borran tambien las variantes: son archivos derivados que no significan
+  // nada sin su original, y dejarlas seria pagar el bucket para siempre por
+  // imagenes que ya nadie referencia. Se intentan las CUATRO sin averiguar
+  // cuales existen: borrar una clave inexistente no es un error en S3, y una
+  // consulta previa por cada ancho seria el cuadruple de viajes para nada.
+  await Promise.all([
+    borrarClave(nombre),
+    ...ANCHOS_VARIANTE.map((ancho) => borrarClave(archivoVariante(nombre, ancho))),
+  ]);
 }
 
 /**

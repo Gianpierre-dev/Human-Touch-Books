@@ -13,6 +13,7 @@ import Footer from "../../components/Footer.astro";
 import { bd } from "../../lib/bd";
 import { resolverContenidoLinea } from "../../lib/lineas";
 import { ESTILOS_ARGUMENTO, ESTILOS_PILAR } from "../../lib/bloques-linea";
+import { srcsetDe } from "../../lib/imagenes";
 import { cargarNavegacion } from "../../lib/navegacion";
 import { resolverRedes } from "../../lib/redes";
 import { defectoFijo } from "../../lib/textos";
@@ -91,6 +92,11 @@ const hayImagenHero = Boolean(linea.heroImagenUrl);
 // 4:3 para reservar el hueco: el objetivo es que no haya salto de maquetado.
 const anchoHero = linea.heroAncho ?? 1600;
 const altoHero = linea.heroAlto ?? 1200;
+
+// El `srcset` va con el ancho REAL de la base, nunca con el respaldo de arriba:
+// ese 1600 sirve para reservar el hueco, y declararlo como ancho de un archivo
+// que mide otra cosa haria que el navegador eligiera mal.
+const srcsetHero = linea.heroImagenUrl ? srcsetDe(linea.heroImagenUrl, linea.heroAncho) : undefined;
 
 // Menu de dos niveles: paginas institucionales y lineas activas. La consulta
 // vive en src/lib/navegacion.ts y el Header solo la recibe por props.
@@ -241,8 +247,19 @@ const listaLibros =
         {
           hayImagenHero && (
             <div class="reveal-scroll">
+              {/* `sizes`: hasta lg el hero es de una columna y la imagen ocupa
+                  el contenedor entero (100vw menos el relleno lateral). Desde lg
+                  vive en la columna de 0.95fr del grid, que topa en (1152 - 40) x
+                  0,475 = 528 px cuando el contenedor de 72rem llega a su maximo
+                  (1216 px de ventana); entre 1024 y 1216 px es ~45vw. */}
               <img
                 src={linea.heroImagenUrl}
+                srcset={srcsetHero}
+                sizes={
+                  srcsetHero
+                    ? "(min-width: 1216px) 528px, (min-width: 1024px) 45vw, 100vw"
+                    : undefined
+                }
                 alt={linea.heroImagenAlt ?? ""}
                 width={anchoHero}
                 height={altoHero}
@@ -333,37 +350,44 @@ const listaLibros =
             </div>
           ) : (
             <ul class="mt-12 grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-              {libros.map((libro) => (
-                <li class="reveal-scroll">
-                  <article class="linea-anillo grid h-full items-start gap-5 rounded-2xl border bg-surface p-5 shadow-sm sm:grid-cols-[128px_1fr]">
-                    {/* Proporcion fija: las tapas de la serie comparten formato y
+              {libros.map((libro) => {
+                const srcset = srcsetDe(libro.portadaUrl, libro.ancho);
+                return (
+                  <li class="reveal-scroll">
+                    <article class="linea-anillo grid h-full items-start gap-5 rounded-2xl border bg-surface p-5 shadow-sm sm:grid-cols-[128px_1fr]">
+                      {/* Proporcion fija: las tapas de la serie comparten formato y
                         reservar su hueco deja la grilla sin salto al cargar. */}
-                    <img
-                      src={libro.portadaUrl}
-                      alt={`Portada de ${libro.titulo}`}
-                      width="800"
-                      height="991"
-                      class="aspect-[800/991] w-full max-w-[128px] rounded-lg object-cover shadow-md ring-1 shadow-navy/15 ring-black/5"
-                      loading="lazy"
-                    />
-                    <div>
-                      <h3 class="text-[1.05rem] leading-snug font-extrabold text-[var(--color-linea)]">
-                        {libro.titulo}
-                      </h3>
-                      {(libro.grado ?? libro.nivel) && (
-                        <p class="mt-1 text-[0.85rem] font-medium text-ink/70">
-                          {libro.grado ?? libro.nivel}
-                        </p>
-                      )}
-                      {libro.descripcionCorta && (
-                        <p class="mt-2.5 text-[0.9rem] leading-relaxed text-ink/75">
-                          {libro.descripcionCorta}
-                        </p>
-                      )}
-                    </div>
-                  </article>
-                </li>
-              ))}
+                      {/* `sizes` constante: la tapa tiene `max-w-[128px]` y desde
+                        sm ocupa una columna de 128 px exactos de la tarjeta. */}
+                      <img
+                        src={libro.portadaUrl}
+                        srcset={srcset}
+                        sizes={srcset ? "128px" : undefined}
+                        alt={`Portada de ${libro.titulo}`}
+                        width="800"
+                        height="991"
+                        class="aspect-[800/991] w-full max-w-[128px] rounded-lg object-cover shadow-md ring-1 shadow-navy/15 ring-black/5"
+                        loading="lazy"
+                      />
+                      <div>
+                        <h3 class="text-[1.05rem] leading-snug font-extrabold text-[var(--color-linea)]">
+                          {libro.titulo}
+                        </h3>
+                        {(libro.grado ?? libro.nivel) && (
+                          <p class="mt-1 text-[0.85rem] font-medium text-ink/70">
+                            {libro.grado ?? libro.nivel}
+                          </p>
+                        )}
+                        {libro.descripcionCorta && (
+                          <p class="mt-2.5 text-[0.9rem] leading-relaxed text-ink/75">
+                            {libro.descripcionCorta}
+                          </p>
+                        )}
+                      </div>
+                    </article>
+                  </li>
+                );
+              })}
             </ul>
           )
         }

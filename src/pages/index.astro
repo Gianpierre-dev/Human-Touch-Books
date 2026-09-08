@@ -12,6 +12,7 @@ import {
   textoNosotrosPorDefecto,
   type EspacioImagen,
 } from "../lib/contenido";
+import { srcsetDe } from "../lib/imagenes";
 import { descripcionColeccionPorDefecto, resolverTextos } from "../lib/textos";
 import { cargarCatalogoEscolar } from "../lib/libros";
 import { cargarNavegacion } from "../lib/navegacion";
@@ -187,6 +188,15 @@ interface ImagenResuelta {
   altTexto: string;
   ancho: number;
   alto: number;
+  /**
+   * Ancho MEDIDO del archivo que se va a servir, o `null` si no se conoce.
+   *
+   * No es lo mismo que `ancho`: ese cae al del archivo del repositorio cuando la
+   * fila no trae medidas, lo cual esta bien para reservar el hueco (la
+   * proporcion se parece) y estaria MAL para el `srcset`, donde declarar un
+   * ancho que el archivo no tiene hace que el navegador elija de mas o de menos.
+   */
+  anchoReal: number | null;
 }
 
 interface FilaImagenSitio {
@@ -201,11 +211,14 @@ interface FilaImagenSitio {
 // archivo del repositorio.
 function resolverImagen(espacio: EspacioImagen, fila: FilaImagenSitio | undefined): ImagenResuelta {
   if (!fila) {
+    // El archivo del repositorio no tiene variantes generadas: `anchoReal` va en
+    // null a proposito para que no se emita ningun `srcset`.
     return {
       imagenUrl: espacio.imagenUrl,
       altTexto: espacio.altTexto,
       ancho: espacio.ancho,
       alto: espacio.alto,
+      anchoReal: null,
     };
   }
   return {
@@ -213,6 +226,7 @@ function resolverImagen(espacio: EspacioImagen, fila: FilaImagenSitio | undefine
     altTexto: fila.altTexto,
     ancho: fila.ancho ?? espacio.ancho,
     alto: fila.alto ?? espacio.alto,
+    anchoReal: fila.ancho,
   };
 }
 
@@ -221,6 +235,11 @@ const imagenPlataforma = resolverImagen(
   ESPACIO_PLATAFORMA,
   imagenPorClave.get(ESPACIO_PLATAFORMA.clave),
 );
+
+// Vacio mientras el espacio use el archivo del repositorio o la fila no tenga
+// medidas: sin `srcset` el `<img>` se comporta igual que hasta ahora.
+const srcsetRetrato = srcsetDe(retrato.imagenUrl, retrato.anchoReal);
+const srcsetPlataforma = srcsetDe(imagenPlataforma.imagenUrl, imagenPlataforma.anchoReal);
 
 // Resultado del envio del formulario (lo define /api/contacto al redirigir)
 const estadoContacto = Astro.url.searchParams.get("contacto");
@@ -432,27 +451,37 @@ const fichaOrganizacion = serializarJsonLd({
             aria-roledescription={hayCarrusel ? "carrusel" : undefined}
             aria-label={hayCarrusel ? "Imágenes del proyecto Tutoría SMART" : undefined}
           >
-            {imagenesHero.map((imagen, indice) => (
-              <div
-                id={`hero-imagen-${indice + 1}`}
-                data-diapositiva
-                data-visible={indice === 0 ? true : undefined}
-                class="hero-diapositiva"
-                role={hayCarrusel ? "group" : undefined}
-                aria-roledescription={hayCarrusel ? "diapositiva" : undefined}
-                aria-label={hayCarrusel ? `${indice + 1} de ${totalDiapositivas}` : undefined}
-              >
-                <img
-                  src={imagen.imagenUrl}
-                  alt={imagen.altTexto}
-                  class="h-full w-full object-cover"
-                  width={HERO_POR_DEFECTO.ancho}
-                  height={HERO_POR_DEFECTO.alto}
-                  loading={indice === 0 ? "eager" : "lazy"}
-                  fetchpriority={indice === 0 ? "high" : undefined}
-                />
-              </div>
-            ))}
+            {imagenesHero.map((imagen, indice) => {
+              // Se resuelve una sola vez: decide a la vez si hay `srcset` que
+              // emitir y si tiene sentido acompanarlo de un `sizes`.
+              const srcset = srcsetDe(imagen.imagenUrl, imagen.ancho);
+              return (
+                <div
+                  id={`hero-imagen-${indice + 1}`}
+                  data-diapositiva
+                  data-visible={indice === 0 ? true : undefined}
+                  class="hero-diapositiva"
+                  role={hayCarrusel ? "group" : undefined}
+                  aria-roledescription={hayCarrusel ? "diapositiva" : undefined}
+                  aria-label={hayCarrusel ? `${indice + 1} de ${totalDiapositivas}` : undefined}
+                >
+                  {/* `sizes="100vw"`: la imagen es el FONDO de la seccion
+                    (`absolute inset-0`, `object-cover`), asi que ocupa el ancho
+                    completo de la ventana en todos los tamanos. */}
+                  <img
+                    src={imagen.imagenUrl}
+                    srcset={srcset}
+                    sizes={srcset ? "100vw" : undefined}
+                    alt={imagen.altTexto}
+                    class="h-full w-full object-cover"
+                    width={HERO_POR_DEFECTO.ancho}
+                    height={HERO_POR_DEFECTO.alto}
+                    loading={indice === 0 ? "eager" : "lazy"}
+                    fetchpriority={indice === 0 ? "high" : undefined}
+                  />
+                </div>
+              );
+            })}
           </div>
         )
       }
@@ -739,30 +768,44 @@ const fichaOrganizacion = serializarJsonLd({
                     gruposEscolares.length > 1 && "mt-5",
                   ]}
                 >
-                  {grupo.libros.map((libro) => (
-                    <li class="reveal-scroll">
-                      <a
-                        href="#contacto"
-                        class="foco-marca group block text-center"
-                        aria-label={`Solicitar información sobre ${libro.titulo}`}
-                      >
-                        <img
-                          src={libro.portadaUrl}
-                          alt={`Portada de ${libro.titulo}`}
-                          loading="lazy"
-                          width="800"
-                          height="991"
-                          class="aspect-[800/991] w-full rounded-lg object-cover shadow-lg ring-1 shadow-navy/15 ring-black/5 transition duration-300 ease-out group-hover:ring-brand/40 motion-safe:group-hover:-translate-y-1.5 motion-safe:group-hover:shadow-xl motion-safe:group-hover:shadow-navy/25"
-                        />
-                        <EtiquetaLibro class="mt-3.5 text-[0.9375rem] leading-snug font-bold text-ink transition-colors group-hover:text-brand">
-                          {libro.titulo}
-                        </EtiquetaLibro>
-                        <p class="mt-0.5 text-[0.8125rem] font-medium text-ink/70">
-                          {libro.grado ?? libro.nivel}
-                        </p>
-                      </a>
-                    </li>
-                  ))}
+                  {grupo.libros.map((libro) => {
+                    const srcset = srcsetDe(libro.portadaUrl, libro.ancho);
+                    return (
+                      <li class="reveal-scroll">
+                        <a
+                          href="#contacto"
+                          class="foco-marca group block text-center"
+                          aria-label={`Solicitar información sobre ${libro.titulo}`}
+                        >
+                          {/* `sizes` medido sobre la grilla de arriba, que es de
+                            2 / 3 / 6 columnas con 20 px de separacion dentro de
+                            un contenedor de 72 rem: 50vw en celular, 33vw en
+                            tablet y, desde lg, un tope de 176 px (la columna mas
+                            ancha posible: (1152 - 5x20) / 6 = 175,3 px). */}
+                          <img
+                            src={libro.portadaUrl}
+                            srcset={srcset}
+                            sizes={
+                              srcset
+                                ? "(min-width: 1024px) 176px, (min-width: 640px) 33vw, 50vw"
+                                : undefined
+                            }
+                            alt={`Portada de ${libro.titulo}`}
+                            loading="lazy"
+                            width="800"
+                            height="991"
+                            class="aspect-[800/991] w-full rounded-lg object-cover shadow-lg ring-1 shadow-navy/15 ring-black/5 transition duration-300 ease-out group-hover:ring-brand/40 motion-safe:group-hover:-translate-y-1.5 motion-safe:group-hover:shadow-xl motion-safe:group-hover:shadow-navy/25"
+                          />
+                          <EtiquetaLibro class="mt-3.5 text-[0.9375rem] leading-snug font-bold text-ink transition-colors group-hover:text-brand">
+                            {libro.titulo}
+                          </EtiquetaLibro>
+                          <p class="mt-0.5 text-[0.8125rem] font-medium text-ink/70">
+                            {libro.grado ?? libro.nivel}
+                          </p>
+                        </a>
+                      </li>
+                    );
+                  })}
                 </ul>
               </div>
             ))}
@@ -805,80 +848,88 @@ const fichaOrganizacion = serializarJsonLd({
             </div>
 
             <ul class:list={["mt-10 grid gap-8", literatura.length > 1 && "lg:grid-cols-2"]}>
-              {literatura.map((libro) => (
-                <li class="reveal-scroll">
-                  <article class="grid items-start gap-6 rounded-2xl bg-paper p-5 ring-1 ring-line sm:grid-cols-[212px_1fr] sm:p-6">
-                    {/* Sin proporcion forzada: las portadas de esta linea las carga
+              {literatura.map((libro) => {
+                const srcset = srcsetDe(libro.portadaUrl, libro.ancho);
+                return (
+                  <li class="reveal-scroll">
+                    <article class="grid items-start gap-6 rounded-2xl bg-paper p-5 ring-1 ring-line sm:grid-cols-[212px_1fr] sm:p-6">
+                      {/* Sin proporcion forzada: las portadas de esta linea las carga
                         el panel y no comparten formato con la serie escolar.
                         Recortarlas a vertical mutilaria la tapa. */}
-                    {/* Con las medidas reales (columnas `ancho`/`alto`, que se
+                      {/* Con las medidas reales (columnas `ancho`/`alto`, que se
                         guardan al subir la portada) el navegador deduce la
                         proporcion y reserva el hueco EXACTO. El `min-h` es el
                         respaldo para las filas anteriores a esas columnas: sin
                         medidas, reservaba 150 px y una tapa de 300 empujaba el
                         resto de la tarjeta al terminar de cargar. */}
-                    <span
-                      class:list={[
-                        "block w-full max-w-[212px] rounded-lg bg-surface-2 p-2.5 ring-1 ring-line",
-                        !(libro.ancho && libro.alto) && "min-h-[150px]",
-                      ]}
-                    >
-                      <img
-                        src={libro.portadaUrl}
-                        alt={`Portada de ${libro.titulo}`}
-                        loading="lazy"
-                        width={libro.ancho ?? undefined}
-                        height={libro.alto ?? undefined}
-                        class="block h-auto w-full rounded shadow-md shadow-navy/15"
-                      />
-                    </span>
-                    <div>
-                      <h3 class="text-[1.15rem] leading-snug font-extrabold text-ink">
-                        {libro.titulo}
-                      </h3>
-                      {libro.subtitulo && (
-                        <p class="mt-1 text-[0.9rem] text-ink/75">{libro.subtitulo}</p>
-                      )}
-                      <dl class="mt-3 space-y-1 text-[0.8125rem] text-ink/75">
-                        {libro.autor && (
-                          <div class="flex gap-1.5">
-                            <dt class="font-semibold text-ink">Autor:</dt>
-                            <dd>{libro.autor}</dd>
-                          </div>
-                        )}
-                        {libro.ilustrador && (
-                          <div class="flex gap-1.5">
-                            <dt class="font-semibold text-ink">Ilustración:</dt>
-                            <dd>{libro.ilustrador}</dd>
-                          </div>
-                        )}
-                        {libro.nivel && (
-                          <div class="flex gap-1.5">
-                            <dt class="font-semibold text-ink">Línea:</dt>
-                            <dd>
-                              {libro.nivel}
-                              {libro.anio ? ` · ${libro.anio}` : ""}
-                            </dd>
-                          </div>
-                        )}
-                      </dl>
-                      <p class="mt-3.5 text-[0.9rem] leading-relaxed text-ink/75">
-                        {libro.sinopsis}
-                      </p>
-                      <a
-                        href="#contacto"
-                        class="foco-marca mt-4 inline-flex min-h-[44px] items-center gap-2 text-[0.9rem] font-bold text-brand hover:text-brand-deep"
-                        aria-label={`Solicitar información sobre ${libro.titulo}`}
+                      <span
+                        class:list={[
+                          "block w-full max-w-[212px] rounded-lg bg-surface-2 p-2.5 ring-1 ring-line",
+                          !(libro.ancho && libro.alto) && "min-h-[150px]",
+                        ]}
                       >
-                        Solicitar información
-                        <svg viewBox="0 0 24 24" class="h-4 w-4 fill-current" aria-hidden="true">
-                          <path d="M10 17l5-5-5-5v10Z" />
-                        </svg>
-                      </a>
-                    </div>
-                  </article>
-                </li>
-              ))}
+                        {/* `sizes` constante: la tapa vive en un marco de
+                          `max-w-[212px]` con `p-2.5`, y desde sm en una columna
+                          de 212 px exactos. Nunca pasa de 212 - 2x10 = 192 px. */}
+                        <img
+                          src={libro.portadaUrl}
+                          srcset={srcset}
+                          sizes={srcset ? "192px" : undefined}
+                          alt={`Portada de ${libro.titulo}`}
+                          loading="lazy"
+                          width={libro.ancho ?? undefined}
+                          height={libro.alto ?? undefined}
+                          class="block h-auto w-full rounded shadow-md shadow-navy/15"
+                        />
+                      </span>
+                      <div>
+                        <h3 class="text-[1.15rem] leading-snug font-extrabold text-ink">
+                          {libro.titulo}
+                        </h3>
+                        {libro.subtitulo && (
+                          <p class="mt-1 text-[0.9rem] text-ink/75">{libro.subtitulo}</p>
+                        )}
+                        <dl class="mt-3 space-y-1 text-[0.8125rem] text-ink/75">
+                          {libro.autor && (
+                            <div class="flex gap-1.5">
+                              <dt class="font-semibold text-ink">Autor:</dt>
+                              <dd>{libro.autor}</dd>
+                            </div>
+                          )}
+                          {libro.ilustrador && (
+                            <div class="flex gap-1.5">
+                              <dt class="font-semibold text-ink">Ilustración:</dt>
+                              <dd>{libro.ilustrador}</dd>
+                            </div>
+                          )}
+                          {libro.nivel && (
+                            <div class="flex gap-1.5">
+                              <dt class="font-semibold text-ink">Línea:</dt>
+                              <dd>
+                                {libro.nivel}
+                                {libro.anio ? ` · ${libro.anio}` : ""}
+                              </dd>
+                            </div>
+                          )}
+                        </dl>
+                        <p class="mt-3.5 text-[0.9rem] leading-relaxed text-ink/75">
+                          {libro.sinopsis}
+                        </p>
+                        <a
+                          href="#contacto"
+                          class="foco-marca mt-4 inline-flex min-h-[44px] items-center gap-2 text-[0.9rem] font-bold text-brand hover:text-brand-deep"
+                          aria-label={`Solicitar información sobre ${libro.titulo}`}
+                        >
+                          Solicitar información
+                          <svg viewBox="0 0 24 24" class="h-4 w-4 fill-current" aria-hidden="true">
+                            <path d="M10 17l5-5-5-5v10Z" />
+                          </svg>
+                        </a>
+                      </div>
+                    </article>
+                  </li>
+                );
+              })}
             </ul>
           </div>
         </section>
@@ -998,8 +1049,18 @@ const fichaOrganizacion = serializarJsonLd({
               leia como una imagen suelta sobre el fondo de la seccion. */
           }
           <div class="overflow-hidden rounded-2xl shadow-xl ring-1 shadow-navy/15 ring-line">
+            {
+              /* `sizes`: por debajo de lg la foto vive en un envoltorio de
+                `max-w-[340px]`. Desde lg ocupa la columna de 1.1fr del grid
+                (1,1 / 2 del contenedor de 72rem menos el hueco de 40 px = 612 px)
+                MAS el sangrado a la derecha, que crece con la ventana: en el
+                limite eso es 50vw + 20 px, y 52vw lo cubre en todo el rango
+                (medido: 49,4vw a 1024 px y 51,0vw a 1920 px). */
+            }
             <img
               src={imagenPlataforma.imagenUrl}
+              srcset={srcsetPlataforma}
+              sizes={srcsetPlataforma ? "(min-width: 1024px) 52vw, 340px" : undefined}
               alt={imagenPlataforma.altTexto}
               class="block w-full object-cover"
               style={`aspect-ratio: ${imagenPlataforma.ancho} / ${imagenPlataforma.alto};`}
@@ -1043,8 +1104,15 @@ const fichaOrganizacion = serializarJsonLd({
                   La proporcion va en `style` porque las medidas son de la base:
                   Tailwind solo compila las clases que ve escritas en el codigo. */
               }
+              {
+                /* `sizes` constante: el retrato vive en un envoltorio de
+                  `max-w-[240px]` y desde lg en una columna de 240 px exactos, asi
+                  que nunca se pinta mas ancho que eso. */
+              }
               <img
                 src={retrato.imagenUrl}
+                srcset={srcsetRetrato}
+                sizes={srcsetRetrato ? "240px" : undefined}
                 alt={retrato.altTexto}
                 class="w-full object-cover"
                 style={`aspect-ratio: ${retrato.ancho} / ${retrato.alto};`}

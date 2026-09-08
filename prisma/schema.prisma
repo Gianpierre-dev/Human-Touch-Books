@@ -270,6 +270,14 @@ model ImagenHero {
   id        String   @id @default(cuid())
   imagenUrl String   @map("imagen_url")
   altTexto  String   @map("alt_texto")
+  // Medidas reales de la imagen ya procesada. Mismo criterio que ImagenSitio,
+  // pero aqui el motivo principal es otro: sin el ANCHO real no se puede
+  // escribir un `srcset` honesto (src/lib/imagenes.ts) y el hero —la imagen mas
+  // pesada del sitio, a pantalla completa— se sigue sirviendo entero a un
+  // celular. Nullable por las filas anteriores a estas columnas: mientras no se
+  // completen (scripts/generar-variantes.mts) el hero sirve solo el original.
+  ancho     Int?
+  alto      Int?
   orden     Int      @default(0)
   activa    Boolean  @default(true)
   creadoEn  DateTime @default(now()) @map("creado_en")

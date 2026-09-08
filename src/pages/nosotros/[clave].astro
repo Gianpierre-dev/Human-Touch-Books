@@ -14,6 +14,7 @@ import Footer from "../../components/Footer.astro";
 import { bd } from "../../lib/bd";
 import { cargarNavegacion } from "../../lib/navegacion";
 import { resolverRedes } from "../../lib/redes";
+import { srcsetDe } from "../../lib/imagenes";
 import { migasDePan } from "../../lib/json-ld";
 import {
   ESTILOS_SECCION,
@@ -65,6 +66,11 @@ const hayImagen = Boolean(pagina.imagenUrl);
 // 4:3 para reservar el hueco: el objetivo es que no haya salto de maquetado.
 const ancho = pagina.ancho ?? 1600;
 const alto = pagina.alto ?? 1200;
+
+// Con el ancho REAL de la base, no con el respaldo de arriba: ese 1600 reserva
+// el hueco, y publicarlo como ancho de un archivo que mide otra cosa haria que
+// el navegador eligiera mal la variante.
+const srcsetImagen = pagina.imagenUrl ? srcsetDe(pagina.imagenUrl, pagina.ancho) : undefined;
 
 // Datos de contacto: los mismos que administra /admin/ajustes para la landing.
 const filasAjustes = await bd.ajuste.findMany();
@@ -202,8 +208,18 @@ const migas = migasDePan(
         {
           hayImagen && (
             <div class="reveal-scroll">
+              {/* Mismo hero de dos columnas que /lineas/{clave}: hasta lg la
+                  imagen ocupa el contenedor entero; desde lg vive en la columna
+                  de 0.95fr, que topa en (1152 - 40) x 0,475 = 528 px cuando el
+                  contenedor de 72rem llega a su maximo (1216 px de ventana). */}
               <img
                 src={pagina.imagenUrl}
+                srcset={srcsetImagen}
+                sizes={
+                  srcsetImagen
+                    ? "(min-width: 1216px) 528px, (min-width: 1024px) 45vw, 100vw"
+                    : undefined
+                }
                 alt={pagina.imagenAlt ?? ""}
                 width={ancho}
                 height={alto}
