@@ -455,6 +455,11 @@ const fichaOrganizacion = serializarJsonLd({
               // Se resuelve una sola vez: decide a la vez si hay `srcset` que
               // emitir y si tiene sentido acompanarlo de un `sizes`.
               const srcset = srcsetDe(imagen.imagenUrl, imagen.ancho);
+              // Version vertical para celular, si quien administra la cargo.
+              // Su `srcset` puede no existir (fila sin ancho): entonces se
+              // ofrece el archivo tal cual, que sigue siendo el encuadre bueno.
+              const movil = imagen.imagenMovilUrl;
+              const srcsetMovil = movil ? (srcsetDe(movil, imagen.movilAncho) ?? movil) : undefined;
               return (
                 <div
                   id={`hero-imagen-${indice + 1}`}
@@ -467,18 +472,34 @@ const fichaOrganizacion = serializarJsonLd({
                 >
                   {/* `sizes="100vw"`: la imagen es el FONDO de la seccion
                     (`absolute inset-0`, `object-cover`), asi que ocupa el ancho
-                    completo de la ventana en todos los tamanos. */}
-                  <img
-                    src={imagen.imagenUrl}
-                    srcset={srcset}
-                    sizes={srcset ? "100vw" : undefined}
-                    alt={imagen.altTexto}
-                    class="h-full w-full object-cover"
-                    width={HERO_POR_DEFECTO.ancho}
-                    height={HERO_POR_DEFECTO.alto}
-                    loading={indice === 0 ? "eager" : "lazy"}
-                    fetchpriority={indice === 0 ? "high" : undefined}
-                  />
+                    completo de la ventana en todos los tamanos.
+
+                    DIRECCION DE ARTE: por debajo de 768px —el mismo punto en
+                    que el hero deja de tener dos columnas— la caja es alta y
+                    angosta (medido: 345x700 a 360px) y de una panoramica de
+                    1,9:1 solo se ve el 26 % del ancho. Si la fila trae una
+                    version vertical, el `<source>` la sirve ahi; sin ella el
+                    `<picture>` no aporta nada y el `<img>` manda, como siempre.
+
+                    El `<picture>` lleva `block h-full w-full`: es un elemento
+                    en linea y sin eso el `h-full` del `<img>` se mediria contra
+                    una caja de altura automatica y el fondo perderia su alto. */}
+                  <picture class="block h-full w-full">
+                    {movil && (
+                      <source media="(max-width: 767px)" srcset={srcsetMovil} sizes="100vw" />
+                    )}
+                    <img
+                      src={imagen.imagenUrl}
+                      srcset={srcset}
+                      sizes={srcset ? "100vw" : undefined}
+                      alt={imagen.altTexto}
+                      class="h-full w-full object-cover"
+                      width={HERO_POR_DEFECTO.ancho}
+                      height={HERO_POR_DEFECTO.alto}
+                      loading={indice === 0 ? "eager" : "lazy"}
+                      fetchpriority={indice === 0 ? "high" : undefined}
+                    />
+                  </picture>
                 </div>
               );
             })}

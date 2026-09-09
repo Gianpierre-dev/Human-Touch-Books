@@ -63,7 +63,7 @@ async function reunirObjetivos(): Promise<Objetivo[]> {
   // desde otra tabla, hay que sumarla aqui, o sus filas con ancho cargado
   // prometerian variantes que nadie genero.
   const [heroes, sitios, libros, lineas, paginas] = await Promise.all([
-    bd.imagenHero.findMany({ select: { id: true, imagenUrl: true } }),
+    bd.imagenHero.findMany({ select: { id: true, imagenUrl: true, imagenMovilUrl: true } }),
     bd.imagenSitio.findMany({ select: { id: true, imagenUrl: true } }),
     bd.libro.findMany({ select: { id: true, portadaUrl: true } }),
     bd.linea.findMany({ select: { id: true, heroImagenUrl: true } }),
@@ -73,14 +73,30 @@ async function reunirObjetivos(): Promise<Objetivo[]> {
   const objetivos: Objetivo[] = [];
 
   for (const hero of heroes) {
-    if (!esSubida(hero.imagenUrl)) continue;
-    objetivos.push({
-      tabla: "ImagenHero",
-      url: hero.imagenUrl,
-      guardarMedidas: async (ancho, alto) => {
-        await bd.imagenHero.update({ where: { id: hero.id }, data: { ancho, alto } });
-      },
-    });
+    if (esSubida(hero.imagenUrl)) {
+      objetivos.push({
+        tabla: "ImagenHero",
+        url: hero.imagenUrl,
+        guardarMedidas: async (ancho, alto) => {
+          await bd.imagenHero.update({ where: { id: hero.id }, data: { ancho, alto } });
+        },
+      });
+    }
+    // La version para celular (direccion de arte) es una imagen mas, con sus
+    // propias variantes y medidas: sin este bucle, un relleno tras perder
+    // objetos del bucket la dejaria prometiendo archivos que nadie regenero.
+    if (esSubida(hero.imagenMovilUrl)) {
+      objetivos.push({
+        tabla: "ImagenHero (movil)",
+        url: hero.imagenMovilUrl,
+        guardarMedidas: async (ancho, alto) => {
+          await bd.imagenHero.update({
+            where: { id: hero.id },
+            data: { movilAncho: ancho, movilAlto: alto },
+          });
+        },
+      });
+    }
   }
 
   for (const sitio of sitios) {

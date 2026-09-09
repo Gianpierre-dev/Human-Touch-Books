@@ -45,6 +45,13 @@ export const ANCHO_IMAGEN_SITIO = 1600;
 // lleguen blandas a un monitor grande. Solo afecta a subidas nuevas.
 export const ANCHO_IMAGEN_HERO = 1920;
 
+// La version para celular del hero solo se sirve por debajo de 768 px, asi que
+// nunca se pinta a mas de un ancho de telefono: uno de 390 px CSS a 3x de
+// densidad pide 1170 px. 1200 lo cubre y coincide con un escalon de variante
+// (src/lib/imagenes.ts), asi que no se genera un ancho suelto. Mas que eso no
+// anade un pixel visible, solo peso en la conexion mas lenta del sitio.
+export const ANCHO_IMAGEN_HERO_MOVIL = 1200;
+
 // Con timeouts explicitos: sin ellos, un bucket que no responde (colgado, no
 // caido) deja cada peticion de imagen esperando indefinidamente, y /uploads
 // esta en la ruta caliente de todas las paginas publicas.
