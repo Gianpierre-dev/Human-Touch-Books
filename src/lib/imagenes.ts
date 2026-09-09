@@ -38,11 +38,23 @@ export const ANCHOS_VARIANTE = [480, 768, 1200, 1920] as const;
  * formato cambia, y por eso la extension se reemplaza en vez de anadirse.
  */
 export function archivoVariante(nombreArchivo: string, ancho: number): string {
+  return `${prefijoVariantes(nombreArchivo)}${ancho}.webp`;
+}
+
+/**
+ * Prefijo comun a TODAS las variantes de un archivo: `hero-123.png` →
+ * `hero-123-w`. Es lo que permite borrarlas listando el bucket por prefijo, sin
+ * saber que anchos se generaron (uno de ellos, el del original, es distinto
+ * para cada imagen). No puede pisar a otra imagen: los nombres subidos son
+ * `<ranura>-<marca de tiempo>.<ext>`, y tras la marca de tiempo nunca sigue
+ * `-w`.
+ */
+export function prefijoVariantes(nombreArchivo: string): string {
   const punto = nombreArchivo.lastIndexOf(".");
   // `> 0` y no `>= 0`: un nombre que empieza por punto no tiene extension, lo
   // que tiene es un nombre oculto, y cortarlo dejaria la base vacia.
   const base = punto > 0 ? nombreArchivo.slice(0, punto) : nombreArchivo;
-  return `${base}-w${ancho}.webp`;
+  return `${base}-w`;
 }
 
 /**
@@ -69,16 +81,33 @@ export function anchosDisponibles(anchoOriginal: number): number[] {
 }
 
 /**
- * Valor del atributo `srcset` de una imagen subida, con el original al final y
- * su ancho real como descriptor.
+ * Todos los anchos que se generan para un original: los escalones mas angostos
+ * MAS el ancho exacto del original, siempre.
+ *
+ * POR QUE TAMBIEN EL ANCHO COMPLETO
+ * Sin el, en escritorio el unico candidato que cubre la pantalla era el
+ * original tal cual se subio: tres heroes en PNG de 2 a 2,6 MB cada uno, 6,6 MB
+ * medidos a 1440px. Re-codificar el original en WebP al mismo ancho baja eso
+ * ~10 veces con el mismo descriptor honesto. El original queda solo como `src`
+ * de respaldo para un navegador sin `srcset`.
+ */
+export function anchosAGenerar(anchoOriginal: number): number[] {
+  return [...anchosDisponibles(anchoOriginal), anchoOriginal];
+}
+
+/**
+ * Valor del atributo `srcset` de una imagen subida: solo variantes WebP, la
+ * ultima al ancho exacto del original.
  *
  * Devuelve `undefined` —y entonces el `<img>` se queda como estaba, con solo su
- * `src`— en los tres casos en los que no hay nada que ofrecer:
+ * `src`— cuando no hay nada honesto que ofrecer:
  *
  *  · la URL no es de `/uploads/`: es un archivo del repositorio, sin variantes;
  *  · no se conoce el ancho del original (fila anterior a las columnas de
- *    medidas): sin el no se puede escribir un descriptor honesto;
- *  · el original es tan angosto que no hay ninguna variante mas chica que el.
+ *    medidas): sin el no se puede escribir un descriptor honesto.
+ *
+ * Un original mas angosto que el escalon mas chico SI tiene srcset: su unica
+ * variante es el WebP a ancho completo, que igual pesa mucho menos que el PNG.
  */
 export function srcsetDe(
   url: string,
@@ -87,13 +116,8 @@ export function srcsetDe(
   if (!url.startsWith(PREFIJO_SUBIDAS)) return undefined;
   if (!anchoOriginal || anchoOriginal <= 0) return undefined;
 
-  const anchos = anchosDisponibles(anchoOriginal);
-  if (anchos.length === 0) return undefined;
-
   const archivo = url.slice(PREFIJO_SUBIDAS.length);
-  const candidatos = anchos.map(
-    (ancho) => `${PREFIJO_SUBIDAS}${archivoVariante(archivo, ancho)} ${ancho}w`,
-  );
-  candidatos.push(`${url} ${anchoOriginal}w`);
-  return candidatos.join(", ");
+  return anchosAGenerar(anchoOriginal)
+    .map((ancho) => `${PREFIJO_SUBIDAS}${archivoVariante(archivo, ancho)} ${ancho}w`)
+    .join(", ");
 }

@@ -3,11 +3,12 @@ import {
   PutObjectCommand,
   GetObjectCommand,
   DeleteObjectCommand,
+  ListObjectsV2Command,
 } from "@aws-sdk/client-s3";
 import { extname } from "node:path";
 import sharp from "sharp";
 import { ENTORNO } from "./entorno";
-import { anchosDisponibles, ANCHOS_VARIANTE, archivoVariante } from "./imagenes";
+import { anchosAGenerar, archivoVariante, prefijoVariantes } from "./imagenes";
 import { registrarFallo } from "./registro";
 
 // Almacenamiento de portadas en Wasabi (S3 compatible). El bucket es privado:
@@ -154,7 +155,7 @@ async function crearVariantes(
   nombreArchivo: string,
 ): Promise<ObjetoSubible[]> {
   return Promise.all(
-    anchosDisponibles(anchoOriginal).map(async (ancho) => ({
+    anchosAGenerar(anchoOriginal).map(async (ancho) => ({
       nombre: archivoVariante(nombreArchivo, ancho),
       datos: await sharp(bytes)
         .resize({ width: ancho, withoutEnlargement: true })
@@ -233,8 +234,7 @@ export async function generarVariantes(
   anchoOriginal: number,
   nombreArchivo: string,
 ): Promise<number[]> {
-  const anchos = anchosDisponibles(anchoOriginal);
-  if (anchos.length === 0) return [];
+  const anchos = anchosAGenerar(anchoOriginal);
   const variantes = await crearVariantes(bytes, anchoOriginal, nombreArchivo);
   await Promise.all(variantes.map(subirObjeto));
   return anchos;
@@ -313,13 +313,16 @@ export async function eliminarPortada(url: string): Promise<void> {
   if (!esNombreSeguro(nombre)) return;
   // Se borran tambien las variantes: son archivos derivados que no significan
   // nada sin su original, y dejarlas seria pagar el bucket para siempre por
-  // imagenes que ya nadie referencia. Se intentan las CUATRO sin averiguar
-  // cuales existen: borrar una clave inexistente no es un error en S3, y una
-  // consulta previa por cada ancho seria el cuadruple de viajes para nada.
-  await Promise.all([
-    borrarClave(nombre),
-    ...ANCHOS_VARIANTE.map((ancho) => borrarClave(archivoVariante(nombre, ancho))),
-  ]);
+  // imagenes que ya nadie referencia. Se LISTAN por prefijo en vez de adivinar
+  // nombres: una de las variantes va al ancho exacto del original, distinto
+  // para cada imagen, y aqui solo se conoce la URL.
+  const prefijo = `${PREFIJO}${prefijoVariantes(nombre)}`;
+  const listado = await cliente.send(new ListObjectsV2Command({ Bucket: BUCKET, Prefix: prefijo }));
+  const variantes = (listado.Contents ?? [])
+    .map((objeto) => objeto.Key)
+    .filter((clave): clave is string => typeof clave === "string")
+    .map((clave) => clave.slice(PREFIJO.length));
+  await Promise.all([borrarClave(nombre), ...variantes.map(borrarClave)]);
 }
 
 /**

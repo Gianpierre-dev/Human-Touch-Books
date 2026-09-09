@@ -15,9 +15,11 @@ import assert from "node:assert/strict";
 
 import {
   ANCHOS_VARIANTE,
+  anchosAGenerar,
   anchosDisponibles,
   archivoVariante,
   nombreVariante,
+  prefijoVariantes,
   srcsetDe,
 } from "../../src/lib/imagenes.ts";
 
@@ -63,30 +65,57 @@ test("anchos: un original enorme genera la lista completa", () => {
   assert.deepEqual(anchosDisponibles(4000), [...ANCHOS_VARIANTE]);
 });
 
+test("anchos a generar: los escalones menores MAS el ancho exacto del original", () => {
+  assert.deepEqual(anchosAGenerar(1340), [480, 768, 1200, 1340]);
+  assert.deepEqual(anchosAGenerar(600), [480, 600]);
+  // Un original angosto igual tiene su WebP a ancho completo: pesa mucho menos
+  // que el PNG y es lo unico que cubre la pantalla en escritorio.
+  assert.deepEqual(anchosAGenerar(400), [400]);
+});
+
+// --- prefijoVariantes -------------------------------------------------------
+
+test("prefijo: es lo que comparten todas las variantes y ninguna otra imagen", () => {
+  assert.equal(prefijoVariantes("hero-1788802685683.png"), "hero-1788802685683-w");
+  // Otra imagen con la misma ranura tiene otra marca de tiempo: no empieza asi.
+  assert.equal(
+    "hero-1788810012798.png".startsWith(prefijoVariantes("hero-1788802685683.png")),
+    false,
+  );
+  // Toda variante generada empieza por el prefijo de su original.
+  for (const ancho of anchosAGenerar(1736)) {
+    assert.ok(archivoVariante("hero-1.png", ancho).startsWith(prefijoVariantes("hero-1.png")));
+  }
+});
+
 // --- srcsetDe ---------------------------------------------------------------
 
 test("srcset: los descriptores son los anchos REALES de cada archivo", () => {
   assert.equal(
     srcsetDe("/uploads/hero-1.png", 1340),
     "/uploads/hero-1-w480.webp 480w, /uploads/hero-1-w768.webp 768w, " +
-      "/uploads/hero-1-w1200.webp 1200w, /uploads/hero-1.png 1340w",
+      "/uploads/hero-1-w1200.webp 1200w, /uploads/hero-1-w1340.webp 1340w",
   );
 });
 
-test("srcset: el original va SIEMPRE al final y con su ancho de verdad", () => {
+test("srcset: el ultimo candidato es el WebP a ancho completo, nunca el PNG original", () => {
   const salida = srcsetDe("/uploads/tapa-7.jpg", 600);
-  assert.equal(salida, "/uploads/tapa-7-w480.webp 480w, /uploads/tapa-7.jpg 600w");
+  assert.equal(salida, "/uploads/tapa-7-w480.webp 480w, /uploads/tapa-7-w600.webp 600w");
+  // El original queda solo como `src` de respaldo: no aparece en el srcset.
+  assert.equal(salida?.includes("tapa-7.jpg"), false);
   // Ningun descriptor puede nombrar un ancho que su archivo no tenga.
   assert.equal(salida?.includes("1200w"), false);
 });
 
-test("srcset: sin nada que ofrecer devuelve undefined y el <img> queda como estaba", () => {
+test("srcset: un original mas angosto que el escalon minimo ofrece solo su WebP", () => {
+  assert.equal(srcsetDe("/uploads/hero-1.png", 400), "/uploads/hero-1-w400.webp 400w");
+});
+
+test("srcset: sin nada honesto que ofrecer devuelve undefined y el <img> queda como estaba", () => {
   // 1. Imagen del repositorio: no hay variantes generadas.
   assert.equal(srcsetDe("/mock/laptop-smarti-limpio.webp", 1600), undefined);
   // 2. Ancho desconocido (fila anterior a las columnas de medidas).
   assert.equal(srcsetDe("/uploads/hero-1.png", null), undefined);
   assert.equal(srcsetDe("/uploads/hero-1.png", undefined), undefined);
   assert.equal(srcsetDe("/uploads/hero-1.png", 0), undefined);
-  // 3. Original mas angosto que la variante mas chica: no hay opcion mejor.
-  assert.equal(srcsetDe("/uploads/hero-1.png", 400), undefined);
 });
