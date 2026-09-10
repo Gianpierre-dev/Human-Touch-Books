@@ -179,6 +179,21 @@ const tarjetaHeroExterna = textos.portada_tarjeta_enlace_url.startsWith("https:/
 const hayCarrusel = imagenesHero.length > 1;
 const totalDiapositivas = imagenesHero.length;
 
+// Alto de la caja del hero en telefonos, techo medido (700px a 360 de ventana,
+// 674 a 390). Sirve para decirle al navegador a que ancho se PINTA la foto de
+// fondo ahi: `object-cover` en una caja alta escala por altura, y una
+// panoramica de 2,75:1 acaba pintada a ~1900px de ancho aunque la ventana mida
+// 390. Con `sizes="100vw"` elegia el archivo de 1200px y lo estiraba 4,6x
+// (borroso, medido). Sobreestimar es el lado seguro: elige un archivo mayor.
+const ALTO_HERO_TELEFONO = 720;
+
+/** `sizes` honesto para la foto de fondo del hero: ancho pintado, no de ventana. */
+function sizesHero(ancho: number | null, alto: number | null): string {
+  if (!ancho || !alto) return "100vw";
+  const anchoPintado = Math.round((ancho / alto) * ALTO_HERO_TELEFONO);
+  return `(max-width: 767px) ${anchoPintado}px, 100vw`;
+}
+
 // Imagenes de secciones fijas: cada espacio cae al archivo del repositorio
 // mientras no se cargue una imagen desde el panel.
 const imagenPorClave = new Map(imagenesSitio.map((imagen) => [imagen.clave, imagen]));
@@ -491,7 +506,7 @@ const fichaOrganizacion = serializarJsonLd({
                     <img
                       src={imagen.imagenUrl}
                       srcset={srcset}
-                      sizes={srcset ? "100vw" : undefined}
+                      sizes={srcset ? sizesHero(imagen.ancho, imagen.alto) : undefined}
                       alt={imagen.altTexto}
                       class="h-full w-full object-cover"
                       width={HERO_POR_DEFECTO.ancho}
