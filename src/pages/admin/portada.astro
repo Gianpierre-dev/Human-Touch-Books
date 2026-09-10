@@ -50,8 +50,6 @@ const clasesBoton =
   "foco-marca inline-flex min-h-[44px] items-center justify-center gap-1.5 rounded-full border border-line bg-surface px-4 text-xs font-bold text-ink transition-colors hover:bg-surface-2 disabled:cursor-not-allowed disabled:opacity-40";
 const clasesBotonPeligro =
   "foco-marca inline-flex min-h-[44px] items-center justify-center rounded-full border border-accent/40 bg-surface px-4 text-xs font-bold text-accent-deep transition-colors hover:bg-accent/10";
-const clasesArchivo =
-  "block w-full text-sm text-ink/75 file:mr-3 file:min-h-[44px] file:rounded-full file:border-0 file:bg-surface-2 file:px-4 file:text-sm file:font-semibold file:text-brand-deep hover:file:bg-line";
 ---
 
 <PanelLayout titulo="Portada" correo={Astro.locals.sesion?.correo}>
@@ -128,9 +126,15 @@ const clasesArchivo =
               <tr class="border-b border-line text-left text-xs font-bold tracking-wide text-ink/70 uppercase">
                 <th scope="col" class="px-4 py-3">
                   Imagen para computadora
+                  <span class="block font-normal tracking-normal text-ink/60 normal-case">
+                    Ideal 1920 × 960 px (2:1)
+                  </span>
                 </th>
                 <th scope="col" class="px-4 py-3">
                   Versión para celular
+                  <span class="block font-normal tracking-normal text-ink/60 normal-case">
+                    Ideal 1080 × 1920 px (9:16)
+                  </span>
                 </th>
                 <th scope="col" class="px-4 py-3">
                   Texto alternativo
@@ -180,14 +184,31 @@ const clasesArchivo =
                         class="flex w-full flex-col items-start gap-2"
                       >
                         <input type="hidden" name="_accion" value="movil" />
-                        <input
-                          type="file"
-                          name="imagen_movil"
-                          accept=".jpg,.jpeg,.png,.webp"
-                          required
-                          class={clasesArchivo}
-                          aria-label={`Archivo de la versión para celular de la imagen «${imagen.altTexto}»`}
-                        />
+                        {/* Selector compacto: el input nativo, a 208px de ancho, aplastaba
+                            su propio texto («Ni…do»). El input queda accesible pero fuera
+                            de vista dentro de la etiqueta-boton (pulsarla abre el dialogo
+                            sin JavaScript); el nombre del archivo elegido lo escribe el
+                            script del final de la pagina. */}
+                        <label
+                          class={`${clasesBoton} cursor-pointer has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-3 has-[:focus-visible]:outline-brand`}
+                        >
+                          Elegir archivo
+                          <input
+                            type="file"
+                            name="imagen_movil"
+                            accept=".jpg,.jpeg,.png,.webp"
+                            required
+                            class="sr-only"
+                            aria-label={`Archivo de la versión para celular de la imagen «${imagen.altTexto}»`}
+                          />
+                        </label>
+                        <span
+                          class="text-xs break-all text-ink/70"
+                          data-nombre-archivo
+                          aria-live="polite"
+                        >
+                          Ningún archivo elegido
+                        </span>
                         <button type="submit" class={clasesBoton}>
                           {imagen.imagenMovilUrl ? "Reemplazar" : "Subir"}
                         </button>
@@ -381,4 +402,17 @@ const clasesArchivo =
       Agregar imagen
     </button>
   </form>
+
+  <script>
+    // Nombre del archivo elegido junto al selector compacto de la tabla. Sin
+    // JavaScript el selector sigue funcionando (la etiqueta abre el dialogo y
+    // el formulario se envia igual); solo se pierde este eco del nombre.
+    document.addEventListener("change", (evento) => {
+      const entrada = evento.target;
+      if (!(entrada instanceof HTMLInputElement) || entrada.type !== "file") return;
+      const salida = entrada.closest("form")?.querySelector("[data-nombre-archivo]");
+      if (!salida) return;
+      salida.textContent = entrada.files?.[0]?.name ?? "Ningún archivo elegido";
+    });
+  </script>
 </PanelLayout>
