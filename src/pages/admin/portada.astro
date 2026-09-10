@@ -59,7 +59,11 @@ const clasesArchivo =
   <p class="mt-1 text-sm text-ink/70">
     Estas imágenes se muestran en la parte superior de la página, junto al título
     <strong class="font-semibold text-ink">Tutoría SMART 2027</strong>. Con dos o más imágenes
-    visibles se arma un carrusel; con una sola se muestra fija.
+    visibles se arma un carrusel; con una sola se muestra fija. Cada imagen tiene dos versiones: la <strong
+      class="font-semibold text-ink">panorámica para computadora</strong
+    >, que es la que se agrega abajo, y una <strong class="font-semibold text-ink"
+      >vertical para celular</strong
+    >, opcional, que se sube después en la fila de esa imagen.
   </p>
 
   {
@@ -123,7 +127,7 @@ const clasesArchivo =
             <thead>
               <tr class="border-b border-line text-left text-xs font-bold tracking-wide text-ink/70 uppercase">
                 <th scope="col" class="px-4 py-3">
-                  Imagen
+                  Imagen para computadora
                 </th>
                 <th scope="col" class="px-4 py-3">
                   Versión para celular
@@ -289,11 +293,15 @@ const clasesArchivo =
     enctype="multipart/form-data"
     class="mt-8 max-w-xl rounded-xl border border-line bg-surface p-6 shadow-sm md:p-8"
   >
-    <h2 class="text-lg font-bold text-ink">Agregar imagen</h2>
+    <h2 class="text-lg font-bold text-ink">Agregar imagen para computadora</h2>
+    <p class="mt-1 text-sm text-ink/70">
+      Panorámica, de borde a borde. La versión para celular se sube después, en la fila de la imagen
+      dentro de la tabla.
+    </p>
 
     <div class="mt-5">
       <label class="block text-sm font-semibold text-ink" for="imagen-hero">
-        Imagen <span class="text-accent-deep">*</span>
+        Imagen para computadora <span class="text-accent-deep">*</span>
       </label>
       <input
         type="file"
