@@ -174,6 +174,13 @@ const textos = resolverTextos(filasTextos, {
 const tarjetaHeroVisible = textos.portada_tarjeta_enlace_url !== "";
 const tarjetaHeroExterna = textos.portada_tarjeta_enlace_url.startsWith("https://");
 
+// Destino del boton "Solicitar acceso" (este de Plataforma y el del header, en
+// TODAS las paginas): vacio, sigue yendo al formulario de contacto de siempre.
+// Sale de `navegacion` y no de `textos`: es la MISMA fuente, ya validada, que
+// usa el header, asi los dos botones no pueden apuntar a sitios distintos.
+const enlaceAcceso = navegacion.enlaceAcceso || "#contacto";
+const enlaceAccesoExterno = enlaceAcceso.startsWith("https://");
+
 // Portada: sin imagenes cargadas se mantiene la del diseno original; con una se
 // muestra fija y con dos o mas se arma el carrusel.
 const hayCarrusel = imagenesHero.length > 1;
@@ -372,7 +379,10 @@ const preguntasPorDefecto: PreguntaVista[] = [
     pregunta: "¿Cómo se accede a la plataforma Tutoría SMART?",
     respuesta:
       "La plataforma se habilita para las instituciones que trabajan con la editorial. Solicita el acceso desde el formulario y lo coordinamos con tu colegio.",
-    enlace: { href: "#contacto", texto: "Solicitar acceso" },
+    // «Ir al formulario» y no «Solicitar acceso»: la respuesta dice «desde el
+    // formulario», y ese nombre ya es el del boton administrable, que puede
+    // llevar a otro sitio. Dos botones iguales con destinos distintos confunden.
+    enlace: { href: "#contacto", texto: "Ir al formulario" },
   },
 ];
 
@@ -1037,7 +1047,9 @@ const fichaOrganizacion = serializarJsonLd({
           }
           <div class="mt-8 flex flex-wrap items-center gap-4">
             <a
-              href="#contacto"
+              href={enlaceAcceso}
+              target={enlaceAccesoExterno ? "_blank" : undefined}
+              rel={enlaceAccesoExterno ? "noopener noreferrer" : undefined}
               class="foco-marca inline-flex min-h-[52px] items-center gap-2.5 rounded-full bg-gradient-to-r from-brand to-violet px-8 text-[0.95rem] font-bold text-white shadow-lg shadow-brand/25 transition duration-300 ease-out motion-safe:hover:-translate-y-0.5 motion-safe:hover:shadow-xl"
             >
               <span class="grid h-6 w-6 place-items-center rounded-full bg-white/20">

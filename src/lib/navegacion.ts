@@ -24,7 +24,7 @@
 // reciben las trae puestas.
 
 import { bd } from "./bd";
-import { defectoFijo, type ClaveTexto, type FilaTexto } from "./textos";
+import { defectoFijo, esEnlaceSeguro, type ClaveTexto, type FilaTexto } from "./textos";
 
 /** Un enlace del segundo nivel del menu. */
 export interface EnlaceMenu {
@@ -69,6 +69,25 @@ function resolverEtiquetas(filas: readonly FilaTexto[]): EtiquetasNavegacion {
   return etiquetas;
 }
 
+/**
+ * Destino del boton «Solicitar acceso» (header en todas las paginas y seccion
+ * Plataforma). Viaja en `Navegacion` por la misma razon que las etiquetas: si
+ * cada pagina tuviera que leerlo, la proxima que se agregue saldria con el
+ * boton apuntando al formulario sin que nadie lo note.
+ */
+const CLAVE_ENLACE_ACCESO = "plataforma_enlace_acceso" satisfies ClaveTexto;
+
+/**
+ * Vacio si no hay fila o si lo guardado no pasa la validacion de enlaces. La
+ * unica via de escritura (/api/admin/textos) ya valida, pero este es el ultimo
+ * punto antes de un `href` que aparece en todas las paginas y comprobarlo
+ * cuesta una linea.
+ */
+function resolverEnlaceAcceso(filas: readonly FilaTexto[]): string {
+  const valor = filas.find((fila) => fila.clave === CLAVE_ENLACE_ACCESO)?.valor ?? "";
+  return valor && esEnlaceSeguro(valor) ? valor : "";
+}
+
 /** Etiquetas del codigo, sin tocar la base. Es lo que ve una pagina sin datos. */
 export const ETIQUETAS_POR_DEFECTO: EtiquetasNavegacion = resolverEtiquetas([]);
 
@@ -79,6 +98,11 @@ export interface Navegacion {
   lineas: readonly EnlaceMenu[];
   /** Etiquetas fijas del menu y del pie, administrables desde /admin/textos. */
   etiquetas: EtiquetasNavegacion;
+  /**
+   * Destino del boton «Solicitar acceso», ya validado. Vacio: el boton sigue
+   * llevando al formulario de contacto de la landing, como siempre hizo.
+   */
+  enlaceAcceso: string;
 }
 
 /** Menu vacio: los dos desplegables se omiten. Sirve de valor por defecto. */
@@ -86,6 +110,7 @@ export const NAVEGACION_VACIA: Navegacion = {
   paginas: [],
   lineas: [],
   etiquetas: ETIQUETAS_POR_DEFECTO,
+  enlaceAcceso: "",
 };
 
 export async function cargarNavegacion(): Promise<Navegacion> {
@@ -100,17 +125,18 @@ export async function cargarNavegacion(): Promise<Navegacion> {
       orderBy: [{ orden: "asc" }, { creadoEn: "asc" }],
       select: { clave: true, nombre: true, colorHex: true },
     }),
-    // Solo las filas del menu y el pie: la landing carga el catalogo entero
-    // porque lo necesita entero, pero las demas paginas no tienen por que
-    // traerse cuarenta textos para pintar siete etiquetas.
+    // Solo las filas del menu, el pie y el boton de acceso: la landing carga el
+    // catalogo entero porque lo necesita entero, pero las demas paginas no
+    // tienen por que traerse cuarenta textos para pintar la cabecera.
     bd.textoSitio.findMany({
-      where: { clave: { in: [...CLAVES_ETIQUETAS] } },
+      where: { clave: { in: [...CLAVES_ETIQUETAS, CLAVE_ENLACE_ACCESO] } },
       select: { clave: true, valor: true },
     }),
   ]);
 
   return {
     etiquetas: resolverEtiquetas(textos),
+    enlaceAcceso: resolverEnlaceAcceso(textos),
     paginas: paginas.map((pagina) => ({
       href: `/nosotros/${pagina.clave}`,
       etiqueta: pagina.titulo,

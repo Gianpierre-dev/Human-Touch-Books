@@ -122,6 +122,12 @@ export interface CampoTexto {
   defecto: string | ((contexto: ContextoTextos) => string);
 }
 
+/** Espacio y caracteres de control (0-32), barra invertida (92) y DEL (127). */
+function esCaracterProhibido(caracter: string): boolean {
+  const codigo = caracter.codePointAt(0) ?? 0;
+  return codigo <= 32 || codigo === 92 || codigo === 127;
+}
+
 /**
  * Valida el destino de un enlace editable desde el panel: una ruta interna
  * (empieza con "/", nunca "//" para no escapar a otro host), un ancla de la
@@ -129,8 +135,14 @@ export interface CampoTexto {
  * otro esquema (javascript:, data:, etc.), la via de inyeccion mas comun en un
  * campo que termina en un atributo href. Se llama solo con valores no vacios:
  * un campo `esUrl` vacio es valido y borra la fila, igual que el resto.
+ *
+ * Espacios, caracteres de control y la barra invertida se rechazan antes de
+ * todo: ningun enlace legitimo los lleva y el navegador los reinterpreta. Quita
+ * los tabuladores y saltos, y lee «\» como «/», asi que «/\otro.com» o
+ * «/<tab>/otro.com» terminan siendo «//otro.com», fuera del sitio.
  */
 export function esEnlaceSeguro(valor: string): boolean {
+  if ([...valor].some(esCaracterProhibido)) return false;
   if (valor.startsWith("/") && !valor.startsWith("//")) return true;
   if (valor.startsWith("#") && valor.length > 1) return true;
   try {
@@ -441,9 +453,19 @@ export const CAMPOS_TEXTO = [
     clave: "plataforma_cta",
     grupo: "plataforma",
     etiqueta: "Botón",
-    ayuda: "Botón degradado. Lleva al formulario de contacto.",
+    ayuda: "Texto del botón degradado. A dónde lleva se define en el campo siguiente.",
     limite: 30,
     defecto: "Solicitar acceso",
+  },
+  {
+    clave: "plataforma_enlace_acceso",
+    grupo: "plataforma",
+    etiqueta: "Botón «Solicitar acceso» — destino del enlace",
+    ayuda:
+      "A dónde lleva el botón «Solicitar acceso»: el de esta sección Y el del menú, que se repite en todas las páginas del sitio. Una ruta interna (/nosotros/quienes-somos), un ancla (#contacto) o una dirección externa completa (https://…). Vacío, sigue llevando al formulario de contacto de esta página, como hoy.",
+    limite: 300,
+    esUrl: true,
+    defecto: "",
   },
 
   // Nosotros

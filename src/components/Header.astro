@@ -30,11 +30,25 @@ interface Props {
 }
 
 const { whatsapp = "51982953436", base = "", navegacion = NAVEGACION_VACIA } = Astro.props;
-const { etiquetas } = navegacion;
+const { etiquetas, enlaceAcceso } = navegacion;
 const whatsappVisible = `+${whatsapp.slice(0, 2)} ${whatsapp.slice(2, 5)} ${whatsapp.slice(5, 8)} ${whatsapp.slice(8)}`;
 
 const enlaceContacto = `${base}#contacto`;
 const enlaceInicio = `${base}#inicio`;
+
+// El destino llega ya validado (cargarNavegacion, src/lib/navegacion.ts): aqui
+// solo se decide si es externo, para abrirlo en pestaña aparte. Una direccion
+// externa en el HEADER navegaria fuera del sitio desde CUALQUIER pagina; en
+// una pestaña nueva, la visitante no pierde la landing detras.
+// Un ANCLA cargada desde el panel (#seccion) vive en la landing: fuera de ella
+// se prefija con la base, igual que el #contacto de siempre, o apuntaria a una
+// seccion que en /privacidad o /lineas/... no existe.
+const destinoAcceso = !enlaceAcceso
+  ? enlaceContacto
+  : enlaceAcceso.startsWith("#")
+    ? `${base}${enlaceAcceso}`
+    : enlaceAcceso;
+const accesoExterno = destinoAcceso.startsWith("https://");
 
 interface GrupoMenu {
   id: string;
@@ -163,7 +177,9 @@ const claseItemPanel =
       </a>
 
       <a
-        href={enlaceContacto}
+        href={destinoAcceso}
+        target={accesoExterno ? "_blank" : undefined}
+        rel={accesoExterno ? "noopener noreferrer" : undefined}
         class="foco-marca boton-elevar hidden min-h-[44px] items-center rounded-full bg-brand px-5 text-sm font-bold whitespace-nowrap text-white [--sombra-hover:rgb(18_74_153_/_0.5)] hover:bg-brand-deep lg:inline-flex"
       >
         Solicitar acceso
@@ -255,7 +271,9 @@ const claseItemPanel =
           </a>
 
           <a
-            href={enlaceContacto}
+            href={destinoAcceso}
+            target={accesoExterno ? "_blank" : undefined}
+            rel={accesoExterno ? "noopener noreferrer" : undefined}
             class="foco-marca boton-elevar mt-2 flex min-h-[44px] items-center justify-center rounded-full bg-brand px-3 text-sm font-bold text-white [--sombra-hover:rgb(18_74_153_/_0.5)] hover:bg-brand-deep"
           >
             Solicitar acceso
