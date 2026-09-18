@@ -72,6 +72,28 @@ const comprimir = defineMiddleware(async (contexto, siguiente) => {
   });
 });
 
+// Un solo dominio oficial. `www.` y el dominio sin `www.` sirven lo mismo, y para
+// un buscador eso son DOS sitios con contenido duplicado que se reparten la
+// reputacion. El canonical ya dice cual es el bueno; la redireccion 301 lo hace
+// cumplir y deja a la visitante en la direccion que despues va a compartir.
+//
+// El dominio sale de `site` (astro.config.mjs), no esta escrito aqui: cambiarlo
+// alla mueve tambien esta regla. Solo GET y HEAD: redirigir un POST le haria
+// perder el cuerpo al formulario. El dominio *.up.railway.app no se toca (lo
+// usan las pruebas de humo y el canonical ya lo cubre).
+const HOST_CANONICO = import.meta.env.SITE ? new URL(import.meta.env.SITE).host : "";
+
+const unificarDominio = defineMiddleware((contexto, siguiente) => {
+  const { request, url } = contexto;
+  if (!HOST_CANONICO || !METODOS_SEGUROS.has(request.method)) return siguiente();
+  const host = request.headers.get("x-forwarded-host") ?? request.headers.get("host") ?? "";
+  if (host !== `www.${HOST_CANONICO}`) return siguiente();
+  return new Response(null, {
+    status: 301,
+    headers: { Location: `https://${HOST_CANONICO}${url.pathname}${url.search}` },
+  });
+});
+
 // Protege el panel y su API. Todo lo demas es publico.
 const protegerPanel = defineMiddleware(async (contexto, siguiente) => {
   const { request, url, cookies } = contexto;
@@ -110,5 +132,7 @@ const protegerPanel = defineMiddleware(async (contexto, siguiente) => {
   return siguiente();
 });
 
-// La compresion va por fuera: envuelve la respuesta que produzca el resto.
-export const onRequest = sequence(comprimir, protegerPanel);
+// La redireccion de dominio va primero: no tiene sentido comprimir ni consultar
+// la sesion de una peticion que se va a mandar a otra direccion. La compresion
+// envuelve la respuesta que produzca el resto.
+export const onRequest = sequence(unificarDominio, comprimir, protegerPanel);
