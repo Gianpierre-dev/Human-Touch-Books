@@ -6,7 +6,6 @@ import {
   ListObjectsV2Command,
 } from "@aws-sdk/client-s3";
 import { extname } from "node:path";
-import sharp from "sharp";
 import { ENTORNO } from "./entorno";
 import { anchosAGenerar, archivoVariante, prefijoVariantes } from "./imagenes";
 import { registrarFallo } from "./registro";
@@ -111,6 +110,32 @@ interface ImagenOptimizada {
   alto: number;
 }
 
+/**
+ * `sharp` se carga A PEDIDO, no al importar este modulo.
+ *
+ * Este archivo lo importa la ruta publica /uploads, asi que un `import` normal
+ * metia la libreria de procesado de imagenes (libvips) en la memoria del
+ * proceso desde el arranque, para siempre, aunque solo hace falta cuando
+ * alguien SUBE una imagen desde el panel: unas pocas veces al mes. Railway
+ * factura la memoria residente por minuto; medido, son ~6 MB que el trafico
+ * publico no usa nunca.
+ *
+ * `cache(false)`: libvips guarda por defecto hasta 50 MB de operaciones ya
+ * hechas para reutilizarlas. Aqui cada subida es distinta, asi que ese cache
+ * solo retendria memoria despues de cada carga.
+ */
+type ConstructorSharp = (typeof import("sharp"))["default"];
+
+let sharpCargado: Promise<ConstructorSharp> | undefined;
+
+function cargarSharp(): Promise<ConstructorSharp> {
+  sharpCargado ??= import("sharp").then((modulo) => {
+    modulo.default.cache(false);
+    return modulo.default;
+  });
+  return sharpCargado;
+}
+
 // Redimensiona y comprime la imagen conservando su formato original, para que
 // la extension, el tipo MIME y la URL guardada en la base de datos no cambien.
 // Devuelve tambien las medidas del resultado: `resolveWithObject` las trae del
@@ -120,6 +145,7 @@ async function optimizarImagen(
   ext: string,
   ancho: number,
 ): Promise<ImagenOptimizada> {
+  const sharp = await cargarSharp();
   const base = sharp(bytes)
     .rotate() // respeta la orientacion EXIF de las fotos de camara
     .resize({ width: ancho, withoutEnlargement: true });
@@ -161,6 +187,7 @@ async function crearVariantes(
   anchoOriginal: number,
   nombreArchivo: string,
 ): Promise<ObjetoSubible[]> {
+  const sharp = await cargarSharp();
   return Promise.all(
     anchosAGenerar(anchoOriginal).map(async (ancho) => ({
       nombre: archivoVariante(nombreArchivo, ancho),
